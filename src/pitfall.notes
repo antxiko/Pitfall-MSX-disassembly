@@ -1,24 +1,18 @@
 # Anotaciones de Pitfall! (Activision, 1984, MSX1).
 #
-# Cada linea esta anclada a una direccion, asi que los comentarios sobreviven a
-# un retrazado del binario. Directivas: L=etiqueta, C=comentario de linea,
-# B=cabecera de bloque, D=rango de datos.
+# Cada linea va anclada a una direccion, asi que los comentarios sobreviven a
+# un retrazado. Directivas: L=etiqueta, C=comentario de linea, B=cabecera de
+# bloque, D=rango de datos. Todo sale de leer el codigo que lo usa; lo que es
+# suposicion va marcado con "(?)".
 #
-# TODO lo que hay aqui sale de leer el codigo que lo usa, no de que "parezca".
-# Lo que sea suposicion va marcado con "(?)".
+# El mapa de memoria: cartucho de 16 KB fijo en 0x8000-0xBFFF (pagina 2); el
+# estado vive en RAM. INIT borra 0xE000-0xEFFF y pone la pila en 0xE54B.
 #
-# EL MAPA DE MEMORIA, que hace falta para leer el resto: el cartucho son 16 KB
-# fijos en 0x8000-0xBFFF (la pagina 2), o sea que aqui NO hay ni una variable.
-# El estado del juego vive en la RAM del MSX; INIT borra 0xE000-0xEFFF al
-# arrancar y pone la pila en 0xE54B.
-#
-# Y LA VARIABLE REINA: 0xE222 es el REGISTRO DE PANTALLA, un LFSR de 8 bits
-# igual que el contador polinomico del Pitfall! original de Atari 2600. INIT
-# lo siembra con 0xC4; 0xB68F lo avanza (rla/xor) y 0xB69F lo retrocede (la
-# funcion inversa), y el anillo tiene PERIODO 255: doscientas cincuenta y
-# cinco pantallas, comprobado simulando las dos rutinas. Sus bits 3-5 dan el
-# TIPO de escena (0xE225) y sus bits 0-2 la variante (0xE224). El estado 0x00
-# no pertenece al anillo y es el que usa la pantalla del titulo.
+# 0xE222 es el registro de pantalla: un LFSR de 8 bits (semilla 0xC4, avance
+# 0xB68F, retroceso 0xB69F) con anillo de periodo 255, como el contador
+# polinomico del Pitfall! de Atari 2600. Bits 3-5 = tipo de escena (0xE225),
+# bits 0-2 = variante (0xE224). El 0x00 queda fuera del anillo y es la
+# pantalla del titulo.
 
 # =============================================================================
 # LA CABECERA
@@ -29,30 +23,20 @@ D 0x8000 0x8010 cabecera_del_cartucho La cabecera que lee la BIOS: "AB", INIT=0x
 D 0x8010 0x8013 plantilla_del_gancho Los tres bytes C3 F7 80 -un `jp 0x80F7` ya montado- que INIT copia tal cual al gancho H.KEYI (0xFD9A) con el LDIR de 0x803C-0x8046. Aqui dentro no se ejecutan nunca: se ejecutan en la RAM del gancho, en cada interrupcion
 
 # =============================================================================
-# ARRANQUE
-# =============================================================================
-
-L 0x8013 INIT
-
-# =============================================================================
 # EL DESPACHADOR DE MODOS
 # =============================================================================
 
 D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
 
 # =============================================================================
-# NO HAY TEXTO EN ESTE CARTUCHO (comprobado, 2026-08-17)
+# NO HAY TEXTO EN ESTE CARTUCHO
 # =============================================================================
-# Ni una cadena, ni un alfabeto, ni un mensaje escondido de los programadores.
-# La fuente que carga el juego son SOLO diez digitos (tiles 0xB8-0xC1), los dos
-# puntos (0xC2) y el blanco (0xC3): con eso se escribe el marcador y el reloj,
-# y no da para una letra. Todo lo demas que parece texto -"ACTiViSiON
-# PRESENTS", "PITFALL!", el "Copyright 1982, 1984" del pie- son DIBUJOS
-# partidos en tiles consecutivos, uno por posicion, no cadenas. Por eso una
-# busqueda de cadenas en la ROM no devuelve nada legible: lo poco que sale son
-# coincidencias de bytes de graficos y de codigo.
-# La unica firma de los autores es esa linea del pie, y dice DOS fechas: 1982,
-# la del Pitfall! de Atari 2600, y 1984, la de esta conversion.
+# Ni una cadena ni un alfabeto. La fuente son doce tiles: los diez digitos
+# (0xB8-0xC1), los dos puntos (0xC2) y el blanco (0xC3), lo justo para el
+# marcador y el reloj. Todo lo demas que parece texto -"ACTiViSiON PRESENTS",
+# "PITFALL!", el "Copyright 1982, 1984" del pie- son dibujos partidos en tiles
+# consecutivos. Las dos fechas del pie: 1982 el Pitfall! de Atari 2600, 1984
+# esta conversion.
 
 L 0x80F7 bucle_principal
 B 0x80F7 ############################################################
@@ -90,17 +74,13 @@ L 0x9CBE cambia_de_pantalla_a_la_derecha
 B 0x9CBE ############################################################
 B 0x9CBE EL CAMBIO DE PANTALLA, y el atajo de tres escenas
 B 0x9CBE ############################################################
-B 0x9CBE La X del jugador esta en 0xE2A3 (el campo +1 de la
-B 0x9CBE estructura de 0xE2A2). Cuando vale 0xE7 -el borde
-B 0x9CBE derecho- esto lo reposiciona en 0x19, o sea al otro
-B 0x9CBE lado, y acto seguido avanza el registro de pantalla.
-B 0x9CBE Y AQUI ESTA LO BUENO: avanza UNO o TRES pasos segun el
-B 0x9CBE bit 0 de 0xE2EB. Tres pasos son tres escenas de golpe,
-B 0x9CBE que es el atajo del subterraneo del Pitfall! original:
-B 0x9CBE por abajo se recorre el mundo al triple de velocidad.
-B 0x9CBE Al final salta a 0x9EE6, que monta la escena nueva; esa
-B 0x9CBE es la UNICA via por la que se dibuja una escena, asi que
-B 0x9CBE cambiar 0xE222 por las bravas no repinta nada
+B 0x9CBE La X del jugador esta en 0xE2A3. Cuando vale 0xE7 -el
+B 0x9CBE borde derecho- se reposiciona en 0x19, el otro lado, y
+B 0x9CBE se avanza el registro de pantalla: UN paso, o TRES si
+B 0x9CBE el bit 0 de 0xE2EB dice subterraneo. Por abajo el mundo
+B 0x9CBE se recorre al triple. Al final salta a 0x9EE6, la unica
+B 0x9CBE via por la que se monta una escena: cambiar 0xE222 a
+B 0x9CBE pelo no repinta nada
 C 0x9CC2 0xE7 es la X del borde derecho
 C 0x9CC9 y 0x19 la del izquierdo, por donde reaparece
 C 0x9CD2 el bit que decide si se avanza una escena o tres
@@ -111,23 +91,17 @@ C 0x9F91 Los BITS 6-7 del LFSR de pantalla, doblados, son el indice de las dos t
 B 0xB68F ############################################################
 B 0xB68F EL MUNDO NO ESTA GUARDADO: SE CALCULA
 B 0xB68F ############################################################
-B 0xB68F Las 255 escenas no ocupan ni un byte de mapa. Salen de un
-B 0xB68F registro de desplazamiento realimentado de 8 bits, 0xE222,
-B 0xB68F que es el mismo truco del Pitfall! de Atari 2600.
-B 0xB68F NO ES ALEATORIO: el orden esta fijado y se puede escribir
-B 0xB68F entero. La realimentacion, sacada de los rla/xor de aqui
-B 0xB68F abajo y comprobada sobre los 256 valores posibles, es
+B 0xB68F Las 255 escenas no ocupan ni un byte de mapa: salen del
+B 0xB68F registro de desplazamiento realimentado 0xE222. No es
+B 0xB68F aleatorio: el orden esta fijado. La realimentacion,
+B 0xB68F comprobada sobre los 256 valores posibles, es
 B 0xB68F     bit nuevo = b7 xor b5 xor b4 xor b3      (mascara 0xB8)
-B 0xB68F y el registro se desplaza a la izquierda metiendo ese bit.
-B 0xB68F Con esa realimentacion el anillo es MAXIMO: recorre los 255
-B 0xB68F valores no nulos y vuelve al principio. El 0x00 se queda
-B 0xB68F fuera -de un LFSR nadie sale del cero- y por eso el juego
-B 0xB68F lo usa para la pantalla del titulo.
-B 0xB68F Sembrando con 0xC4, que es lo que hace el arranque en
-B 0xB68F 0x8075, sale el orden en que se recorre el mundo yendo
-B 0xB68F siempre a la derecha. tools/mapa_escenas.py lo reproduce, y
-B 0xB68F las 255 capturas del emulador salieron en ESE MISMO orden,
-B 0xB68F las 255 de 255.
+B 0xB68F y el anillo es maximo: 255 valores no nulos y vuelta al
+B 0xB68F principio. El 0x00 queda fuera -de un LFSR no se sale del
+B 0xB68F cero- y es la pantalla del titulo. Sembrando con 0xC4
+B 0xB68F (0x8075) sale el orden del mundo yendo a la derecha;
+B 0xB68F tools/mapa_escenas.py lo reproduce y las 255 capturas del
+B 0xB68F emulador salen en ese mismo orden, 255 de 255.
 L 0xB68F avanza_pantalla_lfsr
 C 0xB68F El paso ADELANTE: desplaza 0xE222 a la izquierda metiendo el bit de realimentacion
 L 0xB69F retrocede_pantalla_lfsr
@@ -401,7 +375,7 @@ D 0xBAA2 0xBAB2 listas_nibble_espejo Dos listas de 8 bytes, y la segunda es la p
 
 D 0xBC6D 0xC000 relleno Los 915 bytes finales del cartucho, TODOS a 0x00 (comprobado byte a byte): relleno hasta completar los 16 KB
 
-D 0xA61A 0xA69E tabla_del_balanceo Treinta y tres registros de cuatro bytes, uno por fase del balanceo de la liana: 0xA47D indexa con (0xE1CB)*4, y la fase va y viene entre 1 -la cuerda vertical- y 0x20 -la cuerda tumbada del todo-. LOS CUATRO BYTES SON CUATRO COSAS DISTINTAS. (1) La PENDIENTE de la cuerda en 1/256 de pixel por fila, de 0x00 a 0xC9: es el DE con el que 0xA4C4 va acumulando la recta. (2) El PERIODO del objeto, que 0xA48F escribe en 0xE33F: vale 1 cuadro cerca de la vertical y 9 en el extremo, o sea que el balanceo CORRE POR EL CENTRO Y FRENA EN LAS PUNTAS, como un pendulo de verdad; sumando los 32 periodos, media ida son 75 cuadros. (3) Cuantas veces MAS se suma la pendiente para llegar al punto de agarre (0xA529), que ademas se guarda en 0xE1CC y es la fila donde cuelga el jugador: 0x10 en la vertical y 0x06 en el extremo. (4) Con cuantos pasos de la curva del salto se cae al SOLTARSE: 0xA546 lo lleva a 0xE1E2 y 0x821A lo mete en IX+0x17, y va de 0x00 en la vertical a 0x10 en el extremo. Acaba justo donde empieza su consumidor, el manejador 0xA69E
+D 0xA61A 0xA69E tabla_del_balanceo Treinta y tres registros de cuatro bytes, uno por fase del balanceo de la liana: 0xA47D indexa con (0xE1CB)*4 y la fase va y viene entre 1 (vertical) y 0x20 (tumbada). Los cuatro bytes: (1) pendiente de la cuerda en 1/256 de pixel por fila, 0x00 a 0xC9 (el DE que 0xA4C4 acumula); (2) PERIODO del objeto (0xA48F lo escribe en 0xE33F), 1 cuadro en el centro y 9 en el extremo: el balanceo frena en las puntas como un pendulo, y media ida son 75 cuadros sumando los 32 periodos; (3) cuantas veces mas se suma la pendiente hasta el punto de agarre (0xA529, guardado en 0xE1CC), 0x10 vertical a 0x06 extremo; (4) en que paso de la curva del salto arranca la caida al soltarse (0xA546 -> 0xE1E2, 0x821A -> IX+0x17), 0x00 vertical a 0x10 extremo. Acaba donde empieza su consumidor, 0xA69E
 
 D 0x8A75 0x8A88 tiles_de_las_vidas Un 0x00 de relleno y TRES filas de seis tiles C3/C5/C6, una por cuenta de vidas: 0x8A76 ninguna, 0x8A7C una, 0x8A82 dos. 0x89AB elige la que toca y 0x89DA y 0x89E9 suben sus dos mitades de tres bytes a la VRAM 0x1843 y 0x1863
 
@@ -629,7 +603,7 @@ L 0x9F13 monta_la_escena_sigue
 # ---- Tramo 0xA400-0xAEFF: la liana, los troncos, los cocodrilos y el hoyo ----
 
 B 0xA43A ############################################################
-B 0xA43A LAS CAJAS DE COLISION, que es como el juego sabe que te pasa
+B 0xA43A LAS CAJAS DE COLISION
 B 0xA43A ############################################################
 B 0xA43A 0xE229-0xE246 son DIEZ registros de tres bytes: clase, X
 B 0xA43A izquierda y X derecha. Las rutinas de escena escriben las
@@ -679,7 +653,7 @@ L 0xA4E8 mueve_la_liana_sprite2
 L 0xA511 mueve_la_liana_sprite3
 L 0xA530 mueve_la_liana_agarre
 C 0xA540 0xE1CD = la X donde se agarra el jugador
-C 0xA551 LA CUERDA NO MIDE 48 FILAS: estos dos LDIR fabrican el patron del TERCER sprite -el 0x60- copiando solo B filas de cada mitad del patron completo, siendo B el tercer byte de la fase, y 0xA43A ha puesto los dos mapas de bits a cero antes. O sea que el tercer sprite se corta justo en el punto de agarre: la cuerda mide 32+B filas, 48 con la liana vertical y 38 en el extremo, y se acorta al tumbarse
+C 0xA551 estos dos LDIR fabrican el patron del TERCER sprite -el 0x60- copiando solo B filas de cada mitad (B = tercer byte de la fase) sobre mapas que 0xA43A dejo a cero: el tercer sprite se corta en el punto de agarre. La cuerda mide 32+B filas -48 en vertical, 38 en el extremo- y se acorta al tumbarse
 L 0xA57F mueve_la_liana_vuelca
 L 0xA594 mueve_la_liana_a_vram
 C 0xA597 los dos patrones de sprite de la cuerda
@@ -746,59 +720,11 @@ C 0xAE4E la plantilla del objeto de la liana
 C 0xAE56 y su manejador
 C 0xAE63 los tres sprites de la cuerda: patrones 0x3C, 0x3C y 0x60, color 0
 
-# Anotaciones del tramo 0x8000-0x99FF de Pitfall! (Activision, 1984, MSX1).
-# Solo directivas L/C/B. Todas las L existen como L_XXXX en src/pitfall.asm
-# (verificado con grep). Nada de esto se ha escrito en src/.
-#
-# LO QUE SE HA AVERIGUADO EN ESTE TRAMO, y de donde sale:
-#
-# * 0xE05F es la ENTRADA, en formato de joystick del PSG: bit0 arriba,
-#   bit1 abajo, bit2 izquierda, bit3 derecha, bit4/5 los disparos. Se
-#   comprueba siguiendo el remapeo de teclado de 0xB26E: mete la fila 8
-#   (bit5 arriba, bit6 abajo, bit7 izquierda, bit0 espacio) en los bits
-#   0-4 con tres rlca y and 0x1F, y sale exactamente ese orden.
-#
-# * 0xE012 son LAS VIDAS QUE QUEDAN. 0x8A54 las pone a 2 al empezar,
-#   0x8975 resta una y 0x89A8 las pinta.
-#
-# * 0xE1D0-0xE1D4 es EL RELOJ y 0xE1D6-0xE1DB EL MARCADOR, los dos en la
-#   RAM. Los inicializadores lo confirman byte a byte: 0x8A69 vale
-#   BA B8 C2 B8 B8 = tiles "2 0 : 0 0", o sea 20:00, y 0x8A6F vale
-#   00 00 02 00 00 00 = 2000 puntos, que es la cifra que ya estaba
-#   documentada como marcador de salida.
-#
-# * IX+0x16 bit 0 dice DONDE ESTA EL JUGADOR: 1 en la superficie, 0 en
-#   el subterraneo. 0xACE4 lo pone a 1 al empezar la partida, 0x8751 lo
-#   apaga al caer por un hoyo y 0x849A lo enciende al salir de el.
-#
-# * Los sprites de mirar a la izquierda NO estan en la ROM: se fabrican
-#   al arrancar espejando los de mirar a la derecha (0x8B5E/0x8BC1). Los
-#   guiones de animacion lo cuadran: andar a la derecha usa los patrones
-#   0x20..0x30 y andar a la izquierda los 0x44..0x54, y 0x20+0x24 = 0x44,
-#   que es justo el desplazamiento de nueve sprites de cuatro patrones.
-#
-# * 0x8AE1, 0x8AED y 0x8AF9 (dentro del rango que las notas llaman
-#   tabla_de_incrementos) NO son incrementos: son GUIONES DE ANIMACION,
-#   parejas [duracion][patron] cerradas por 00 00. 0x8AE1 = andar a la
-#   derecha (03 20 / 03 24 / 03 28 / 03 2C / 03 30), 0x8AED = andar a la
-#   izquierda (03 44 ... 03 54), 0x8AF9 = trepar (01 3C / 01 60). Los
-#   cargan 0x892D, 0x8903 y 0x8411 en IX+0x0C/0x0D. La curva del salto
-#   propiamente dicha ocupa 0x8AB6-0x8AD7.
-#
-# * PENDIENTE, y aqui hay 186 bytes de los 192 sin explicar de
-#   0x8E46-0x8F05: son SEIS PATRONES DE SPRITE de 0x20 bytes en crudo,
-#   en 0x8E40, 0x8E60, 0x8E80, 0x8EA0, 0x8EC0 y 0x8EE0 (los dos ultimos
-#   con sus mitades en 0x8ED0 y 0x8EF0). Los copia 0x8BFB a los buferes
-#   de RAM 0xE138/0xE15E (0x8E40+0x8E60 mirando a la derecha,
-#   0x8EC0+0x8EE0 a la izquierda), 0x8CAB carga 0x8E80+0x8EA0, y 0x8314
-#   los manda a la VRAM 0x3D00/0x3AC0/0x3D10/0x3AD0. El primero arranca
-#   en 0x8E40, seis bytes DENTRO de tabla_tramos_fila13 (0x8E32-0x8E46),
-#   que son 0xFF: los dos bloques comparten esos seis bytes.
-
 # =============================================================================
 # ARRANQUE
 # =============================================================================
 
+L 0x8013 INIT
 B 0x8013 Borra 0xE000-0xEFFF, engancha 0x80F7 en H.KEYI y cae
 B 0x8013 en 0x8065. El bucle de 0x80F5 no hace nada mas: el
 B 0x8013 juego entero corre dentro de la interrupcion
@@ -950,7 +876,7 @@ L 0x85D2 mira_colisiones_en_el_aire_devuelve
 L 0x85D4 mira_colisiones_en_el_aire_siguiente
 L 0x85D7 mira_colisiones_en_el_aire_nada
 L 0x85D9 alcanza_la_liana
-C 0x85D9 la caja de clase 5 que monta 0xA5B4 ya ha decidido por la X; esta es la unica comprobacion vertical, y es rara: exige a la vez (0xE1CC)-7 < Y del jugador y (0xE1CC)-0x14 >= Y, que solo pueden cumplirse juntas porque la segunda resta se desborda. 0xE1CC lleva el TERCER byte de la fase del balanceo -de 0x06 a 0x10, la fila donde esta el punto de agarre-, y con esos valores la condicion sale cierta para cualquier Y del jugador... menos cuando vale 0x06, que son justo las dos fases del extremo: EN LA PUNTA DEL BALANCEO LA LIANA NO SE COGE
+C 0x85D9 la caja de clase 5 ya decidio por la X; esta comprobacion vertical exige a la vez (0xE1CC)-7 < Y y (0xE1CC)-0x14 >= Y, que solo se cumplen juntas porque la segunda resta se desborda. Con 0xE1CC entre 0x07 y 0x10 sale cierta para cualquier Y; con 0x06 -las dos fases del extremo- sale falsa: en la punta del balanceo la liana no se coge
 
 L 0x85EF rebota_y_retrocede   Clase 10: invierte la velocidad y retrocede tres pasos. NO baja al subterraneo
 C 0x85F2 parado no rebota
@@ -1166,10 +1092,6 @@ C 0x8DE8 filas 14-15 al tile 0x30
 C 0x8DF7 filas 16-17 al 0x40
 C 0x8E06 filas 18-21 al 0x2C
 C 0x8E15 fila 22 al 0x48
-
-# Anotaciones del tramo 0xB000-0xBFFF de Pitfall! (Activision, 1984).
-# Todo sale de leer el codigo y de comprobar con grep quien llama a que.
-# Lo que es suposicion va con "(?)".
 
 # =============================================================================
 # LA CAPA DE VDP (0xB113-0xB248)
@@ -1466,7 +1388,7 @@ L 0xB9C8 avanza_el_guion_de_la_demo
 C 0xB9CF +0x0B es la entrada del guion, doblada porque son parejas
 C 0xB9DD la entrada que 0x9A7E le mete al jugador
 
-# ---- Cierre: lo que quedaba suelto de 0x9F00-0xAE00 y los seis RET ----
+# ---- Sueltos de 0x9F00-0xAE00, y los seis RET huerfanos ----
 
 L 0x9F8E vuelve_del_tipo_de_escena La direccion que el despachador apila antes del jp (hl)
 L 0x9FAD escoge_decorado_indice
@@ -1541,7 +1463,7 @@ D 0xAFD8 0xAFDE guion_anim_cocodrilos 01 F8 / 01 FC / 00 00: los mismos dos patr
 D 0xB000 0xB010 guion_anim_estorbo Siete pares con esperas desiguales (2, 1, 3, 2, 2, 4, 1) entre los patrones 0xF8 y 0xFC: un parpadeo irregular. Lo apunta la plantilla de 0xB014, la del estorbo de la derecha
 
 # =============================================================================
-# LOS SPRITES DEL JUGADOR HUNDIENDOSE (el ultimo hueco del presupuesto)
+# LOS SPRITES DEL JUGADOR HUNDIENDOSE
 # =============================================================================
 # Seis bloques de 32 bytes, o sea tres parejas. Cada pareja son las dos capas
 # de color del jugador -las mismas dos que 0x9D03 coloca 16 pixeles por encima
@@ -1563,21 +1485,15 @@ D 0x8EC0 0x8EE0 sprite_hundiendose_izquierda_1 El espejo de 0x8E60 dandole la vu
 D 0x8EE0 0x8F00 sprite_hundiendose_izquierda_2 El espejo de 0x8E40 con los bits de cada byte del reves, y este EXACTO: los 32 bytes. La copia 0x8C1C a 0xE15E, y 0x8348 sube sus mitades a 0x3D10 y 0x3AD0
 D 0x8F00 0x8F06 reloj_inicial_duplicado Los mismos cinco tiles del reloj de salida que hay en 0x8A69 -BA B8 C2 B8 B8, que se lee "20:00"- pero con 0x00 detras en vez del divisor 0x3C. Nadie lo copia: la unica palabra del cartucho que vale 0x8F00 esta en 0xA3A3, dentro de una tabla de patrones, o sea que es coincidencia de bytes y no un puntero. Una segunda copia que se quedo sin usar
 
-# ---- La cuenta del reloj, hecha entera sobre el binario ----
-B 0x9DB8 LOS 20:00, CONTADOS PASO A PASO
-B 0x9DB8 La cadena no tiene ni una condicion por el camino: INIT engancha
-B 0x9DB8 0x80F7 en H.KEYI (0xFD9A), o sea una llamada por interrupcion del
-B 0x9DB8 VDP; 0x8100 llama a cuadro_del_juego siempre, sin mirar nada; y
-B 0x9DB8 cuadro_del_juego llama aqui lo PRIMERO. Asi que esto corre una vez
-B 0x9DB8 por interrupcion, y 0xE1D5 -que vale 60- gasta una por pasada.
-B 0x9DB8 UN TICK CADA 60 INTERRUPCIONES. En una maquina de 60 Hz eso es un
-B 0x9DB8 segundo clavado y los 20:00 duran veinte minutos de reloj de pared;
-B 0x9DB8 en una de 50 Hz el tick son 1,2 s y la partida dura veinticuatro.
-B 0x9DB8 MEDIDO EN EL EMULADOR con un bp aqui y otro de control en 0x80F7
-B 0x9DB8 (tools/omsx_mide_tick.tcl): 55 ticks seguidos de partida real, los
-B 0x9DB8 55 a 60 interrupciones exactas, con el marcador bajando de 20:00.
-B 0x9DB8 Los "~9 s por tick" que se midieron al principio eran OTRA cosa:
-B 0x9DB8 se vigilaba 0xE25A/B/C, que no es este reloj, y con la partida sin
-B 0x9DB8 arrancar. Y OJO: esto corre tambien en el titulo y en la demo,
-B 0x9DB8 decrementando los tiles sin inicializar; los 20:00 se escriben al
-B 0x9DB8 arrancar la partida de verdad.
+# ---- La cuenta del reloj ----
+B 0x9DB8 LOS 20:00, CONTADOS SOBRE EL BINARIO
+B 0x9DB8 INIT engancha 0x80F7 en H.KEYI (una llamada por interrupcion
+B 0x9DB8 del VDP), 0x8100 llama a cuadro_del_juego sin condicion y este
+B 0x9DB8 llama aqui lo primero: una pasada por interrupcion, y 0xE1D5
+B 0x9DB8 -que vale 60- gasta una por pasada. UN TICK CADA 60
+B 0x9DB8 INTERRUPCIONES: a 60 Hz el tick es un segundo y los 20:00 duran
+B 0x9DB8 veinte minutos; a 50 Hz, 1,2 s y veinticuatro. Medido en partida
+B 0x9DB8 real (tools/omsx_mide_tick.tcl, bp aqui y control en 0x80F7):
+B 0x9DB8 55 ticks seguidos, los 55 a 60 interrupciones exactas. OJO:
+B 0x9DB8 corre tambien en titulo y demo, sobre tiles sin inicializar;
+B 0x9DB8 los 20:00 se escriben al arrancar la partida.

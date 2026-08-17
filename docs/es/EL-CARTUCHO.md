@@ -1,9 +1,8 @@
 # El cartucho
 
-Son 16384 bytes, y ya está. No hay cargador, ni bloques, ni nada que esperar: el
-MSX mapea el cartucho en 0x8000-0xBFFF —la página 2— y lo que hay ahí es lo que
-hay para siempre. Una sola foto de la memoria, sin solapes: ninguna dirección
-significa dos cosas distintas en dos momentos distintos.
+Son 16384 bytes. No hay cargador ni bloques: el MSX mapea el cartucho en
+0x8000-0xBFFF —la página 2— y esa es toda la foto de la memoria, sin solapes:
+ninguna dirección significa dos cosas en dos momentos distintos.
 
 ## Por dónde entra
 
@@ -12,41 +11,33 @@ Los primeros dieciséis bytes son la cabecera que lee la BIOS:
     41 42 13 80 00 00 00 00 00 00 00 00 00 00 00 00
     'A' 'B'  \_ INIT = 0x8013
 
-Las dos letras son la firma que le dice a la máquina que ahí hay un cartucho
-ejecutable, y detrás van cuatro vectores de dos bytes. Solo el primero está
-puesto: los otros tres —STATEMENT, DEVICE y TEXT, los que servirían para añadir
-instrucciones al BASIC o para declarar un dispositivo— están a cero. Este
-cartucho es un juego y nada más.
+Las dos letras marcan un cartucho ejecutable; de los cuatro vectores solo está
+puesto INIT —STATEMENT, DEVICE y TEXT, los del BASIC, van a cero—.
 
-Detrás de la cabecera, en 0x8010, hay tres bytes que no son cabecera y tampoco
-se ejecutan nunca aquí: `C3 F7 80`, o sea un `jp 0x80F7` ya montado. El arranque
-los copia tal cual al gancho de interrupción, y es ahí donde se ejecutan.
+En 0x8010 hay tres bytes que no son cabecera y tampoco se ejecutan aquí:
+`C3 F7 80`, un `jp 0x80F7` ya montado. El arranque los copia al gancho de
+interrupción, y ahí es donde corren.
 
 ## Lo que hace el arranque
 
-INIT (0x8013) es corto y muy medido:
+INIT (0x8013):
 
-- borra los 4 KB de 0xE000 a 0xEFFF de un tirón (0x8017), que es donde va a
-  vivir todo el estado del juego, y pone la pila en 0xE54B (0x8023);
-- calla el chip de sonido (0x8026) y deja a cero los 16 KB de memoria de vídeo
+- borra 0xE000-0xEFFF de un tirón (0x8017), donde vivirá el estado, y pone la
+  pila en 0xE54B (0x8023);
+- calla el chip de sonido (0x8026) y borra los 16 KB de memoria de vídeo
   (0x802D);
-- copia los tres bytes de 0x8010 al gancho H.KEYI, en 0xFD9A (0x803C-0x8046);
-- pasa por la presentación (0x805C), vuelve, vuelve a borrar la memoria de vídeo
-  y carga los sprites;
-- prepara la partida y se mete en un bucle de dos bytes, en 0x80F5.
+- copia los tres bytes de 0x8010 al gancho H.KEYI, 0xFD9A (0x803C-0x8046);
+- pasa por la presentación (0x805C), vuelve a borrar la memoria de vídeo y
+  carga los sprites;
+- prepara la partida y se mete en un bucle de dos bytes, 0x80F5.
 
-Ese bucle vacío es el programa principal. **A partir de ahí el juego entero
-corre dentro de la interrupción**, cincuenta o sesenta veces por segundo, y el
-hilo que arrancó la máquina no vuelve a hacer nada nunca.
+Ese bucle vacío es el programa principal. **El juego entero corre dentro de la
+interrupción**, cincuenta o sesenta veces por segundo.
 
 ## Dónde vive el estado
 
-En el cartucho no hay ni una variable, porque es ROM. Todo lo que el juego
-apunta vive en la RAM del MSX a partir de 0xE000, y por eso el listado está
-lleno de direcciones que empiezan por 0xE0: no son datos del cartucho, son
-variables.
-
-Las que más se leen:
+Todo lo que el juego apunta vive en la RAM a partir de 0xE000. Las direcciones
+más leídas:
 
 | | |
 |---|---|
@@ -56,32 +47,28 @@ Las que más se leen:
 | 0xE1D6-0xE1DB | los seis dígitos del marcador |
 | 0xE1E6-0xE1ED | los cuatro vectores de sonido |
 | 0xE20E-0xE21B | la copia de los catorce registros del chip de sonido |
-| 0xE21D-0xE220 | los 32 bits de los tesoros que ya te has llevado |
+| 0xE21D-0xE220 | los 32 bits de los tesoros ya recogidos |
 | 0xE221 | si lo que corre es la demo |
 | 0xE222 | **el registro de pantalla**: el mundo entero cabe aquí |
 | 0xE224 / 0xE225 | la variante y el tipo de la escena, sacados de 0xE222 |
 | 0xE229-0xE246 | las diez cajas de colisión |
 | 0xE247 | cuántos objetos vivos hay, y detrás un puntero por objeto |
-| 0xE26A-0xE2BD | la tabla de atributos de sprite, que se vuelca entera cada cuadro |
+| 0xE26A-0xE2BD | la tabla de atributos de sprite, volcada entera cada cuadro |
 
-Y detrás de esa tabla van las estructuras de los objetos, una pegada a la otra
-sin un hueco: 0xE2BF, 0xE2D5 (el jugador), 0xE2ED, 0xE303, 0xE319 y 0xE32F. La
-del jugador ocupa 24 bytes y las otras cinco 22, que es justo lo que hace falta
-para que la cadena cierre en 0xE345.
+Detrás van las estructuras de los objetos, pegadas sin hueco: 0xE2BF, 0xE2D5
+(el jugador), 0xE2ED, 0xE303, 0xE319 y 0xE32F. La del jugador ocupa 24 bytes y
+las otras cinco 22, con lo que la cadena cierra en 0xE345.
 
 ## La pantalla, y los tres registros que el juego no toca
 
-El cartucho escribe los registros del chip gráfico en cinco sitios contados, y
-solo escribe cinco de los ocho: el 0 y el 1 (modo y pantalla), el 3 y el 4 (las
-bases de color y de dibujo) y el 7 (el fondo, en 0x8036, valor 0x11: negro).
+El cartucho escribe cinco de los ocho registros del chip gráfico: el 0 y el 1
+(modo y pantalla), el 3 y el 4 (bases de color y dibujo) y el 7 (el borde,
+0x11: negro, en 0x8036).
 
-**Los registros 2, 5 y 6 no los escribe nadie.** Son los que dicen dónde están
-la tabla de nombres, los atributos de sprite y los patrones de sprite, y sin
-embargo el juego escribe en 0x1800, en 0x1B00 y en 0x3800-0x3FFF a lo largo de
-todo el listado. O sea que da por buenas las bases que le dejó puestas la BIOS y
-no se molesta en repetirlas.
-
-El reparto que sale es este:
+**Los registros 2, 5 y 6 no los escribe nadie**: son los que dicen dónde están
+la tabla de nombres, los atributos de sprite y los patrones de sprite, y el
+juego escribe en 0x1800, 0x1B00 y 0x3800-0x3FFF dando por buenas las bases que
+dejó la BIOS.
 
 | | |
 |---|---|
@@ -91,46 +78,40 @@ El reparto que sale es este:
 | 0x2000 | los colores (registro 3 = 0x80, en 0xB794) |
 | 0x3800 | los patrones de sprite |
 
-El registro 1 vale 0xE2 (0x8047): 16 KB, pantalla e interrupción encendidas y
+El registro 1 vale 0xE2 (0x8047): 16 KB, pantalla e interrupción encendidas,
 sprites de 16x16.
 
-Hay un detalle que se paga en bytes: **la presentación va en un modo y el juego
-en otro**. En 0xB6B2 el registro 0 se pone a 0x02 —modo gráfico 2, el de los
-tres bancos independientes— para el rótulo de entrada, y al salir, en 0xB788,
-vuelve a 0x00, modo gráfico 1. Por eso la tabla de colores del juego son 32
-bytes y no 6144: en el modo del juego el color va por grupo de ocho casillas, no
-por casilla.
+**La presentación va en un modo y el juego en otro**: 0xB6B2 pone el registro 0
+a 0x02 —modo gráfico 2— para el rótulo de entrada, y 0xB788 lo devuelve a 0x00,
+modo gráfico 1. Por eso la tabla de colores del juego son 32 bytes y no 6144:
+en el modo del juego el color va por grupo de ocho casillas.
 
 ## Cómo están guardados los dibujos
 
 Hay un descompresor de 58 bytes en 0xB142 que vuelca directamente al puerto de
-vídeo. El formato se lee entero en él: dos bytes de dirección de destino y luego
-tokens de un byte con el contador en los seis bits bajos —bit 7 saltar N
-posiciones, bit 6 copiar N bytes literales, ninguno de los dos repetir N veces
-el byte siguiente, y un cero cierra—.
+vídeo. El formato: dos bytes de dirección de destino y tokens de un byte con el
+contador en los seis bits bajos —bit 7 saltar N posiciones, bit 6 copiar N
+literales, ninguno repetir N veces el byte siguiente, cero cierra—.
 
-Con eso van comprimidos los patrones de casilla y de sprite (0x909E-0x95FE), los
-nueve bloques de sprite de los manejadores de escena (0x981E-0x99AF) y los seis
-de la presentación (0xBAB2-0xBC61). Lo que no va comprimido son los cuatro
-juegos de 16 casillas del decorado (0x95FE-0x97FE) y siete patrones de sprite
-sueltos: el de relleno de 0x97FE-0x981E y los seis de 0x99AF-0x9A6F, de 32 bytes
-cada uno, sin nada que ahorrar.
+Así van los patrones de casilla y de sprite (0x909E-0x95FE), los nueve bloques
+de sprite de los manejadores de escena (0x981E-0x99AF) y los seis de la
+presentación (0xBAB2-0xBC61). Sin comprimir van los cuatro juegos de 16
+casillas del decorado (0x95FE-0x97FE) y siete patrones de sprite sueltos
+(0x97FE-0x981E y 0x99AF-0x9A6F).
 
 Cada bloque comprimido acaba **exactamente** donde empieza el siguiente, y eso
-es lo que fija su tamaño sin tener que suponerlo.
+fija su tamaño sin suponer nada.
 
 ## La tipografía cabe en doce casillas
 
-En este cartucho no hay ni una cadena de texto. Lo único parecido a una fuente
-son doce casillas: los diez dígitos (0xB8-0xC1), los dos puntos (0xC2) y el
-blanco (0xC3). Con eso se escriben el marcador y el reloj, y no da para una sola
-letra. Todo lo demás que parece texto en la pantalla es dibujo.
+No hay ni una cadena de texto. La única fuente son doce casillas: los diez
+dígitos (0xB8-0xC1), los dos puntos (0xC2) y el blanco (0xC3), lo justo para el
+marcador y el reloj. Todo lo demás que parece texto es dibujo.
 
 ## El reparto completo
 
-Ni un byte sin dueño: 9467 de código que el trazador alcanza siguiendo el flujo
-de verdad y 6917 de datos, cada uno dentro de un rango declarado con la
-instrucción que lo lee escrita al lado.
+Ni un byte sin dueño: 9467 de código trazado y 6917 de datos, cada uno dentro
+de un rango declarado con la instrucción que lo lee al lado.
 
 | | |
 |---|---|
@@ -141,14 +122,14 @@ instrucción que lo lee escrita al lado.
 | 0x8AFF-0x8E1B | carga de pantalla y de sprites, y el pintado de la escena |
 | 0x8E1B-0x8F06 | los tramos de suelo y los seis patrones del hundimiento |
 | 0x8F06-0x9090 | los guiones de celdas del decorado |
-| 0x9090-0x909E | catorce números de casilla en crudo: la fila 23 de la pantalla |
+| 0x9090-0x909E | catorce números de casilla en crudo: la fila 23 |
 | 0x909E-0x95FE | los cinco bloques grandes de gráficos comprimidos |
 | 0x95FE-0x97FE | los cuatro juegos de 16 casillas del decorado |
 | 0x97FE-0x9A6F | los sprites: nueve bloques comprimidos y siete patrones en crudo |
 | 0x9A6F-0xA086 | el cuadro, los objetos, el cambio de pantalla, el marcador y el reloj |
 | 0xA086-0xA43A | las tablas de decorado, los cuatro layouts de escena y la de 14x18 |
 | 0xA43A-0xA61A | la liana |
-| 0xA61A-0xA69E | las 33 pendientes con las que se traza la liana |
+| 0xA61A-0xA69E | las 33 fases con las que se traza la liana |
 | 0xA69E-0xAE90 | los manejadores de objeto y las ocho rutinas de escena |
 | 0xAE90-0xAED4 | las cuatro tablas de despacho |
 | 0xAED4-0xB113 | guiones de celdas, plantillas de objeto, guiones de animación y los colores |

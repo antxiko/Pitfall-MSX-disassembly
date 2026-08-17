@@ -698,7 +698,7 @@ mira_colisiones_en_el_aire_nada:
 	xor a			;85d7
 	ret			;85d8
 alcanza_la_liana:
-	ld hl,0e2a2h		;85d9   ; la caja de clase 5 que monta 0xA5B4 ya ha decidido por la X; esta es la unica comprobacion vertical, y es rara: exige a la vez (0xE1CC)-7 < Y del jugador y (0xE1CC)-0x14 >= Y, que solo pueden cumplirse juntas porque la segunda resta se desborda. 0xE1CC lleva el TERCER byte de la fase del balanceo -de 0x06 a 0x10, la fila donde esta el punto de agarre-, y con esos valores la condicion sale cierta para cualquier Y del jugador... menos cuando vale 0x06, que son justo las dos fases del extremo: EN LA PUNTA DEL BALANCEO LA LIANA NO SE COGE
+	ld hl,0e2a2h		;85d9   ; la caja de clase 5 ya decidio por la X; esta comprobacion vertical exige a la vez (0xE1CC)-7 < Y y (0xE1CC)-0x14 >= Y, que solo se cumplen juntas porque la segunda resta se desborda. Con 0xE1CC entre 0x07 y 0x10 sale cierta para cualquier Y; con 0x06 -las dos fases del extremo- sale falsa: en la punta del balanceo la liana no se coge
 	ld a,(0e1cch)		;85dc
 	sub 007h		;85df
 	cp (hl)			;85e1
@@ -2322,17 +2322,13 @@ pausa_reanuda:
 ; ############################################################
 ; EL CAMBIO DE PANTALLA, y el atajo de tres escenas
 ; ############################################################
-; La X del jugador esta en 0xE2A3 (el campo +1 de la
-; estructura de 0xE2A2). Cuando vale 0xE7 -el borde
-; derecho- esto lo reposiciona en 0x19, o sea al otro
-; lado, y acto seguido avanza el registro de pantalla.
-; Y AQUI ESTA LO BUENO: avanza UNO o TRES pasos segun el
-; bit 0 de 0xE2EB. Tres pasos son tres escenas de golpe,
-; que es el atajo del subterraneo del Pitfall! original:
-; por abajo se recorre el mundo al triple de velocidad.
-; Al final salta a 0x9EE6, que monta la escena nueva; esa
-; es la UNICA via por la que se dibuja una escena, asi que
-; cambiar 0xE222 por las bravas no repinta nada
+; La X del jugador esta en 0xE2A3. Cuando vale 0xE7 -el
+; borde derecho- se reposiciona en 0x19, el otro lado, y
+; se avanza el registro de pantalla: UN paso, o TRES si
+; el bit 0 de 0xE2EB dice subterraneo. Por abajo el mundo
+; se recorre al triple. Al final salta a 0x9EE6, la unica
+; via por la que se monta una escena: cambiar 0xE222 a
+; pelo no repinta nada
 ; ----------------------------------------------------------------------
 cambia_de_pantalla_a_la_derecha:
 	ld iy,0e2a2h		;9cbe
@@ -2497,23 +2493,17 @@ suma_miles_sigue:
 	jr pinta_marcador		;9db6
 
 ; ----------------------------------------------------------------------
-; LOS 20:00, CONTADOS PASO A PASO
-; La cadena no tiene ni una condicion por el camino: INIT engancha
-; 0x80F7 en H.KEYI (0xFD9A), o sea una llamada por interrupcion del
-; VDP; 0x8100 llama a cuadro_del_juego siempre, sin mirar nada; y
-; cuadro_del_juego llama aqui lo PRIMERO. Asi que esto corre una vez
-; por interrupcion, y 0xE1D5 -que vale 60- gasta una por pasada.
-; UN TICK CADA 60 INTERRUPCIONES. En una maquina de 60 Hz eso es un
-; segundo clavado y los 20:00 duran veinte minutos de reloj de pared;
-; en una de 50 Hz el tick son 1,2 s y la partida dura veinticuatro.
-; MEDIDO EN EL EMULADOR con un bp aqui y otro de control en 0x80F7
-; (tools/omsx_mide_tick.tcl): 55 ticks seguidos de partida real, los
-; 55 a 60 interrupciones exactas, con el marcador bajando de 20:00.
-; Los "~9 s por tick" que se midieron al principio eran OTRA cosa:
-; se vigilaba 0xE25A/B/C, que no es este reloj, y con la partida sin
-; arrancar. Y OJO: esto corre tambien en el titulo y en la demo,
-; decrementando los tiles sin inicializar; los 20:00 se escriben al
-; arrancar la partida de verdad.
+; LOS 20:00, CONTADOS SOBRE EL BINARIO
+; INIT engancha 0x80F7 en H.KEYI (una llamada por interrupcion
+; del VDP), 0x8100 llama a cuadro_del_juego sin condicion y este
+; llama aqui lo primero: una pasada por interrupcion, y 0xE1D5
+; -que vale 60- gasta una por pasada. UN TICK CADA 60
+; INTERRUPCIONES: a 60 Hz el tick es un segundo y los 20:00 duran
+; veinte minutos; a 50 Hz, 1,2 s y veinticuatro. Medido en partida
+; real (tools/omsx_mide_tick.tcl, bp aqui y control en 0x80F7):
+; 55 ticks seguidos, los 55 a 60 interrupciones exactas. OJO:
+; corre tambien en titulo y demo, sobre tiles sin inicializar;
+; los 20:00 se escriben al arrancar la partida.
 ; ----------------------------------------------------------------------
 reloj_de_partida:		; Cuenta atras desde 20:00, un tick cada 60 cuadros
 	ld a,(0e21ch)		;9db8   ; en pausa (0xE21C) no corre
@@ -2952,7 +2942,7 @@ repone_decorado:		; Vuelve a poner los patrones de sprite y el juego de tiles gu
 
 ; ----------------------------------------------------------------------
 ; ############################################################
-; LAS CAJAS DE COLISION, que es como el juego sabe que te pasa
+; LAS CAJAS DE COLISION
 ; ############################################################
 ; 0xE229-0xE246 son DIEZ registros de tres bytes: clase, X
 ; izquierda y X derecha. Las rutinas de escena escriben las
@@ -3132,7 +3122,7 @@ mueve_la_liana_guarda_agarre:
 	ld (hl),c			;a54d
 	ld b,000h		;a54e
 	push bc			;a550
-	ld hl,0e18ah		;a551   ; LA CUERDA NO MIDE 48 FILAS: estos dos LDIR fabrican el patron del TERCER sprite -el 0x60- copiando solo B filas de cada mitad del patron completo, siendo B el tercer byte de la fase, y 0xA43A ha puesto los dos mapas de bits a cero antes. O sea que el tercer sprite se corta justo en el punto de agarre: la cuerda mide 32+B filas, 48 con la liana vertical y 38 en el extremo, y se acorta al tumbarse
+	ld hl,0e18ah		;a551   ; estos dos LDIR fabrican el patron del TERCER sprite -el 0x60- copiando solo B filas de cada mitad (B = tercer byte de la fase) sobre mapas que 0xA43A dejo a cero: el tercer sprite se corta en el punto de agarre. La cuerda mide 32+B filas -48 en vertical, 38 en el extremo- y se acorta al tumbarse
 	ld de,0e1aah		;a554
 	ldir		;a557
 	pop bc			;a559
@@ -3220,7 +3210,7 @@ lleva_al_jugador_colgado_y:
 	ret			;a619
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_del_balanceo: Treinta y tres registros de cuatro bytes, uno por fase del balanceo de la liana: 0xA47D indexa con (0xE1CB)*4, y la fase va y viene entre 1 -la cuerda vertical- y 0x20 -la cuerda tumbada del todo-. LOS CUATRO BYTES SON CUATRO COSAS DISTINTAS. (1) La PENDIENTE de la cuerda en 1/256 de pixel por fila, de 0x00 a 0xC9: es el DE con el que 0xA4C4 va acumulando la recta. (2) El PERIODO del objeto, que 0xA48F escribe en 0xE33F: vale 1 cuadro cerca de la vertical y 9 en el extremo, o sea que el balanceo CORRE POR EL CENTRO Y FRENA EN LAS PUNTAS, como un pendulo de verdad; sumando los 32 periodos, media ida son 75 cuadros. (3) Cuantas veces MAS se suma la pendiente para llegar al punto de agarre (0xA529), que ademas se guarda en 0xE1CC y es la fila donde cuelga el jugador: 0x10 en la vertical y 0x06 en el extremo. (4) Con cuantos pasos de la curva del salto se cae al SOLTARSE: 0xA546 lo lleva a 0xE1E2 y 0x821A lo mete en IX+0x17, y va de 0x00 en la vertical a 0x10 en el extremo. Acaba justo donde empieza su consumidor, el manejador 0xA69E
+; DATOS tabla_del_balanceo: Treinta y tres registros de cuatro bytes, uno por fase del balanceo de la liana: 0xA47D indexa con (0xE1CB)*4 y la fase va y viene entre 1 (vertical) y 0x20 (tumbada). Los cuatro bytes: (1) pendiente de la cuerda en 1/256 de pixel por fila, 0x00 a 0xC9 (el DE que 0xA4C4 acumula); (2) PERIODO del objeto (0xA48F lo escribe en 0xE33F), 1 cuadro en el centro y 9 en el extremo: el balanceo frena en las puntas como un pendulo, y media ida son 75 cuadros sumando los 32 periodos; (3) cuantas veces mas se suma la pendiente hasta el punto de agarre (0xA529, guardado en 0xE1CC), 0x10 vertical a 0x06 extremo; (4) en que paso de la curva del salto arranca la caida al soltarse (0xA546 -> 0xE1E2, 0x821A -> IX+0x17), 0x00 vertical a 0x10 extremo. Acaba donde empieza su consumidor, 0xA69E
 ;   0xa61a..0xa69e  (132 bytes)
 ; ----------------------------------------------------------------------
 	defb 000h,001h,010h,000h,007h,001h,010h,000h,00eh,001h,010h,000h,015h,001h,010h,000h	; a61a  ................
@@ -5146,23 +5136,17 @@ lee_registro_de_guion:		; B cuadros, DE periodo, C volumen; A=0 si acabo
 ; ############################################################
 ; EL MUNDO NO ESTA GUARDADO: SE CALCULA
 ; ############################################################
-; Las 255 escenas no ocupan ni un byte de mapa. Salen de un
-; registro de desplazamiento realimentado de 8 bits, 0xE222,
-; que es el mismo truco del Pitfall! de Atari 2600.
-; NO ES ALEATORIO: el orden esta fijado y se puede escribir
-; entero. La realimentacion, sacada de los rla/xor de aqui
-; abajo y comprobada sobre los 256 valores posibles, es
+; Las 255 escenas no ocupan ni un byte de mapa: salen del
+; registro de desplazamiento realimentado 0xE222. No es
+; aleatorio: el orden esta fijado. La realimentacion,
+; comprobada sobre los 256 valores posibles, es
 ; bit nuevo = b7 xor b5 xor b4 xor b3      (mascara 0xB8)
-; y el registro se desplaza a la izquierda metiendo ese bit.
-; Con esa realimentacion el anillo es MAXIMO: recorre los 255
-; valores no nulos y vuelve al principio. El 0x00 se queda
-; fuera -de un LFSR nadie sale del cero- y por eso el juego
-; lo usa para la pantalla del titulo.
-; Sembrando con 0xC4, que es lo que hace el arranque en
-; 0x8075, sale el orden en que se recorre el mundo yendo
-; siempre a la derecha. tools/mapa_escenas.py lo reproduce, y
-; las 255 capturas del emulador salieron en ESE MISMO orden,
-; las 255 de 255.
+; y el anillo es maximo: 255 valores no nulos y vuelta al
+; principio. El 0x00 queda fuera -de un LFSR no se sale del
+; cero- y es la pantalla del titulo. Sembrando con 0xC4
+; (0x8075) sale el orden del mundo yendo a la derecha;
+; tools/mapa_escenas.py lo reproduce y las 255 capturas del
+; emulador salen en ese mismo orden, 255 de 255.
 ; ----------------------------------------------------------------------
 avanza_pantalla_lfsr:
 	ld hl,0e222h		;b68f   ; El paso ADELANTE: desplaza 0xE222 a la izquierda metiendo el bit de realimentacion

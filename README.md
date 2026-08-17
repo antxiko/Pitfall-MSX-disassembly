@@ -1,9 +1,9 @@
 # Pitfall! (Activision, 1984, MSX1) — a commented disassembly
 
 A 16 KB cartridge from 1984, taken apart byte by byte. All 16,384 bytes are
-bounded and owned, and inside there is no map at all: the jungle's 255 screens
-are made up as it goes by an eight-bit register, the 32 treasures are exactly the
-32 scenes of one kind, and the vine isn't drawn anywhere.
+bounded and owned, and there is no map stored inside: the jungle's 255 screens
+come out of an eight-bit register, the 32 treasures are exactly the 32 scenes
+of one kind, and the vine is not drawn anywhere.
 
 📖 **[Full documentation](https://antxiko.github.io/Pitfall-MSX-disassembly/)**
 · [En castellano](https://antxiko.github.io/Pitfall-MSX-disassembly/es/)
@@ -13,25 +13,19 @@ are made up as it goes by an eight-bit register, the 32 treasures are exactly th
 
 ## What this is
 
-*Pitfall!* for the MSX is Activision's 1984 conversion of its own 1982 Atari 2600
-game. This repository holds its code, commented, along with the tools to rebuild
-it and to check that the result really is the original.
+*Pitfall!* for the MSX is Activision's 1984 conversion of its 1982 Atari 2600
+game. This repository holds its code, commented, along with the tools to
+rebuild it and check that the result is the original.
 
-Being a cartridge changes the shape of the job. There is no loader and no blocks
-to wait for: the machine maps the 16 KB at 0x8000-0xBFFF —page 2— and that is the
-whole picture, one snapshot of memory with no overlaps. The BIOS reads an "AB"
-header, calls the entry point at 0x8013, and from there the code never comes
-back: the startup drops into an empty two-byte loop and **the whole game runs
-inside the interrupt**, fifty or sixty times a second.
+The machine maps the 16 KB at 0x8000-0xBFFF —page 2—, the BIOS calls the entry
+point at 0x8013, and from there the code never comes back: the startup drops
+into an empty two-byte loop and **the whole game runs inside the interrupt**,
+fifty or sixty times a second. All the state lives in RAM from 0xE000 up.
 
-There isn't a single variable in the cartridge either, because it is ROM. All the
-state lives in the machine's RAM from 0xE000 up, which is why the listing is full
-of addresses starting 0xE0 that are not data at all.
+## Why this can be trusted
 
-## How you know this is true
-
-`make` traces the flow, generates the listing and demands that assembling it
-gives back exactly the original:
+`make` traces the flow, builds the listing and demands that assembling it gives
+back exactly the original:
 
 ```
   ensamblado : 16384 bytes  4d899d62...82c8be58
@@ -39,13 +33,10 @@ gives back exactly the original:
 OK: reproducible byte a byte
 ```
 
-That is the test that settles whether a disassembly can be trusted, but it isn't
-the only one here, because a listing can reassemble perfectly and still be lying:
-if some artwork is read as instructions the bytes don't change, only what we say
-about them does. So two more checks run alongside:
-
-- no range declared as data may come out as code;
-- and no entry point may fall inside one.
+A listing can reassemble perfectly and still be wrong —if drawings are read as
+instructions, the bytes do not change—, so two more checks run alongside: no
+range declared as data may come out as code, and no entry point may fall inside
+one.
 
 ## The numbers
 
@@ -60,58 +51,57 @@ about them does. So two more checks run alongside:
 
 ## A few things that turned up
 
-- **The world isn't stored, it's generated.** The screen you are on *is* one byte
-  of RAM, 0xE222, and changing screen is turning it one step with a feedback
-  shift register. The ring is maximal: 255 screens, always in the same order, out
-  of 33 bytes of code. That is the entire map of this game.
-- **The 32 treasures are exactly the 32 scenes of one kind**, and the ceiling of
-  the game —114,000 points— can be counted without playing: eight treasures of
-  each of the four values, plus the 2,000 the score starts at.
+- **The world is not stored: it is generated.** The screen you are in *is* one
+  byte of RAM, 0xE222, and changing screen is stepping a feedback shift
+  register once. The ring is maximal: 255 screens, always in the same order,
+  out of 33 bytes of code.
+- **The 32 treasures are exactly the 32 scenes of one kind**, and the game's
+  ceiling —114,000 points— is counted without playing: eight treasures of each
+  of the four values, plus the score's starting 2,000.
 - **A treasure already taken has its return address eaten.** 0xAAFF rotates its
-  «already got it» bit into the carry, and if it was set it does `pop hl` and
-  `ret`: it swallows its caller's return address, so the code that would have
-  drawn the treasure never runs.
-- **The tunnel crosses the world three times as fast**: crossing a screen down
-  there turns the register three steps instead of one, which is why the route
-  that collects everything is 190 screens instead of 238.
-- **The vine isn't drawn anywhere.** Every frame a sixteen-point straight line is
-  traced onto a bitmap in RAM and sent to video memory as a sprite pattern.
-- **There isn't one written word in the cartridge.** The font is ten digits, a
-  colon and a blank; everything that looks like text is drawing cut into cells.
-  The only thing the cartridge signs is the **Copyright 1982, 1984** at the foot
-  of the title screen.
+  bit into the carry and, if it was set, does `pop hl` and `ret`: the code that
+  would draw the treasure never runs.
+- **The underground crosses the world at triple speed**: crossing a screen down
+  there steps the register three places instead of one. The route that collects
+  the 32 treasures is 189 screens, against 238 never going down.
+- **One clock tick is 60 interrupts**, measured in a real game: at 60 Hz the
+  20:00 last twenty wall-clock minutes, and at 50 Hz, twenty-four.
+- **The vine is not drawn anywhere.** Every frame a sixteen-point straight line
+  is traced onto a bitmap in RAM and sent to video memory as a sprite pattern.
+- **There is not one written word in the cartridge.** The font is ten digits,
+  the colon and a blank; everything that looks like text is drawing. The only
+  thing the cartridge signs is the **Copyright 1982, 1984** at the foot of the
+  intro.
 
-There is more, with the evidence, on
+More, with the evidence next to it, on
 [the findings page](https://antxiko.github.io/Pitfall-MSX-disassembly/FINDINGS.html).
 
-## What's still open
+## What stays open
 
-Every byte has an owner, but not everything is settled. The clock is the clearest
-case: the code ticks once every 60 frames and a measurement in the emulator gave
-something of the order of nine real seconds per tick, and that difference is
-still unexplained. The 190-screen route is a calculation over the cartridge's own
-rules, not a recorded game. And no winning condition turns up in the code: there
-isn't a single comparison against 32 anywhere. Those and the rest are on
-[the open-questions page](https://antxiko.github.io/Pitfall-MSX-disassembly/OPEN-QUESTIONS.html).
+No victory condition shows up in the code: no treasure counter, no comparison
+against 32. The 189-screen route is a calculation over the cartridge's rules,
+not validated by playing it. And the 16 bytes at 0xBAA2 have no consumer. They
+are on
+[the open questions page](https://antxiko.github.io/Pitfall-MSX-disassembly/OPEN-QUESTIONS.html).
 
 ## Getting started
 
 You need `pasmo`, `z80dasm` and Python 3. The cartridge is **not** distributed
-here: put your own copy in the project root as `pitfall.rom`, 16384 bytes, sha256
+here: put your copy in the root as `pitfall.rom`, 16384 bytes, sha256
 `4d899d6258a8b06dfae8c91a8c57230fa23ff364136d6a243fafeaf282c8be58`.
 
 ```sh
 make          # trace, build the listing and check everything
-make verify   # just the acid test
-make sanity   # what reassembling cannot catch
+make verify   # assemble and compare with the cartridge
+make sanity   # what reassembly cannot catch
 ```
 
-Full instructions are in
+Full instructions on
 [Getting started](https://antxiko.github.io/Pitfall-MSX-disassembly/GETTING-STARTED.html).
 
 ## Licence and attribution
 
-The game is not ours: *Pitfall!* is Activision's, and all rights in it remain
-with their holders. What is ours —the tools, the comments, the analysis and the
-documentation— is published under the licence in `LICENSE`. The cartridge image
-is not distributed. See [LEGAL-NOTICE.md](LEGAL-NOTICE.md).
+The game is not ours: *Pitfall!* belongs to Activision, and all rights remain
+with their holders. What is ours —the tools, the comments and the
+documentation— is published under the licence in `LICENSE`. The cartridge image is not
+distributed. See [LEGAL-NOTICE.md](LEGAL-NOTICE.md).

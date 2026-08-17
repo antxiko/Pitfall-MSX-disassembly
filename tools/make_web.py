@@ -46,12 +46,12 @@ TXT = {
     "es": dict(
         titulo="Pitfall! (1984) — desensamblado comentado",
         aviso="<b>La ruta óptima es un cálculo, no una partida grabada.</b> "
-              "Las 189 pantallas del guion salen de aplicar Dijkstra sobre el "
-              "mundo que genera el cartucho, y se cuentan en PANTALLAS "
-              "CRUZADAS, no en tiempo: correr, saltar, esquivar y el reloj de "
-              "20:00 no entran en esa cuenta, y bajar una escalera se cuenta "
-              "gratis. Todo lo demás —el listado, las cifras y el mapa— sale "
-              "del binario y se reproduce con <code>make</code>.",
+              "Las 189 pantallas del guion salen de recorrer el mundo que "
+              "genera el cartucho con sus propias reglas, contadas en "
+              "PANTALLAS CRUZADAS: el reloj, saltar y esquivar no entran, y "
+              "la escalera se cuenta gratis. Todo lo demás —el listado, las "
+              "cifras y el mapa— sale del binario y se reproduce con "
+              "<code>make</code>.",
         claim="Un cartucho de 16 KB de 1984, desmontado byte a byte. "
               "Dentro no hay ni un mapa guardado: las 255 pantallas de la "
               "selva las va inventando un registro de ocho bits, los 32 "
@@ -75,13 +75,12 @@ TXT = {
                 (mil(CODIGO, "es"), "bytes de código"),
                 (mil(DATOS, "es"), "bytes de datos"),
                 ("0", "bytes sin identificar")],
-        nota_scr="Estas ocho sí son capturas, pero no de jugar: al emulador se "
-                 "le dicta el valor del registro de pantalla y se le pide una "
-                 "foto de cada escena, así que las 255 salen seguidas y sin "
-                 "repetir. Aquí hay una de cada tipo, elegida cruzando el "
-                 "valor del registro con la tabla que sale del cartucho. Si "
-                 "esa lectura estuviera mal, lo que se vería debajo de cada "
-                 "pie sería otra cosa.",
+        nota_scr="Capturas del emulador, pero no de jugar: se le dicta el "
+                 "valor del registro de pantalla y se le pide una foto de "
+                 "cada escena. Aquí hay una de cada tipo, elegida cruzando el "
+                 "valor del registro con la tabla que sale del cartucho: si "
+                 "esa lectura estuviera mal, debajo de cada pie se vería otra "
+                 "cosa.",
         pie_leg="Esto es trabajo de documentación y preservación sobre un "
                 "juego de 1984: el código y los gráficos siguen siendo de sus "
                 "autores y de Activision, y la imagen del cartucho no se "
@@ -90,13 +89,12 @@ TXT = {
     "en": dict(
         titulo="Pitfall! (1984) — a commented disassembly",
         aviso="<b>The optimal route is a calculation, not a recorded game.</b> "
-              "The 189 screens of the walkthrough come from running Dijkstra "
-              "over the world the cartridge generates, and they are counted in "
-              "SCREENS CROSSED, not in time: running, jumping, dodging and the "
-              "20:00 clock are not in that count, and taking a ladder is "
-              "counted as free. Everything else —the listing, the numbers and "
-              "the map— comes from the binary and is reproducible with "
-              "<code>make</code>.",
+              "The 189 screens of the walkthrough come from walking the world "
+              "the cartridge generates with its own rules, counted in SCREENS "
+              "CROSSED: the clock, jumping and dodging are not in it, and "
+              "ladders are counted as free. Everything else —the listing, the "
+              "numbers and the map— comes from the binary and is reproducible "
+              "with <code>make</code>.",
         claim="A 16 KB cartridge from 1984, taken apart byte by byte. "
               "There's no map stored inside it: the jungle's 255 screens are "
               "made up as it goes by an eight-bit register, the 32 treasures "
@@ -121,13 +119,12 @@ TXT = {
                 (mil(CODIGO, "en"), "bytes of code"),
                 (mil(DATOS, "en"), "bytes of data"),
                 ("0", "bytes unidentified")],
-        nota_scr="These eight are screen captures, but not of anyone playing: "
-                 "the emulator is told what to put in the screen register and "
-                 "asked for a photograph of each scene, so all 255 come out "
-                 "one after another with no repeats. Here is one of each kind, "
-                 "picked by crossing the register value with the table that "
-                 "comes out of the cartridge. Get that reading wrong and what "
-                 "you would see under each caption would be something else.",
+        nota_scr="Emulator captures, but not of anyone playing: it is told "
+                 "what to put in the screen register and asked for a "
+                 "photograph of each scene. Here is one of each kind, picked "
+                 "by crossing the register value with the table that comes "
+                 "out of the cartridge: get that reading wrong and what sits "
+                 "under each caption would be something else.",
         pie_leg="This is documentation and preservation work on a 1984 game: "
                 "the code and artwork still belong to their authors and to "
                 "Activision, and the cartridge image is not distributed.",
@@ -162,20 +159,18 @@ HALLAZGOS = {
          "rota su bit hasta el acarreo.</p>"
          "<p>Y si estaba a uno no salta ni pone una bandera: hace "
          "<code>pop hl</code> y <code>ret</code>. Se traga la dirección de "
-         "retorno del que le llamó, así que la rutina que pintaba el tesoro no "
-         "llega a ejecutarse nunca. Ahorrarse un salto sale caro de leer y "
-         "barato de correr.</p>"),
+         "retorno del que le llamó, y la rutina que pintaba el tesoro no "
+         "llega a ejecutarse.</p>"),
         ("El subterráneo recorre el mundo al triple",
          "<p>El cambio de pantalla lo hace 0x9CBE: cuando la X del jugador "
          "llega al borde derecho lo reposiciona al otro lado y avanza el "
          "registro de pantalla. Pero avanza <b>uno o tres pasos</b> según el "
          "bit 0 de 0xE2EB, que es el que dice si se va por arriba o por el "
          "túnel. La rutina de la izquierda es simétrica.</p>"
-         "<p>Por eso el atajo vale oro, y por eso la ruta que se lleva los 32 "
-         "tesoros baja siempre que puede: 189 pantallas usando el túnel contra "
-         "238 sin bajar nunca, un 21 % menos. Bajar sólo se puede por una "
-         "escalera, y las escaleras están medidas sobre las 255 capturas: son "
-         "las 63 escenas de tipo 0 y 1, y ni una más.</p>"),
+         "<p>La ruta que se lleva los 32 tesoros baja siempre que puede: 189 "
+         "pantallas con el túnel contra 238 sin bajar, un 21 % menos. Solo se "
+         "baja por una escalera, y las escaleras están medidas sobre las 255 "
+         "capturas: las 63 escenas de tipos 0 y 1.</p>"),
         ("La liana no está dibujada en ninguna parte",
          "<p>No hay un solo dibujo de liana en el cartucho. En cada paso, "
          "0xA471 traza una recta de dieciséis puntos sobre un mapa de bits en "
@@ -219,9 +214,8 @@ HALLAZGOS = {
          "drawing one, 0xAAFF rotates its bit out into the carry.</p>"
          "<p>And if it was set, there's no branch and no flag: it does "
          "<code>pop hl</code> and <code>ret</code>. It swallows its caller's "
-         "return address, so the routine that was going to draw the treasure "
-         "never runs at all. Saving one jump costs a lot to read and nothing "
-         "to run.</p>"),
+         "return address, and the routine that was going to draw the treasure "
+         "never runs.</p>"),
         ("The tunnel crosses the world three times as fast",
          "<p>Changing screen is 0x9CBE's job: when the player's X reaches the "
          "right-hand edge it puts him back on the other side and steps the "
@@ -229,12 +223,10 @@ HALLAZGOS = {
          "depending on bit 0 of 0xE2EB, which is what says whether you're up "
          "on the surface or down in the tunnel. The left-hand routine is "
          "symmetrical.</p>"
-         "<p>That's why the shortcut is worth so much, and why the route that "
-         "collects all 32 treasures goes underground whenever it can: 189 "
-         "screens using the tunnel against 238 never going down, 21 % fewer. "
-         "You can only go down by a ladder, and the ladders are measured over "
-         "the 255 captures: they're the 63 scenes of types 0 and 1, and not "
-         "one more.</p>"),
+         "<p>The route that collects the 32 treasures goes down whenever it "
+         "can: 189 screens with the tunnel against 238 never going down, 21 % "
+         "fewer. The only way down is a ladder, and the ladders are measured "
+         "over the 255 captures: the 63 scenes of kinds 0 and 1.</p>"),
         ("The vine isn't drawn anywhere",
          "<p>There isn't a single picture of a vine in the cartridge. On every "
          "step, 0xA471 traces a sixteen-point straight line onto a bitmap at "

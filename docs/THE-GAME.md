@@ -1,38 +1,36 @@
 # The game
 
-An explorer crosses the jungle from left to right collecting treasures, with a
-clock running out on him. Everything here comes from reading the code that does
-it.
+An explorer crosses the jungle picking up treasures, against a clock that runs
+out. Everything on this page comes from reading the code that does it.
 
-## The world is 255 screens, and not one byte of it is a map
+## The world is 255 screens, and they take up no map at all
 
-The scene you are in is the contents of one byte of RAM, 0xE222. When the
-player's X reaches the right-hand edge —0xE7— he is put at 0x19, that is, on the
-other side, and that byte is turned one step (0x9CBE). On the left, at 0x16, the
-same happens in reverse with the inverse function (0x9CF9).
+The scene you are in is the content of one byte of RAM, 0xE222. When the
+player's X reaches the right edge —0xE7— it is put at 0x19, the other side, and
+that byte is stepped once (0x9CBE). On the left, at 0x16, the same happens in
+reverse with the inverse function (0x9CF9).
 
-That turning runs through 255 different values before coming back to the start,
-so the world is a ring of 255 screens and **the order is fixed**: a game always
-begins on the same scene, and the next one is always the same. There is nothing
-random about it, and there is no list of screens in the cartridge.
+The step runs through 255 values before repeating, so the world is a ring of
+255 screens in a fixed order: the game always starts on the same scene and the
+next one is always the same. Nothing is random, and there is no list of screens
+in the cartridge.
 
-Three separate things are read out of that byte when the scene is built (0x9EE6):
+When a scene is built (0x9EE6), three things are read from the byte:
 
-| bits | what they pick |
+| bits | what they choose |
 |---|---|
-| 6-7 | the scenery: which of the four landscapes is painted (0x9F91) |
+| 6-7 | the scenery: which of the four landscapes is drawn (0x9F91) |
 | 3-5 | the kind of scene, 0 to 7 (0x9EFB) |
 | 0-2 | the variant within that kind (0x9EEF) |
 
 ## The eight kinds of screen
 
-Bits 3-5 pick one of eight routines through the table at 0xAEB4, and each one
-builds a kind of screen:
+Bits 3-5 pick one of eight routines through the table at 0xAEB4:
 
 | Kind | Routine | What it is | How many |
 |---|---|---|---|
-| 0 | 0xA9AA | pits in the ground, with a ladder to the tunnel | 31 |
-| 1 | 0xA9AA | the same ones: both table entries point to the same place | 32 |
+| 0 | 0xA9AA | pits in the ground, with a ladder to the underground | 31 |
+| 1 | 0xA9AA | the same: both entries point to the same place | 32 |
 | 2 | 0xAC7C | a tar pit | 32 |
 | 3 | 0xAC6B | a water pool | 32 |
 | 4 | 0xAD75 | a lagoon with three crocodiles | 32 |
@@ -40,31 +38,29 @@ builds a kind of screen:
 | 6 | 0xAE04 | tar with a vine | 32 |
 | 7 | 0xADE8 | water with a vine | 32 |
 
-The share-out is practically even because the ring runs through all 255 non-zero
-values: only kind 0 ends up one scene short.
+The share-out is almost uniform because the ring visits the 255 non-zero
+values: only kind 0 gets one scene fewer.
 
-Kinds 0 and 1 share a routine, so those 63 scenes are the same class of screen.
-What splits them in two is **another bit**: 0xA9AA reads bit 7 of the register on
-its own and uses it to decide where the **rebound box** goes —the class 10 one,
-centred at 0xD8 with the bit set and at 0x31 with it clear— and which of the two
-pit drawings is painted, the one with a single pit or the one with three. The
-ladder doesn't move: both branches paint the same cell script, 0x8F06 (0x8D4A and
-0x8D5D).
+Kinds 0 and 1 share their routine; what splits those 63 scenes in two is bit 7
+of the register, which 0xA9AA reads on its own to decide where the **bounce
+box** goes —class 10, centred at 0xD8 with the bit set and at 0x31 with it
+clear— and whether one pit or three are drawn. The ladder does not move: both
+branches draw the same cell script, 0x8F06 (0x8D4A and 0x8D5D).
 
-And kinds 2 and 3 are **the same drawing in a different colour**: 0xAC7C writes
-`1B 1B 1B` into the colour table, which leaves the pool black —tar—, and 0xAC6B
-writes `7B 7B 7B`, which leaves it cyan —water—.
+Kinds 2 and 3 are **the same drawing in a different colour**: 0xAC7C writes
+`1B 1B 1B` into the colour table —a black pool, tar— and 0xAC6B writes
+`7B 7B 7B` —cyan, water—.
 
-The lagoon's three crocodiles sit at X 0x50, 0x6F and 0x88 (0xA828), and open
-their jaws every frame (script at 0xAFD8). With the jaws open, their collision
-box grows (0xA812).
+The three crocodiles sit at X 0x50, 0x6F and 0x88 (0xA828) and open their
+mouths every frame (script at 0xAFD8); with the mouth open their collision box
+grows (0xA812).
 
-## The 32 treasures, counted without playing a game
+## The 32 treasures, counted without playing
 
-The treasures are exactly the 32 scenes of kind 5, because kind 5 is the only one
-dispatched through the table at 0xAEA4, and that table holds four routines
-repeated two by two. Since the eight variants share out four scenes each, one
-treasure of each class comes up eight times:
+The treasures are exactly the 32 scenes of kind 5: kind 5 is the only one
+dispatched through the table at 0xAEA4, which holds four routines repeated two
+by two, and the eight variants share out four scenes each. One treasure of each
+class eight times:
 
 | Routine | Worth | How many |
 |---|---|---|
@@ -73,147 +69,135 @@ treasure of each class comes up eight times:
 | 0xAB1B | 4000 | 8 |
 | 0xABB7 | 5000 | 8 |
 
-They are four drawings: the money bag, two bars and the ring with the stone,
-which is the dearest one. The two bars share even their colour —the colour byte is
-0x4B at 0xAE90 and at 0xAE92 alike— and the only thing that tells them apart is
-the pattern.
+Four drawings: the money bag, two bars and the ring. The two bars share their
+colour (0x4B at 0xAE90 and 0xAE92): the pattern tells them apart.
 
-Eight of each, and not one more: 8 × (2000+3000+4000+5000) = **112000 points**
-spread around the world. The score starts at 2000 (0x8A28), so the ceiling of the
-game is **114000 points**.
+8 × (2000+3000+4000+5000) = **112000 points** spread over the world. The score
+starts at 2000 (0x8A28), so the ceiling of the game is **114000**.
 
-What you have already taken away is remembered in 32 bits: 0xE21D-0xE220, one
-byte per class and one bit per treasure, with the index within the class at
-0xE223. On entering a treasure scene, 0xAAFF looks at that bit, and if it is set
-nothing is painted: the treasure never appears again.
+What you have taken is remembered in 32 bits: 0xE21D-0xE220, one byte per class
+and one bit per treasure, with the index within the class at 0xE223. Entering a
+treasure scene, 0xAAFF checks that bit and, if it is set, the treasure never
+appears again.
 
-## The tunnel, which is a real shortcut
+## The underground
 
-The pits take you down to the tunnel, and so does the ladder that the scenes of
-kinds 0 and 1 carry —63 of the 255—. The ladder has no collision box: it is
-checked by hand that the scene is one of those and that the player's X falls
-between 0x70 and 0x88 (0x83D4). That window is **wider than the drawing**: the
-mast the cell script at 0x8F06 paints is column 16, that is 0x80 to 0x87, so you
-can also go down from a little before standing on it.
+You go down through the pits, and also by the ladder in scenes of kinds 0 and
+1. The ladder has no collision box: the code checks by hand that the scene is
+one of those and that the player's X falls between 0x70 and 0x88 (0x83D4). That
+window is wider than the drawing: the mast drawn by 0x8F06 runs from 0x80 to
+0x87, so you also go down from a little before stepping on it.
 
-And down there the world runs at three times the rate. Bit 0 of 0xE2EB says
-whether you are on the surface —0xACE4 sets it when the game starts, 0x8751
-clears it when you fall down a pit and 0x849A sets it again on the way out— and
-when it is clear, crossing a screen turns the register **three steps instead of
-one** (0x9CD2). Three scenes at once.
+Down there the world runs at triple speed: bit 0 of 0xE2EB says whether you are
+on the surface —0xACE4 sets it at the start, 0x8751 clears it when you fall
+down a pit, 0x849A sets it on the way out— and with it clear, crossing a screen
+steps the register **three places instead of one** (0x9CD2).
 
-On top of those two rules you can work out the shortest route that collects all
-32 treasures: **189 screens** crossed, against 238 if you never go down: the
-shortcut saves 21 %. And they don't all go one way: right to the first
-treasure, then round and the other 31 swept leftwards.
+With those two rules the shortest route that collects the 32 treasures can be
+computed: **189 screens** crossed, against 238 never going down —21 % fewer—.
+It does not all go the same way: right until the first treasure, an about-turn,
+and the other 31 swept leftwards. It is a count of screens crossed, not a
+recorded game: ladders are counted as free and the clock is not in it.
 
-It is a calculation, not a game played: the cost is measured in screens crossed,
-the ladder is counted as free, and the clock is not in the count.
+## What costs points, and what costs a life
 
-## What costs you points, and what costs you a life
+Of the ten collision classes only four cost a life: 3 and 4 through 0x83B9, 6
+and 9 through 0x8226 —the only two callers of the lose-a-life routine—. The
+rest:
 
-Of the ten classes of box only four cost a life: 3 and 4 through 0x83B9, and 6 and
-9 through 0x8226, which are the only two places in the cartridge that call for a
-life to be taken. This is what the rest of them do:
-
-- **the log** (collision class 1, handler 0x8640) knocks you over and takes
-  **one point per frame** off you while it rolls over you (0x8674). You walk out
-  of it, and as soon as the box stops giving class 1 the normal handler is back;
-- **being hit by a log while you're climbing** costs two points and sends you
-  down the ladder (0x8506);
-- **falling down a pit** costs a hundred points, and you end up in the tunnel
+- **the log** (class 1, 0x8640) knocks you down and drains **one point per
+  frame** while it rolls over you (0x8674); you walk out of it;
+- **a log while you climb** costs two points and sends you back down the ladder
+  (0x8506);
+- **falling down a pit** costs a hundred points, and you end up underground
   (0x8781);
 - **the pool and the crocodile** sink you (0x8361): the player's drawing is
-  eaten away from the bottom a byte at a time as he goes down to Y 0x7A, and
-  there a life is lost;
-- **classes 6 and 9** kill you outright (0x8221).
+  eaten from below down to Y 0x7A, and there the life is lost;
+- **classes 6 and 9** kill outright (0x8221).
 
-You start with two spare lives (0x8A52), and they are shown two ways at once:
-three cells in rows 2 and 3 of the screen, and the colour of sprites 12 and 13,
-which is set to zero —transparent— when that life is gone (0x89A8).
+The creatures the scenes set up, identified in the captures:
 
-When you lose one, the scene is not repainted: everything else is hidden, keeping
-how many objects there were in 0xE189, the player is drawn again in pieces and
-falls to the ground, and at the end the objects are given back (0x8221-0x82E7).
-You come back at the left-hand edge, at X 0x20 (0x826A).
+| routine | what it is | box |
+|---|---|---|
+| 0xAA74 | the snake | class 6, kills |
+| 0xAAB7 | the campfire | class 6, kills |
+| 0xAD1F | the standing log (the rolling ones come from its template) | class 1 |
+| 0xA69E | the underground scorpion: it walks towards your X | class 9, kills |
+
+You start with two spare lives (0x8A52), visible in two ways: three tiles on
+rows 2 and 3, and the colour of sprites 12 and 13, set to zero —transparent—
+when that life is spent (0x89A8).
+
+Losing one does not repaint the scene: everything else is hidden, saving how
+many objects there were at 0xE189, the player is redrawn piece by piece, falls
+to the ground, and the objects are given back (0x8221-0x82E7). You reappear at
+the left edge, X 0x20 (0x826A).
 
 ## The clock and the score
 
-The clock starts at **20:00** and counts down. It is not stored as a number: the
-five bytes at 0xE1D0 are already the cell numbers `BA B8 C2 B8 B8`, that is, the
-drawings of «2», «0», «:», «0» and «0», and the countdown is done on those
-(0x9DB8). When the borrow reaches the tens of minutes and a blank turns up there
-(0xC3), time is up (0x9DEA): the clock stays stuck at 00:00 and the closing
-sequence starts.
+The clock starts at **20:00** and counts down. It is not stored as a number:
+the five bytes at 0xE1D0 are already tile numbers —`BA B8 C2 B8 B8`, the
+drawings of “2”, “0”, “:”, “0”, “0”— and the countdown works on them (0x9DB8).
+When the borrow reaches the tens of minutes, time is up (0x9DEA): the clock
+stays at 00:00 and the ending sequence starts.
 
-Each tick spends 60 frames (0xE1D5), and while paused the clock doesn't run
-(0x9DB8).
+A tick takes 60 frames (0xE1D5), and the interrupt hook calls the clock once
+per interrupt with no condition on the way: **one tick is 60 interrupts**.
+Measured in a real game (`tools/omsx_mide_tick.tcl`): 55 ticks in a row, all 55
+at exactly 60 interrupts. At 60 Hz the 20:00 last twenty wall-clock minutes; at
+50 Hz, twenty-four: the cartridge counts interrupts, not seconds. The routine
+also runs on the title and the demo, over uninitialised tiles; the 20:00 are
+written when a real game starts. It does not run while paused.
 
-The score is six loose digits at 0xE1D6-0xE1DB, in binary, turned into cells when
-they are painted and written into row 1, column 6 (0x9D72). The leading zeros are
-painted blank until a non-zero digit turns up (0x9D5C). Adding a treasure is
-adding into the thousands digit (0x9D9F); taking points off is the routine at
-0x9D7C, which is told which digit to touch.
+The score is six binary digits at 0xE1D6-0xE1DB, turned into tiles when drawn
+at row 1, column 6 (0x9D72). Leading zeros are drawn blank until the first
+non-zero digit (0x9D5C). A treasure adds to the thousands digit (0x9D9F);
+subtracting points is 0x9D7C, told which digit to touch.
 
 ## The controls
 
-Four directions and one fire, and it makes no difference whether they come from
-the joystick or the keyboard: the space bar and the cursor keys are put back into
-the same bits (0xB26E). Up, down, left and right are bits 0 to 3 of 0xE05F, and
-the two fire buttons bits 4 and 5 (0x87E0).
+Four directions and one fire, from joystick or keyboard: the space bar and the
+cursors are remapped onto the same bits (0xB26E). Directions in bits 0-3 of
+0xE05F, both fire buttons in bits 4 and 5 (0x87E0).
 
-Holding the button down doesn't jump again (0x87E9), and you only let go of the
-vine by pressing down (0x81A7).
+Holding the button does not jump again (0x87E9), and the only way off the vine
+is pressing down (0x81A7).
 
-Three keys do something else, and they are read from row 7 of the keyboard
-(0x9BF3):
+Three more keys, read from keyboard row 7 (0x9BF3):
 
 | | |
 |---|---|
-| ESC | pause, with a press-and-release state machine in 0xE267 |
-| RETURN | back to the title, but only if 0xE269 allows it |
+| ESC | pause, with a press-release state machine at 0xE267 |
+| RETURN | back to the title, only if 0xE269 allows it |
 | STOP | starts from scratch, jumping to INIT |
 
-The pause is solved rather nicely: 0x9C94 saves how many objects there were and
-puts zero. With the object list empty nothing moves, and there isn't a single
-`if` scattered through the rest of the code. With only one object alive you
-cannot pause, because that means what is running is the closing sequence.
+The pause: 0x9C94 saves how many objects there were and writes zero. With the
+object list empty nothing moves, without a single `if` spread through the code.
+With one live object you cannot pause: that is the ending sequence.
 
-## If nobody touches anything, the screen goes off
+## If nobody touches anything, the screen switches off
 
-0x9B6D keeps three counters in cascade, 0xE25A, 0xE25B and 0xE25C, each of 60.
-As long as input keeps coming the two outer ones are reloaded, 0xE25B and 0xE25C
-(0x9B74); the first keeps counting and reloads itself on reaching zero (0x9B82).
-When all three run out,
-register 1 of the video chip is set to 0x82 and the screen goes off (0x9B8D).
-From then on the game sits in a waiting loop with interrupts disabled —the `di`
-comes before switching off, at 0x9B8C—, so there are no frames to count in there.
-Any of the four directions or the two buttons wakes it (0x9B99) and, through row 7
-of the keyboard, so do RETURN, STOP and ESC (0x9BA9). On the way back, register 1
-goes to 0xE2 again (0x9BAF).
+0x9B6D keeps three cascaded counters (0xE25A/B/C, 60 each). Input reloads the
+outer two (0x9B74); with all three spent, register 1 of the video chip is set
+to 0x82 and the screen goes dark (0x9B8D). The game sits in a wait loop with
+interrupts disabled (`di` at 0x9B8C). Any direction or button wakes it (0x9B99)
+and, through keyboard row 7, RETURN, STOP or ESC (0x9BA9).
 
-## The demo plays itself, and it is a recording byte for byte
+## The demo is recorded byte by byte
 
-You don't leave the title screen (0xB6B1) with a key: it ends when the demo's
-script has spent seven of its entries (0xB751). From then on 0xE221 is 1 and the player's
-input is no longer read: every frame it is fed whatever the table at 0xB9E4
-dictates, which is pairs of [how many frames][what is pressed] in the same format
-the keyboard produces (0xB9C8).
-
-Six pairs finish the demo's game, and behind them come three waits of 0xFF
-frames: there is no intelligence playing, there are eighteen bytes —twelve of play
-and six of waiting—.
+You do not leave the intro (0xB6B1) with a key: you leave when the demo script
+has spent seven of its entries (0xB751). With 0xE221 set to 1, the player's
+input is not read: every frame it is fed from the table at 0xB9E4, pairs of
+[how many frames][what is pressed] in the same format the keyboard produces
+(0xB9C8). The demo's game is six pairs plus three waits of 0xFF frames:
+eighteen bytes.
 
 ## The ending
 
-You get to it through two doors, and they are the only two: running out of lives
-(0x8975, which on going past zero eats its own return address and fits the player
-with handler 0x9E0E) or running out of clock (0x9DEA, which goes through 0x9BCF).
+Two doors, and only two: running out of lives (0x8975, which on passing zero
+eats its own return address and gives the player handler 0x9E0E) or running out
+of clock (0x9DEA, through 0x9BCF). Both leave a single live object with the
+farewell handler: four sprites that come out and rise —Y is 0xBC minus the
+frame (0x9E8F)— over fourteen strips of drawing cycled in ten frames (0x9E67).
 
-Both do the same thing: leave a single object alive and give it the farewell
-handler. What you see then is four sprites coming out and rising —their Y is 0xBC
-minus the frame (0x9E8F)— over fourteen strips of drawing which are run through
-in ten frames and start again (0x9E67).
-
-Pressing RETURN there jumps to 0x8065, which is where every game starts, the
-second one included (0x9C91).
+RETURN there jumps to 0x8065, where every game starts (0x9C91).
