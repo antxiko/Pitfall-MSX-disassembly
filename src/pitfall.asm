@@ -2504,7 +2504,7 @@ L_9F13:
 	ld a,(0e225h)		;9f6e
 	cp 002h		;9f71
 	call nc,L_ACB6		;9f73
-	call L_9F91		;9f76
+	call escoge_decorado_de_la_escena		;9f76
 	ld a,(0e225h)		;9f79
 	sla a		;9f7c
 	ld e,a			;9f7e
@@ -2521,8 +2521,8 @@ L_9F13:
 L_9F8E:
 	ld a,001h		;9f8e
 	ret			;9f90
-L_9F91:
-	ld a,(0e222h)		;9f91
+escoge_decorado_de_la_escena:
+	ld a,(0e222h)		;9f91   ; Los BITS 6-7 del LFSR de pantalla, doblados, son el indice de las dos tablas del decorado: 0xA086 (el juego de 16 tiles) y 0xA08E (el layout). O sea que de los ocho bits del mundo, dos eligen el paisaje, tres el tipo de escena y tres la variante
 	and 0c0h		;9f94
 	ld b,000h		;9f96
 	rl a		;9f98
@@ -2650,7 +2650,7 @@ L_A002:
 	ret			;a085
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_juegos_de_tiles: Cuatro palabras: punteros a los cuatro juegos de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E [3]=0x95FE. La lee 0x9FB3 con el indice en DE
+; DATOS tabla_juegos_de_tiles: Cuatro palabras: punteros a los cuatro juegos de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E [3]=0x95FE. La lee 0x9FB3 con el indice en DE, y ese indice son los BITS 6-7 DEL LFSR DE PANTALLA, que 0x9F91-0x9FA3 extrae y dobla: el mundo elige decorado con dos bits
 ;   0xa086..0xa08e  (8 bytes)
 ; DATOS tabla_de_layouts: Cuatro palabras: punteros a los cuatro layouts de escena de abajo, [0]=0xA1EE [1]=0xA29A [2]=0xA13E [3]=0xA096. La lee 0x9FD1 y el layout lo consume L_8D70
 ;   0xa08e..0xa096  (8 bytes)

@@ -40,6 +40,8 @@ L 0x8013 INIT
 
 D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
 
+L 0x9F91 escoge_decorado_de_la_escena
+C 0x9F91 Los BITS 6-7 del LFSR de pantalla, doblados, son el indice de las dos tablas del decorado: 0xA086 (el juego de 16 tiles) y 0xA08E (el layout). O sea que de los ocho bits del mundo, dos eligen el paisaje, tres el tipo de escena y tres la variante
 L 0xB68F avanza_pantalla_lfsr
 C 0xB68F El paso ADELANTE del registro de pantalla: desplaza 0xE222 un bit a la izquierda metiendo la realimentacion calculada con los rla/xor de arriba. Es el contador polinomico del Pitfall! de Atari 2600, y su anillo tiene periodo 255
 L 0xB69F retrocede_pantalla_lfsr
@@ -221,7 +223,7 @@ D 0x96FE 0x977E tiles_decorado_0 128 bytes, la entrada [0] de la tabla 0xA086
 
 D 0x977E 0x97FE tiles_decorado_1 128 bytes, la entrada [1] de la tabla 0xA086
 
-D 0xA086 0xA08E tabla_juegos_de_tiles Cuatro palabras: punteros a los cuatro juegos de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E [3]=0x95FE. La lee 0x9FB3 con el indice en DE
+D 0xA086 0xA08E tabla_juegos_de_tiles Cuatro palabras: punteros a los cuatro juegos de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E [3]=0x95FE. La lee 0x9FB3 con el indice en DE, y ese indice son los BITS 6-7 DEL LFSR DE PANTALLA, que 0x9F91-0x9FA3 extrae y dobla: el mundo elige decorado con dos bits
 
 D 0xA08E 0xA096 tabla_de_layouts Cuatro palabras: punteros a los cuatro layouts de escena de abajo, [0]=0xA1EE [1]=0xA29A [2]=0xA13E [3]=0xA096. La lee 0x9FD1 y el layout lo consume L_8D70
 
