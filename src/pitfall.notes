@@ -11,6 +11,14 @@
 # fijos en 0x8000-0xBFFF (la pagina 2), o sea que aqui NO hay ni una variable.
 # El estado del juego vive en la RAM del MSX; INIT borra 0xE000-0xEFFF al
 # arrancar y pone la pila en 0xE54B.
+#
+# Y LA VARIABLE REINA: 0xE222 es el REGISTRO DE PANTALLA, un LFSR de 8 bits
+# igual que el contador polinomico del Pitfall! original de Atari 2600. INIT
+# lo siembra con 0xC4; 0xB68F lo avanza (rla/xor) y 0xB69F lo retrocede (la
+# funcion inversa), y el anillo tiene PERIODO 255: doscientas cincuenta y
+# cinco pantallas, comprobado simulando las dos rutinas. Sus bits 3-5 dan el
+# TIPO de escena (0xE225) y sus bits 0-2 la variante (0xE224). El estado 0x00
+# no pertenece al anillo y es el que usa la pantalla del titulo.
 
 # =============================================================================
 # LA CABECERA
@@ -30,7 +38,12 @@ L 0x8013 INIT
 # EL DESPACHADOR DE MODOS
 # =============================================================================
 
-D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por modo. El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
+D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
+
+L 0xB68F avanza_pantalla_lfsr
+C 0xB68F El paso ADELANTE del registro de pantalla: desplaza 0xE222 un bit a la izquierda metiendo la realimentacion calculada con los rla/xor de arriba. Es el contador polinomico del Pitfall! de Atari 2600, y su anillo tiene periodo 255
+L 0xB69F retrocede_pantalla_lfsr
+C 0xB69F El paso ATRAS: la funcion inversa exacta de 0xB68F, desplazando a la derecha. Salir de una pantalla por la izquierda deshace lo que la derecha hizo
 
 D 0xAE94 0xAEA4 tabla_de_submodos_1 Ocho punteros de palabra para el despachador parametrico de 0xA99F, indexados por el submodo (0xE224)=(0xE222)&7. La base la carga el llamante de 0xADE4. Solo dos rutinas distintas, alternadas de dos en dos: 0xACB5 y 0xAE38
 

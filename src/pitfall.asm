@@ -2157,7 +2157,7 @@ L_9CBE:
 	ld b,003h		;9cd6
 L_9CD8:
 	push bc			;9cd8
-	call L_B68F		;9cd9
+	call avanza_pantalla_lfsr		;9cd9
 	pop bc			;9cdc
 	djnz L_9CD8		;9cdd
 	jp L_9EE6		;9cdf
@@ -2174,7 +2174,7 @@ L_9CE2:
 	ld b,003h		;9cf7
 L_9CF9:
 	push bc			;9cf9
-	call L_B69F		;9cfa
+	call retrocede_pantalla_lfsr		;9cfa
 	pop bc			;9cfd
 	djnz L_9CF9		;9cfe
 	jp L_9EE6		;9d00
@@ -3853,7 +3853,7 @@ L_AE46:
 ;   0xae94..0xaea4  (16 bytes)
 ; DATOS tabla_de_submodos_2: Ocho punteros de palabra para 0xA99F, mismos indices. La base la carga 0xAE2E, y SOLO cuando el modo (0xE225) es 5. Cuatro rutinas distintas repetidas dos veces: 0xAC11, 0xAB51, 0xAB1B, 0xABB7
 ;   0xaea4..0xaeb4  (16 bytes)
-; DATOS tabla_de_modos: Ocho punteros de palabra, uno por modo. El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
+; DATOS tabla_de_modos: Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
 ;   0xaeb4..0xaec4  (16 bytes)
 ; DATOS tabla_de_submodos_3: Ocho punteros de palabra para 0xA99F, mismos indices. La cargan los llamantes de 0xAA70, 0xACB1 y el camino de 0xAE24 cuando el modo no es 5. Seis de las ocho entradas apuntan al mismo sitio, 0xAD1F; las otras dos, 0xAAB7 y 0xAA74
 ;   0xaec4..0xaed4  (16 bytes)
@@ -4716,8 +4716,8 @@ L_B683:
 	ld c,(hl)			;b68c
 	inc hl			;b68d
 	ret			;b68e
-L_B68F:
-	ld hl,0e222h		;b68f
+avanza_pantalla_lfsr:
+	ld hl,0e222h		;b68f   ; El paso ADELANTE del registro de pantalla: desplaza 0xE222 un bit a la izquierda metiendo la realimentacion calculada con los rla/xor de arriba. Es el contador polinomico del Pitfall! de Atari 2600, y su anillo tiene periodo 255
 	ld a,(hl)			;b692
 	rla			;b693
 	xor (hl)			;b694
@@ -4731,8 +4731,8 @@ L_B68F:
 	rla			;b69c
 	ld (hl),a			;b69d
 	ret			;b69e
-L_B69F:
-	ld hl,0e222h		;b69f
+retrocede_pantalla_lfsr:
+	ld hl,0e222h		;b69f   ; El paso ATRAS: la funcion inversa exacta de 0xB68F, desplazando a la derecha. Salir de una pantalla por la izquierda deshace lo que la derecha hizo
 	ld a,(hl)			;b6a2
 	rla			;b6a3
 	xor (hl)			;b6a4
