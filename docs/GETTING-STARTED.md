@@ -57,7 +57,7 @@ and it ends with the full share-out:
 ## Without the cartridge
 
 You can still read the listing in `src/pitfall.asm` and the notes, which is
-where the work is: 5722 lines with 337 routines and tables named, 305 comments
+where the work is: 5725 lines with 337 routines and tables named, 305 comments
 anchored to their address and 130 ranges of data with their explanation beside
 them. The 17 tests run just the same, because not one of them needs the
 binary.

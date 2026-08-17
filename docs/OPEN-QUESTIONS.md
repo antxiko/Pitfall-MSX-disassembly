@@ -7,19 +7,27 @@ itself and the rest lean on the 305 line comments and the 50 block headers, so
 there are named routines of which only the name is stated. This page says what
 those figures mean exactly, and what is left to find out.
 
-## The clock doesn't add up, and it isn't being glossed over
+## The clock, closed: one tick is 60 interrupts, measured
 
-The code says something very precise: 0x9DB8 spends one frame per pass and ticks
-once every 60 (0xE1D5). Sixty frames.
+This question used to be open and no longer is. The code says 0x9DB8 spends one
+pass per interrupt and ticks every 60 of them (0xE1D5), but an early emulator
+measurement had given «about nine seconds per tick», and both couldn't be true.
 
-What **cannot** be said from there is how long that is in seconds. Sixty frames are
-a second only if the loop runs at one frame per interrupt and none is lost, and a
-measurement in the emulator gave something of the order of nine real seconds per
-tick. That difference is still unexplained.
+The code won, and the old measurement was wrong twice over: it watched
+0xE25A/0xE25B/0xE25C —which are not this clock— and it pressed SPACE and
+RETURN, when the game starts on a **direction** (0x8128 checks bits 0-3 of
+0xE05F), so it measured a different variable with no game running.
 
-So how long a game of «20:00» lasts is not settled. What is measured is the period
-—60 frames— and what is needed is to measure the tick for real, with the emulator's
-clock beside it, and see where the frames are going.
+The good measurement (`tools/omsx_mide_tick.tcl`): one breakpoint on the tick
+(0x9DC7) and a control one on the interrupt hook (0x80F7), with a real game
+started by pressing right. Out come 55 consecutive ticks with the score clock
+counting down from 20:00, all 55 at **exactly 60 interrupts**. So on a 60 Hz
+machine «20:00» lasts twenty wall-clock minutes, and on a 50 Hz machine,
+twenty-four: the cartridge counts interrupts, not seconds.
+
+And one detail thrown in for free: the routine runs **in the title and the demo
+too**, decrementing the clock tiles before anyone initialises them; the «20:00»
+is written when a real game starts.
 
 ## No winning condition turns up
 

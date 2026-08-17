@@ -7,19 +7,28 @@ el resto se apoya en los 305 comentarios de línea y en las 50 cabeceras de
 bloque, así que hay rutinas bautizadas de las que solo está dicho el nombre. Esta
 página cuenta qué significan esas cifras exactamente, y qué queda por saber.
 
-## El reloj no cuadra, y no se disimula
+## El reloj, cerrado: un tick son 60 interrupciones, medido
 
-El código dice una cosa muy concreta: 0x9DB8 gasta un cuadro por pasada y hace
-un tick cada 60 (0xE1D5). Sesenta cuadros.
+Esta pregunta estuvo abierta y ya no lo está. El código dice que 0x9DB8 gasta
+una pasada por interrupción y hace un tick cada 60 (0xE1D5), pero una medida
+temprana en el emulador había dado «unos nueve segundos por tick», y las dos
+cosas no podían ser verdad.
 
-Lo que **no** se puede decir a partir de ahí es cuánto dura eso en segundos.
-Sesenta cuadros son un segundo solo si el bucle corre a un cuadro por
-interrupción y no se pierde ninguno, y una medida en el emulador dio del orden
-de nueve segundos reales por tick. Esa diferencia sigue sin explicar.
+Ganó el código, y la medida vieja estaba mal por partida doble: vigilaba
+0xE25A/0xE25B/0xE25C —que no son este reloj— y pulsaba ESPACIO y RETURN, cuando
+el juego arranca con una **dirección** (0x8128 mira los bits 0-3 de 0xE05F), o
+sea que midió otra variable con la partida sin arrancar.
 
-Así que la duración de una partida de «20:00» está sin cerrar. Lo que hay
-medido es el periodo —60 cuadros— y lo que hace falta es medir el tick de
-verdad, con el reloj del emulador al lado, y ver por dónde se van los cuadros.
+La medida buena (`tools/omsx_mide_tick.tcl`): un punto de parada en el tick
+(0x9DC7) y otro de control en el gancho de interrupción (0x80F7), partida real
+arrancada con la flecha derecha. Salen 55 ticks seguidos con el marcador
+bajando desde 20:00, y los 55 a **60 interrupciones exactas**. Así que en una
+máquina de 60 Hz los «20:00» duran veinte minutos de pared, y en una de 50 Hz,
+veinticuatro: el cartucho cuenta interrupciones, no segundos.
+
+Y un detalle que salió de propina: la rutina corre **también en el título y en
+la demo**, decrementando los tiles del reloj sin inicializar; los «20:00» se
+escriben al arrancar la partida de verdad.
 
 ## No aparece condición de victoria
 

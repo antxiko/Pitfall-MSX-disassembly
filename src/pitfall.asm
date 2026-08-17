@@ -2506,11 +2506,14 @@ suma_miles_sigue:
 ; UN TICK CADA 60 INTERRUPCIONES. En una maquina de 60 Hz eso es un
 ; segundo clavado y los 20:00 duran veinte minutos de reloj de pared;
 ; en una de 50 Hz el tick son 1,2 s y la partida dura veinticuatro.
-; Queda una cuenta pendiente que NO cuadra: en el emulador se midieron
-; unos 9 s por tick, nueve veces mas de lo que dice esto. O la medida
-; estaba mal tomada o hay algo en la cadena que no hemos visto; hasta
-; remedirlo, la buena es la cuenta del binario, que es la que se puede
-; comprobar leyendo.
+; MEDIDO EN EL EMULADOR con un bp aqui y otro de control en 0x80F7
+; (tools/omsx_mide_tick.tcl): 55 ticks seguidos de partida real, los
+; 55 a 60 interrupciones exactas, con el marcador bajando de 20:00.
+; Los "~9 s por tick" que se midieron al principio eran OTRA cosa:
+; se vigilaba 0xE25A/B/C, que no es este reloj, y con la partida sin
+; arrancar. Y OJO: esto corre tambien en el titulo y en la demo,
+; decrementando los tiles sin inicializar; los 20:00 se escriben al
+; arrancar la partida de verdad.
 ; ----------------------------------------------------------------------
 reloj_de_partida:		; Cuenta atras desde 20:00, un tick cada 60 cuadros
 	ld a,(0e21ch)		;9db8   ; en pausa (0xE21C) no corre
