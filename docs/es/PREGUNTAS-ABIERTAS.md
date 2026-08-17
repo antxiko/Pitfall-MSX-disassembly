@@ -50,9 +50,16 @@ El número está bien hecho —sale de recorrer el anillo de 255 escenas con las
 reglas de cambio de pantalla del propio cartucho, contando el atajo del
 subterráneo— pero mide **pantallas cruzadas**, y nada más.
 
-Lo que no entra en la cuenta: el tiempo, el reloj de 20:00, correr, saltar,
-esperar a que un tronco pase, y bajar o subir una escalera, que se cuentan como
-gratis. No es una partida grabada.
+Lo que no entra en la cuenta: saltar, esperar a que un tronco pase, y bajar o
+subir una escalera, que se cuentan como gratis. No es una partida grabada.
+
+¿Y cabe en el reloj? Esa cuenta sí se puede hacer con los números del propio
+cartucho. El muñeco anda a 200/256 de píxel por cuadro (0x88ED) y una pantalla
+va de la X de entrada (0x19) al borde (0xE7): 206 píxeles, **264 cuadros, 4,4
+segundos** a 60 Hz. Los 190 cruces suman 50.099 cuadros —**13,9 minutos de
+juego**— y el reloj de 20:00 son 72.000: la ruta gasta el 70 % del reloj solo
+en andar y deja unos seis minutos para todo lo demás. Sigue siendo aritmética
+del modelo, no una partida; pero el modelo cabe en el reloj.
 
 Falta correrla en el emulador y comprobar dos cosas: que aparecen los 32 tesoros
 y que el marcador llega a 114000.

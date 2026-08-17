@@ -49,9 +49,16 @@ The number is soundly made —it comes from walking the ring of 255 scenes with 
 cartridge's own screen-change rules, counting the tunnel shortcut— but it measures
 **screens crossed**, and nothing else.
 
-What is not in the count: time, the 20:00 clock, running, jumping, waiting for a log
-to go by, and going down or up a ladder, which are counted as free. It is not a
-recorded game.
+What is not in the count: jumping, waiting for a log to go by, and going down or
+up a ladder, which are counted as free. It is not a recorded game.
+
+Does it fit the clock, though? That sum can be done with the cartridge's own
+numbers. The player walks at 200/256 of a pixel per frame (0x88ED) and a screen
+runs from the entry X (0x19) to the border (0xE7): 206 pixels, **264 frames, 4.4
+seconds** at 60 Hz. The 190 crossings add up to 50,099 frames —**13.9 minutes of
+game time**— and the 20:00 clock is 72,000: the route spends 70 % of the clock
+just walking and leaves about six minutes for everything else. It is still the
+model's arithmetic, not a game; but the model fits inside the clock.
 
 It still needs running in the emulator to check two things: that the 32 treasures
 turn up and that the score reaches 114000.
