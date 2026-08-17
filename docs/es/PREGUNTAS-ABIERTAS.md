@@ -64,19 +64,20 @@ del modelo, no una partida; pero el modelo cabe en el reloj.
 Falta correrla en el emulador y comprobar dos cosas: que aparecen los 32 tesoros
 y que el marcador llega a 114000.
 
-## Qué es cada bicho, y qué es cada estorbo
+## Los bichos, con nombre: los puso el autor mirándolos
 
-Tres rutinas (0xAA74, 0xAAB7 y 0xAB85) pintan un dibujo de 3x2 celdas en el
-mismo hueco de la pantalla, cada una con sus patrones de sprite y su caja de
-colisión —de clase 6 las dos primeras, que matan, y de clase 8 la tercera, que
-es tesoro—. Lo que está por dentro se sabe entero. **Cuál es cuál mirándolo, no.**
+Esta pregunta se cerró de la manera más sencilla: recortando de las capturas el
+hueco de 3x2 celdas donde cada rutina pinta lo suyo, y mirándolo.
 
-Lo mismo pasa con el objeto de 0xA69E, que se acerca a la X del jugador y para
-cuando lo tiene justo encima, con su caja de clase 9: mata, se mueve así, y qué
-animal es hace falta verlo.
+| rutina | variantes | caja | qué es |
+|---|---|---|---|
+| 0xAA74 | 7 | clase 6, mata | **la serpiente**, enroscada y con la cabeza alzada |
+| 0xAAB7 | 6 | clase 6, mata | **la fogata**: llamas blancas sobre dos palos |
+| 0xAD1F | 0-5 | clase 1, resta puntos | **el tronco** (y los que ruedan salen de su plantilla) |
+| 0xA69E | el objeto 0xE2ED | clase 9, mata | **el escorpión** del subterráneo, que se acerca a tu X y se para cuando te tiene encima |
 
-Es una tarde de emulador cruzando las capturas con las rutinas, no una
-investigación.
+Los nombres del listado ya lo dicen: `monta_la_serpiente`, `monta_la_fogata`,
+`monta_los_troncos`, `mueve_el_escorpion`.
 
 ## Dieciséis bytes con dueño y sin uso
 

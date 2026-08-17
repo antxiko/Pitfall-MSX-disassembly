@@ -160,7 +160,7 @@ D 0x904E 0x9090 guion_celdas_pilares_b Los mismos dos pilares con los tiles camb
 
 D 0xAED4 0xAF46 guion_celdas_rotulo Guion de 28 celdas en las filas 14-15, columnas 9-22: dos lineas de tiles consecutivos (0x58-0x6F), un rotulo pintado celda a celda. Lo llaman 0xACA8 y 0xADC1
 
-D 0xB040 0xB05A guion_celdas_objeto_1 Guion de 6 celdas: objeto de 3x2 en filas 14-15, columnas 24-26, tiles 0x90-0x95. Primera de las seis variantes del mismo hueco de pantalla. Lo llama 0xAA7D
+D 0xB040 0xB05A guion_celdas_serpiente Guion de 6 celdas: LA SERPIENTE, 3x2 en filas 14-15, columnas 24-26, tiles 0x90-0x95. Lo llama 0xAA7D
 
 D 0xB05A 0xB074 guion_celdas_objeto_2 Guion de 6 celdas: mismo hueco 3x2, tiles 0xA8-0xAD. Lo llama 0xABC5
 
@@ -168,9 +168,9 @@ D 0xB074 0xB08E guion_celdas_objeto_3 Guion de 6 celdas: mismo hueco 3x2, tiles 
 
 D 0xB08E 0xB0A8 guion_celdas_borrado Guion de 6 celdas: el mismo hueco de 3x2, pero las seis con el MISMO tile 0x30, que es el blanco. O sea que no pinta nada: BORRA el objeto. Lo llaman 0x87B9 (al recoger el tesoro), 0x8D59 y 0x8D6C
 
-D 0xB0A8 0xB0C2 guion_celdas_objeto_5 Guion de 6 celdas: mismo hueco 3x2, tiles 0x98-0x9D. Lo llama 0xAB88
+D 0xB0A8 0xB0C2 guion_celdas_tesoro Guion de 6 celdas: EL TESORO, mismo hueco 3x2, tiles 0x98-0x9D (los patrones los carga antes la rutina de cada tesoro: saco, barra o anillo). Lo llama 0xAB88
 
-D 0xB0C2 0xB0D0 guion_celdas_objeto_6 Guion de 3 celdas: solo la fila 15 del hueco, columnas 24-26, tiles 0xA0-0xA2. Lo llama 0xAABA
+D 0xB0C2 0xB0D0 guion_celdas_fogata Guion de 3 celdas: LA FOGATA, solo la fila 15 del hueco, columnas 24-26, tiles 0xA0-0xA2. Lo llama 0xAABA
 
 # =============================================================================
 # GRAFICOS COMPRIMIDOS: los bloques que descomprime B142
@@ -689,12 +689,12 @@ C 0xA5EF a 0x20 se acabo la ida y empieza la vuelta
 L 0xA5F9 lleva_al_jugador_colgado
 C 0xA5F9 colgado, la liana te escribe la X (de 0xE1CD) y la Y (de 0xE1CC mas 0x5D)
 
-L 0xA69E sigue_al_jugador Manejador de 0xE2ED: se acerca a la X del jugador
+L 0xA69E mueve_el_escorpion Manejador de 0xE2ED, EL ESCORPION del subterraneo (identificado mirando la franja del tunel): se acerca a la X del jugador
 C 0xA6A5 0xE292 es donde esta el bicho
 C 0xA6B1 su caja, clase 9
 C 0xA6C6 compara su X con la del jugador y decide el lado
-L 0xA6EA sigue_al_jugador_derecha
-L 0xA70A sigue_al_jugador_para
+L 0xA6EA escorpion_hacia_la_derecha
+L 0xA70A escorpion_se_para
 C 0xA70A justo encima: se queda quieto
 
 L 0xA728 mueve_los_troncos Manejador de 0xE303
@@ -1483,12 +1483,14 @@ L 0xA609 lleva_al_jugador_colgado_y
 
 B 0xAA74 Las variantes que ponen el estorbo de la derecha. Cada una
 B 0xAA74 carga sus patrones de sprite, pinta un dibujo de 3x2 celdas
-B 0xAA74 en el mismo hueco y declara su caja. QUE dibujo es cada una
-B 0xAA74 esta sin identificar: hace falta cruzarlas con las capturas.
-L 0xAA74 monta_estorbo_tiles_90 Guion 0xB040, sprites de 0x9989, caja clase 6
+B 0xAA74 en el mismo hueco (filas 14-15, columnas 24-26) y declara su
+B 0xAA74 caja. Identificados mirando las capturas: la variante 7 es LA
+B 0xAA74 SERPIENTE (0xAA74), la 6 es LA FOGATA (0xAAB7), y las otras
+B 0xAA74 seis ponen EL TRONCO parado de 0xAD1F.
+L 0xAA74 monta_la_serpiente Guion 0xB040, sprites de 0x9989, caja clase 6. El dibujo es LA SERPIENTE enroscada con la cabeza alzada (identificada mirando la captura de una escena con variante 7)
 C 0xAAA2 clase 6, de 0xC3 a 0xD2
-L 0xAAB7 monta_estorbo_tiles_a0 Guion 0xB0C2, sprites de 0x9865, caja clase 6
-L 0xAB85 monta_estorbo_tiles_98 Guion 0xB0A8, caja clase 8
+L 0xAAB7 monta_la_fogata Guion 0xB0C2, sprites de 0x9865, caja clase 6. El dibujo es LA FOGATA: las llamas blancas sobre dos palos (variante 6)
+L 0xAB85 coloca_el_tesoro Guion 0xB0A8, caja clase 8: pinta en el hueco los tiles 0x98-0x9D que la rutina de tesoro de la escena acaba de cargar (saco, barra o anillo), y por eso la caja es la que suma en vez de matar
 C 0xABA2 clase 8, centrada en 0xCB
 
 L 0xAB11 tesoro_ya_cogido_bit

@@ -3238,7 +3238,7 @@ lleva_al_jugador_colgado_y:
 ; ======================================================================
 
 
-sigue_al_jugador:		; Manejador de 0xE2ED: se acerca a la X del jugador
+mueve_el_escorpion:		; Manejador de 0xE2ED, EL ESCORPION del subterraneo (identificado mirando la franja del tunel): se acerca a la X del jugador
 	ld hl,0e2a3h		;a69e
 	ld iy,0e292h		;a6a1
 	ld a,(iy+001h)		;a6a5   ; 0xE292 es donde esta el bicho
@@ -3256,8 +3256,8 @@ sigue_al_jugador:		; Manejador de 0xE2ED: se acerca a la X del jugador
 	pop ix		;a6c1
 	ld a,(iy+001h)		;a6c3
 	cp (hl)			;a6c6   ; compara su X con la del jugador y decide el lado
-	jr c,sigue_al_jugador_derecha		;a6c7
-	jr z,sigue_al_jugador_para		;a6c9
+	jr c,escorpion_hacia_la_derecha		;a6c7
+	jr z,escorpion_se_para		;a6c9
 	set 7,(ix+006h)		;a6cb
 	ld de,0af58h		;a6cf
 	ld (ix+00ch),e		;a6d2
@@ -3268,7 +3268,7 @@ sigue_al_jugador:		; Manejador de 0xE2ED: se acerca a la X del jugador
 	ld (ix+008h),d		;a6e3
 	ld (ix+007h),e		;a6e6
 	ret			;a6e9
-sigue_al_jugador_derecha:
+escorpion_hacia_la_derecha:
 	res 7,(ix+006h)		;a6ea
 	ld de,0af52h		;a6ee
 	ld (ix+00ch),e		;a6f1
@@ -3280,7 +3280,7 @@ sigue_al_jugador_derecha:
 	ld (ix+008h),d		;a703
 	ld (ix+007h),e		;a706
 	ret			;a709
-sigue_al_jugador_para:
+escorpion_se_para:
 	res 5,(ix+000h)		;a70a   ; justo encima: se queda quieto
 	res 0,(ix+006h)		;a70e
 	ld (ix+00fh),000h		;a712
@@ -3695,10 +3695,12 @@ hoyos_carga_sprites:
 ; ----------------------------------------------------------------------
 ; Las variantes que ponen el estorbo de la derecha. Cada una
 ; carga sus patrones de sprite, pinta un dibujo de 3x2 celdas
-; en el mismo hueco y declara su caja. QUE dibujo es cada una
-; esta sin identificar: hace falta cruzarlas con las capturas.
+; en el mismo hueco (filas 14-15, columnas 24-26) y declara su
+; caja. Identificados mirando las capturas: la variante 7 es LA
+; SERPIENTE (0xAA74), la 6 es LA FOGATA (0xAAB7), y las otras
+; seis ponen EL TRONCO parado de 0xAD1F.
 ; ----------------------------------------------------------------------
-monta_estorbo_tiles_90:		; Guion 0xB040, sprites de 0x9989, caja clase 6
+monta_la_serpiente:		; Guion 0xB040, sprites de 0x9989, caja clase 6. El dibujo es LA SERPIENTE enroscada con la cabeza alzada (identificada mirando la captura de una escena con variante 7)
 	ld hl,09989h		;aa74
 	call descomprime_rle_a_vram		;aa77
 	ld hl,0b040h		;aa7a
@@ -3724,7 +3726,7 @@ monta_estorbo_tiles_90:		; Guion 0xB040, sprites de 0x9989, caja clase 6
 	ld (ix+002h),a		;aab1
 	pop ix		;aab4
 	ret			;aab6
-monta_estorbo_tiles_a0:		; Guion 0xB0C2, sprites de 0x9865, caja clase 6
+monta_la_fogata:		; Guion 0xB0C2, sprites de 0x9865, caja clase 6. El dibujo es LA FOGATA: las llamas blancas sobre dos palos (variante 6)
 	ld hl,0b0c2h		;aab7
 	call pinta_celdas		;aaba
 	ld hl,09865h		;aabd
@@ -3810,7 +3812,7 @@ tesoro_de_4000:
 	ld iy,0e28eh		;ab43
 	ld (iy+001h),0c4h		;ab47
 	ld (iy+003h),007h		;ab4b
-	jr monta_estorbo_tiles_98		;ab4f
+	jr coloca_el_tesoro		;ab4f
 tesoro_de_3000:
 	ld de,0e21eh		;ab51
 	call tesoro_ya_cogido		;ab54
@@ -3829,7 +3831,7 @@ tesoro_de_3000:
 	ld iy,0e28eh		;ab79
 	ld (iy+001h),0c4h		;ab7d
 	ld (iy+003h),00fh		;ab81
-monta_estorbo_tiles_98:		; Guion 0xB0A8, caja clase 8
+coloca_el_tesoro:		; Guion 0xB0A8, caja clase 8: pinta en el hueco los tiles 0x98-0x9D que la rutina de tesoro de la escena acaba de cargar (saco, barra o anillo), y por eso la caja es la que suma en vez de matar
 	ld hl,0b0a8h		;ab85
 	call pinta_celdas		;ab88
 	ld de,0e319h		;ab8b
@@ -4224,7 +4226,7 @@ monta_la_liana_objeto:
 ;   0xb014..0xb02a  (22 bytes)
 ; DATOS plantilla_objeto_e2bf: Plantilla de objeto de 22 bytes que el arranque (0x8094) copia a 0xE2BF y 0xAE54 copia a 0xE32F. Su manejador es 0xA962
 ;   0xb02a..0xb040  (22 bytes)
-; DATOS guion_celdas_objeto_1: Guion de 6 celdas: objeto de 3x2 en filas 14-15, columnas 24-26, tiles 0x90-0x95. Primera de las seis variantes del mismo hueco de pantalla. Lo llama 0xAA7D
+; DATOS guion_celdas_serpiente: Guion de 6 celdas: LA SERPIENTE, 3x2 en filas 14-15, columnas 24-26, tiles 0x90-0x95. Lo llama 0xAA7D
 ;   0xb040..0xb05a  (26 bytes)
 ; DATOS guion_celdas_objeto_2: Guion de 6 celdas: mismo hueco 3x2, tiles 0xA8-0xAD. Lo llama 0xABC5
 ;   0xb05a..0xb074  (26 bytes)
@@ -4232,9 +4234,9 @@ monta_la_liana_objeto:
 ;   0xb074..0xb08e  (26 bytes)
 ; DATOS guion_celdas_borrado: Guion de 6 celdas: el mismo hueco de 3x2, pero las seis con el MISMO tile 0x30, que es el blanco. O sea que no pinta nada: BORRA el objeto. Lo llaman 0x87B9 (al recoger el tesoro), 0x8D59 y 0x8D6C
 ;   0xb08e..0xb0a8  (26 bytes)
-; DATOS guion_celdas_objeto_5: Guion de 6 celdas: mismo hueco 3x2, tiles 0x98-0x9D. Lo llama 0xAB88
+; DATOS guion_celdas_tesoro: Guion de 6 celdas: EL TESORO, mismo hueco 3x2, tiles 0x98-0x9D (los patrones los carga antes la rutina de cada tesoro: saco, barra o anillo). Lo llama 0xAB88
 ;   0xb0a8..0xb0c2  (26 bytes)
-; DATOS guion_celdas_objeto_6: Guion de 3 celdas: solo la fila 15 del hueco, columnas 24-26, tiles 0xA0-0xA2. Lo llama 0xAABA
+; DATOS guion_celdas_fogata: Guion de 3 celdas: LA FOGATA, solo la fila 15 del hueco, columnas 24-26, tiles 0xA0-0xA2. Lo llama 0xAABA
 ;   0xb0c2..0xb0d0  (14 bytes)
 ; DATOS filas_del_rotulo: Cuatro filas de 8 tiles (0x58-0x6F, mas el blanco 0x30 en las cuatro esquinas). Las copian CUATRO sitios, uno por fila: 0xA889, 0xA89C, 0xA8BB y 0xA8D1, todos con la longitud leida de 0xE133 y con 8 menos esa longitud como desplazamiento (0xA896, 0xA8CB): el rotulo dibujandose por columnas
 ;   0xb0d0..0xb0f0  (32 bytes)

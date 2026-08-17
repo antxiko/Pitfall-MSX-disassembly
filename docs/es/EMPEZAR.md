@@ -57,7 +57,7 @@ comprobación, y termina con el reparto completo:
 ## Sin el cartucho
 
 Se puede leer igualmente el listado de `src/pitfall.asm` y las notas, que es
-donde está el trabajo: 5725 líneas con 337 rutinas y tablas bautizadas, 305
+donde está el trabajo: 5727 líneas con 337 rutinas y tablas bautizadas, 305
 comentarios anclados a su dirección y 130 rangos de datos con su explicación al
 lado. Los 17 tests corren igual, porque ninguno necesita el binario.
 

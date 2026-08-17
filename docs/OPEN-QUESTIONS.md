@@ -63,19 +63,20 @@ model's arithmetic, not a game; but the model fits inside the clock.
 It still needs running in the emulator to check two things: that the 32 treasures
 turn up and that the score reaches 114000.
 
-## Which creature is which, and which obstacle is which
+## The creatures, named: by looking at them
 
-Three routines (0xAA74, 0xAAB7 and 0xAB85) paint a 3x2-cell drawing in the same gap
-on the screen, each with its own sprite patterns and its own collision box —class 6
-for the first two, which kill, and class 8 for the third, which is a treasure—.
-What is inside is known in full. **Which is which to look at, no.**
+This question closed the simplest possible way: cropping from the captures the
+3x2-cell gap where each routine paints its piece, and looking at it.
 
-The same goes for the object at 0xA69E, which closes in on the player's X and stops
-when it has him right overhead, with its class 9 box: it kills, it moves like that,
-and what animal it is has to be seen.
+| routine | variants | box | what it is |
+|---|---|---|---|
+| 0xAA74 | 7 | class 6, kills | **the snake**, coiled with its head up |
+| 0xAAB7 | 6 | class 6, kills | **the campfire**: white flames over two sticks |
+| 0xAD1F | 0-5 | class 1, costs points | **the log** (and the rolling ones come from its template) |
+| 0xA69E | object 0xE2ED | class 9, kills | **the scorpion** of the underground, which closes in on your X and stops right under you |
 
-It is an afternoon of emulator crossing captures against routines, not an
-investigation.
+The listing's names now say it: `monta_la_serpiente`, `monta_la_fogata`,
+`monta_los_troncos`, `mueve_el_escorpion`.
 
 ## Sixteen bytes with an owner and no use
 
