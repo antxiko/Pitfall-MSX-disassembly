@@ -136,7 +136,7 @@ def main():
 
     faltan = [r for r in escenas if int(r["lfsr"], 16) not in por_lfsr]
     if faltan:
-        sys.exit("Faltan %d capturas (p.ej. LFSR %s)" % (faltan[0]["lfsr"], len(faltan)))
+        sys.exit("Faltan %d capturas (p.ej. LFSR %s)" % (len(faltan), faltan[0]["lfsr"]))
     print("Escenas: %d   capturas encontradas: %d" % (len(escenas), len(por_lfsr)))
 
     ALTO_BANDA, BORDE, ALTO_LEYENDA = 22, 4, 96

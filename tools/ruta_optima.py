@@ -109,10 +109,8 @@ def main():
             mejor = (total, nombre, tramos)
 
     total, nombre, tramos = mejor
-    solo_arriba = sum(1 for _ in range(1))          # se recalcula abajo
     # La misma ruta sin bajar nunca al subterraneo, para tener con que comparar.
     sin_tunel = [False] * N
-    d0, _ = dijkstra((0, ARRIBA), sin_tunel)
     sentido = 1 if nombre == "derecha" else -1
     orden = sorted(tesoros, key=lambda t: (t[0] * sentido) % N)
     solo_arriba, actual = 0, (0, ARRIBA)

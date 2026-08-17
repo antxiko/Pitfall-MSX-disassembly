@@ -127,7 +127,12 @@ def main():
         # emulador, salvo justo en los huecos que las escenas reutilizan.
         vram = open(sys.argv[2], "rb").read()
         iguales, distintos = [], []
-        for n in range(0x20, 0xE0):
+        # Hasta 0x100: el tercer grupo de espejo llega a 0xF7, y cortar en
+        # 0xE0 dejaba seis de sus nueve sprites sin comparar. Las dos ventanas
+        # que salen distintas (0xF5, 0xF6) pisan la celda 0x3FC0, que es el
+        # hueco que las escenas recargan (sprites_rle_7/8/9): reutilizacion
+        # documentada, no un fallo del espejo.
+        for n in range(0x20, 0x100):
             mio = patron(n)
             suyo = vram[BASE_SPRITES + n * 8:BASE_SPRITES + n * 8 + 32]
             if not any(mio):

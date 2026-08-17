@@ -73,7 +73,6 @@ class Notes:
         return n
 
 
-ADDR_RE = re.compile(r"\b0([0-9a-f]{4})h\b")
 LBL_RE = re.compile(r"\b(?:sub_|l)([0-9a-f]{4})h\b")
 
 
@@ -314,8 +313,6 @@ def emit_code(data, org, a, b, names, notes):
             if tgt in BIOS:
                 nm, desc = BIOS[tgt]
                 extra.append(f"BIOS {nm}" + (f" - {desc}" if desc else ""))
-        if cur is not None and cur in names and not m2:
-            pass
         if cur is not None and cur in notes.line:
             extra.append(notes.line[cur])
         if extra:
