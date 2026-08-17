@@ -1670,8 +1670,22 @@ pinta_el_subsuelo:
 ; ----------------------------------------------------------------------
 ; DATOS tabla_tramos_fila12: Veintitres bytes: la rampa de tiles F0..FE,F0..F7 de la que salen los tramos de la fila 12 (primera pasada, base cargada en 0x8DA7, VRAM 0x1980)
 ;   0x8e1b..0x8e32  (23 bytes)
-; DATOS tabla_tramos_fila13: Veinte bytes, todos 0xFF: los tramos de la fila 13 (segunda pasada, base cargada en 0x8DCA, VRAM 0x19A0). Su final, 0x8E46, coincide EXACTO con el mayor uso posible, 0x8E32+2x0x0A
-;   0x8e32..0x8e46  (20 bytes)
+; DATOS tabla_tramos_fila13: Catorce bytes, todos 0xFF: los tramos de la fila 13 (segunda pasada, base cargada en 0x8DCA, VRAM 0x19A0). El consumidor puede llegar a leer hasta 0x8E46 -0x8E32 mas 2x0x0A-, seis bytes mas alla de donde se acaban los 0xFF; esos seis ya son el principio del sprite de 0x8E40, y no valen 0xFF
+;   0x8e32..0x8e40  (14 bytes)
+; DATOS sprite_hundiendose_derecha_1: Primera capa del jugador mirando a la derecha. La copia 0x8C0F a 0xE138. OJO: empieza seis bytes dentro de lo que 0x8DCA puede llegar a leer como tramos de la fila 13, y esos seis bytes (00 00 00 00 03 03) son ya las dos primeras filas del dibujo, no relleno
+;   0x8e40..0x8e60  (32 bytes)
+; DATOS sprite_hundiendose_derecha_2: Segunda capa de la misma pose. La copia 0x8C04 a 0xE15E
+;   0x8e60..0x8e80  (32 bytes)
+; DATOS sprite_hundiendose_3: Primera capa de la tercera pose, la que carga 0x8CB9 a 0xE138
+;   0x8e80..0x8ea0  (32 bytes)
+; DATOS sprite_hundiendose_4: Segunda capa de esa pose, que carga 0x8CAE a 0xE15E
+;   0x8ea0..0x8ec0  (32 bytes)
+; DATOS sprite_hundiendose_izquierda_1: El espejo de 0x8E40, bit a bit. La copia 0x8C27 a 0xE138, y ademas 0x8330 sube sus dos mitades de 16 bytes a la VRAM 0x3D00 y 0x3AC0 cuando el jugador acaba de caer
+;   0x8ec0..0x8ee0  (32 bytes)
+; DATOS sprite_hundiendose_izquierda_2: El espejo de 0x8E60. La copia 0x8C1C a 0xE15E, y 0x8348 sube sus mitades a la VRAM 0x3D10 y 0x3AD0
+;   0x8ee0..0x8f00  (32 bytes)
+; DATOS reloj_inicial_duplicado: Los mismos cinco tiles del reloj de salida que hay en 0x8A69 -BA B8 C2 B8 B8, que se lee "20:00"- pero con 0x00 detras en vez del divisor 0x3C. Nadie lo copia: la unica palabra del cartucho que vale 0x8F00 esta en 0xA3A3, dentro de una tabla de patrones, o sea que es coincidencia de bytes y no un puntero. Una segunda copia que se quedo sin usar
+;   0x8f00..0x8f06  (6 bytes)
 ; DATOS guion_celdas_columna: Guion de 16 celdas para 0x9FE6: una columna de 3 de ancho por 8 de alto en filas 14-21, columnas 15-17, tiles 0x20-0x36. Lo llaman 0x8D4D y 0x8D60
 ;   0x8f06..0x8f48  (66 bytes)
 ; DATOS guion_celdas_bloque_a: Guion de 24 celdas: un bloque en filas 14-17, columnas 10-22, tiles 0x2A-0x56. Variante A de la misma zona que el guion siguiente. Lo llama 0x8D12
@@ -4118,6 +4132,10 @@ monta_la_liana_objeto:
 ;   0xaed4..0xaf46  (114 bytes)
 ; DATOS inicializador_e26a: Doce bytes que 0xAE44 copia a 0xE26A
 ;   0xaf46..0xaf52  (12 bytes)
+; DATOS guion_anim_sigue_derecha: 03 00 / 03 04 / 00 00: dos fotogramas de tres cuadros. Lo carga 0xA6EE cuando el bicho de 0xE2ED va hacia la derecha
+;   0xaf52..0xaf58  (6 bytes)
+; DATOS guion_anim_sigue_izquierda: 03 08 / 03 0C / 00 00: los mismos tiempos con los otros dos patrones. Lo carga 0xA6CF, el camino de la izquierda
+;   0xaf58..0xaf5e  (6 bytes)
 ; DATOS inicializador_e292: Cuatro bytes que 0xACD0 copia a 0xE292
 ;   0xaf5e..0xaf62  (4 bytes)
 ; DATOS plantilla_objeto_e2ed: Plantilla de objeto de 22 bytes que 0xACDB copia a 0xE2ED. Su manejador (offset 0x12) es 0xA69E
@@ -4128,12 +4146,20 @@ monta_la_liana_objeto:
 ;   0xaf7c..0xaf80  (4 bytes)
 ; DATOS inicializador_e2aa: Cuatro bytes que 0xAD03 copia a 0xE2AA
 ;   0xaf80..0xaf84  (4 bytes)
+; DATOS guion_anim_sin_usar: Un guion entero y bien formado -diez fotogramas, patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384 palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma es lento, de rotulo o de decorado, no de bicho
+;   0xaf84..0xaf98  (20 bytes)
 ; DATOS plantilla_objeto_e2d5: Plantilla de objeto de 24 bytes que 0xAD0E copia a 0xE2D5. Su manejador es 0x8125
 ;   0xaf98..0xafb0  (24 bytes)
+; DATOS guion_anim_troncos: 0A F8 / 0A FC / 00 00: dos patrones alternandose cada diez cuadros, que es el tronco rodando. Lo apunta el campo +0x0C de la plantilla de 0xAFC2, cuyo manejador es 0xA728
+;   0xafb0..0xafb6  (6 bytes)
 ; DATOS inicializador_e282: Cuatro bytes que 0xAD2E copia a 0xE282
 ;   0xafb6..0xafba  (4 bytes)
+; DATOS inicializadores_troncos_2_y_3: Dos bloques de cuatro bytes (Y, X, patron, color) iguales entre si -6F E0 F8 06- y hermanos del de 0xAFB6, que es el primer tronco. Nadie los copia: 0xAD2E se lleva solo los cuatro del primero y 0xA745 coloca los otros dos por codigo a partir de el. O sea que los datos estan escritos y no se usan
+;   0xafba..0xafc2  (8 bytes)
 ; DATOS plantilla_objeto_e303: Plantilla de objeto de 22 bytes que 0xAD39 copia a 0xE303. Su manejador es 0xA728
 ;   0xafc2..0xafd8  (22 bytes)
+; DATOS guion_anim_cocodrilos: 01 F8 / 01 FC / 00 00: los mismos dos patrones que el tronco pero cambiando cada cuadro, que es la boca del cocodrilo. Lo apunta la plantilla de 0xAFEA, manejador 0xA7F5
+;   0xafd8..0xafde  (6 bytes)
 ; DATOS inicializador_e282_b: Cuatro bytes que 0xAD84 copia a 0xE282
 ;   0xafde..0xafe2  (4 bytes)
 ; DATOS inicializador_e286: Cuatro bytes que 0xAD8F copia a 0xE286
@@ -4142,6 +4168,8 @@ monta_la_liana_objeto:
 ;   0xafe6..0xafea  (4 bytes)
 ; DATOS plantilla_objeto_e303_b: Otra plantilla de 22 bytes para 0xE303, copiada por 0xADA5. Su manejador es 0xA7F5
 ;   0xafea..0xb000  (22 bytes)
+; DATOS guion_anim_estorbo: Siete pares con esperas desiguales (2, 1, 3, 2, 2, 4, 1) entre los patrones 0xF8 y 0xFC: un parpadeo irregular. Lo apunta la plantilla de 0xB014, la del estorbo de la derecha
+;   0xb000..0xb010  (16 bytes)
 ; DATOS inicializador_e28e: Cuatro bytes que copian a 0xE28E cinco sitios distintos (0xAA89, 0xAACC, 0xAB3C, 0xAB72, 0xABD7, 0xAC31)
 ;   0xb010..0xb014  (4 bytes)
 ; DATOS plantilla_objeto_e319: Plantilla de objeto de 22 bytes que copian a 0xE319 cinco sitios (0xAA94, 0xAAD7, 0xAB94, 0xABE2, 0xAC3C). Su campo de manejador viene a CERO: se rellena despues en marcha

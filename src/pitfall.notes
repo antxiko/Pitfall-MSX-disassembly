@@ -337,7 +337,7 @@ D 0xA33E 0xA43A tabla_patrones_14x18 Catorce registros de 18 bytes. El bucle de 
 
 D 0x8E1B 0x8E32 tabla_tramos_fila12 Veintitres bytes: la rampa de tiles F0..FE,F0..F7 de la que salen los tramos de la fila 12 (primera pasada, base cargada en 0x8DA7, VRAM 0x1980)
 
-D 0x8E32 0x8E46 tabla_tramos_fila13 Veinte bytes, todos 0xFF: los tramos de la fila 13 (segunda pasada, base cargada en 0x8DCA, VRAM 0x19A0). Su final, 0x8E46, coincide EXACTO con el mayor uso posible, 0x8E32+2x0x0A
+D 0x8E32 0x8E40 tabla_tramos_fila13 Catorce bytes, todos 0xFF: los tramos de la fila 13 (segunda pasada, base cargada en 0x8DCA, VRAM 0x19A0). El consumidor puede llegar a leer hasta 0x8E46 -0x8E32 mas 2x0x0A-, seis bytes mas alla de donde se acaban los 0xFF; esos seis ya son el principio del sprite de 0x8E40, y no valen 0xFF
 
 D 0xB393 0xB3B4 tabla_instaladora_de_vectores Once registros de 3 bytes [ranura][puntero]: la rutina de 0xB32E copia el puntero al vector 0xE1E6+ranura*2 y pone 0xE1EE a 1. El limite lo fija el propio codigo (cp 0Bh / ret nc), y en 0xB3B4 empieza ya la primera rutina instalable
 
@@ -1488,3 +1488,43 @@ D 0xACB4 0xACB5 ret_huerfano_acb4 Un `ret` detras del `jp` de 0xACB1
 D 0xADE7 0xADE8 ret_huerfano_ade7 Un `ret` detras del `jp` de 0xADE4
 D 0xAE37 0xAE38 ret_huerfano_ae37 Un `ret` detras del `jp` de 0xAE34
 D 0xB6B0 0xB6B1 ret_huerfano_b6b0 Un `ret` detras del que cierra la rutina que retrocede el registro de pantalla
+
+# =============================================================================
+# LOS GUIONES DE ANIMACION
+# =============================================================================
+# Van pegados detras de la plantilla del objeto que los usa, y el campo +0x0C/0D
+# de la plantilla los apunta. El formato lo dice 0x9AEC al consumirlos: PARES
+# (cuantos cuadros espera, que patron de sprite), y el par 00 00 cierra y vuelve
+# al principio. Los patrones van de cuatro en cuatro porque cada sprite de
+# 16x16 se lleva cuatro numeros de patron.
+
+D 0xAF52 0xAF58 guion_anim_sigue_derecha 03 00 / 03 04 / 00 00: dos fotogramas de tres cuadros. Lo carga 0xA6EE cuando el bicho de 0xE2ED va hacia la derecha
+D 0xAF58 0xAF5E guion_anim_sigue_izquierda 03 08 / 03 0C / 00 00: los mismos tiempos con los otros dos patrones. Lo carga 0xA6CF, el camino de la izquierda
+D 0xAF84 0xAF98 guion_anim_sin_usar Un guion entero y bien formado -diez fotogramas, patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384 palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma es lento, de rotulo o de decorado, no de bicho
+D 0xAFB0 0xAFB6 guion_anim_troncos 0A F8 / 0A FC / 00 00: dos patrones alternandose cada diez cuadros, que es el tronco rodando. Lo apunta el campo +0x0C de la plantilla de 0xAFC2, cuyo manejador es 0xA728
+D 0xAFBA 0xAFC2 inicializadores_troncos_2_y_3 Dos bloques de cuatro bytes (Y, X, patron, color) iguales entre si -6F E0 F8 06- y hermanos del de 0xAFB6, que es el primer tronco. Nadie los copia: 0xAD2E se lleva solo los cuatro del primero y 0xA745 coloca los otros dos por codigo a partir de el. O sea que los datos estan escritos y no se usan
+D 0xAFD8 0xAFDE guion_anim_cocodrilos 01 F8 / 01 FC / 00 00: los mismos dos patrones que el tronco pero cambiando cada cuadro, que es la boca del cocodrilo. Lo apunta la plantilla de 0xAFEA, manejador 0xA7F5
+D 0xB000 0xB010 guion_anim_estorbo Siete pares con esperas desiguales (2, 1, 3, 2, 2, 4, 1) entre los patrones 0xF8 y 0xFC: un parpadeo irregular. Lo apunta la plantilla de 0xB014, la del estorbo de la derecha
+
+# =============================================================================
+# LOS SPRITES DEL JUGADOR HUNDIENDOSE (el ultimo hueco del presupuesto)
+# =============================================================================
+# Seis bloques de 32 bytes, o sea tres parejas. Cada pareja son las dos capas
+# de color del jugador -las mismas dos que 0x9D03 coloca 16 pixeles por encima
+# del sprite principal-, y la copia va a 0xE138 y a 0xE15E, en RAM, NO a la
+# VRAM: 0x8BFB las copia ahi y 0x8C2F les borra parte del dibujo antes de
+# subirlas. Por eso una busqueda de estos bytes en la VRAM no los encuentra
+# nunca, ni en el titulo ni en la demo: a la VRAM no llega lo que hay aqui,
+# llega lo que queda despues de recortarlo. Eso es el hundimiento: el mismo
+# dibujo al que se le va comiendo la parte de abajo.
+# Quien mira a que lado lo dice el bit 7 de IX+0x06 en 0x8BFF, y se ve en los
+# bytes: 0x8EC0 es 0x8E40 con los bits al reves (03 contra C0), o sea el
+# espejo. La tercera pareja, 0x8E80/0x8EA0, la carga 0x8CAE.
+
+D 0x8E40 0x8E60 sprite_hundiendose_derecha_1 Primera capa del jugador mirando a la derecha. La copia 0x8C0F a 0xE138. OJO: empieza seis bytes dentro de lo que 0x8DCA puede llegar a leer como tramos de la fila 13, y esos seis bytes (00 00 00 00 03 03) son ya las dos primeras filas del dibujo, no relleno
+D 0x8E60 0x8E80 sprite_hundiendose_derecha_2 Segunda capa de la misma pose. La copia 0x8C04 a 0xE15E
+D 0x8E80 0x8EA0 sprite_hundiendose_3 Primera capa de la tercera pose, la que carga 0x8CB9 a 0xE138
+D 0x8EA0 0x8EC0 sprite_hundiendose_4 Segunda capa de esa pose, que carga 0x8CAE a 0xE15E
+D 0x8EC0 0x8EE0 sprite_hundiendose_izquierda_1 El espejo de 0x8E40, bit a bit. La copia 0x8C27 a 0xE138, y ademas 0x8330 sube sus dos mitades de 16 bytes a la VRAM 0x3D00 y 0x3AC0 cuando el jugador acaba de caer
+D 0x8EE0 0x8F00 sprite_hundiendose_izquierda_2 El espejo de 0x8E60. La copia 0x8C1C a 0xE15E, y 0x8348 sube sus mitades a la VRAM 0x3D10 y 0x3AD0
+D 0x8F00 0x8F06 reloj_inicial_duplicado Los mismos cinco tiles del reloj de salida que hay en 0x8A69 -BA B8 C2 B8 B8, que se lee "20:00"- pero con 0x00 detras en vez del divisor 0x3C. Nadie lo copia: la unica palabra del cartucho que vale 0x8F00 esta en 0xA3A3, dentro de una tabla de patrones, o sea que es coincidencia de bytes y no un puntero. Una segunda copia que se quedo sin usar
