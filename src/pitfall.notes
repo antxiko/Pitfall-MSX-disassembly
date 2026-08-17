@@ -1,7 +1,7 @@
-# Anotaciones de Pitfall! (Activision, 1984, MSX1).
-#
-# Cada linea esta anclada a una direccion, asi que los comentarios sobreviven a
-# un retrazado del binario. Directivas: L=etiqueta, C=comentario de linea,
+
+L 0x8D70 pinta_el_layout Vuelca el decorado de la escena: cuatro filas en crudo y una que se repite seis veces
+L 0xB85E revela_el_dibujo_sigue
+zado del binario. Directivas: L=etiqueta, C=comentario de linea,
 # B=cabecera de bloque, D=rango de datos.
 #
 # TODO lo que hay aqui sale de leer el codigo que lo usa, no de que "parezca".
@@ -311,7 +311,7 @@ D 0x977E 0x97FE tiles_decorado_1 128 bytes, la entrada [1] de la tabla 0xA086
 
 D 0xA086 0xA08E tabla_juegos_de_tiles Cuatro palabras: punteros a los cuatro juegos de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E [3]=0x95FE. La lee 0x9FB3 con el indice en DE, y ese indice son los BITS 6-7 DEL LFSR DE PANTALLA, que 0x9F91-0x9FA3 extrae y dobla: el mundo elige decorado con dos bits
 
-D 0xA08E 0xA096 tabla_de_layouts Cuatro palabras: punteros a los cuatro layouts de escena de abajo, [0]=0xA1EE [1]=0xA29A [2]=0xA13E [3]=0xA096. La lee 0x9FD1 y el layout lo consume L_8D70
+D 0xA08E 0xA096 tabla_de_layouts Cuatro palabras: punteros a los cuatro layouts de escena de abajo, [0]=0xA1EE [1]=0xA29A [2]=0xA13E [3]=0xA096. La lee 0x9FD1 y el layout lo consume 0x8D70
 
 # Formato del layout, medido en L_8D70 y su cola 0x8DA0-0x8DDA: 0x71 bytes en
 # crudo para la VRAM 0x188F (filas 4 a 7 del name table), 0x20 bytes de una
@@ -377,7 +377,7 @@ D 0xB56D 0xB5BE guion_sonido_b56d Veinte registros. Instalador 0xB564; cierra EX
 
 D 0xB5C7 0xB5E4 guion_sonido_b5c7 Siete registros. Instalador 0xB5BE; cierra EXACTO en 0xB5E4
 
-D 0xB632 0xB683 guion_sonido_b632 Veinte registros. Instalador 0xB5E4 (ld hl,0B632h en 0xB5E4... lo carga 0xB62E via L_B622); cierra EXACTO en 0xB683
+D 0xB632 0xB683 guion_sonido_b632 Veinte registros. Instalador 0xB5E4 (ld hl,0B632h en 0xB5E4... lo carga 0xB62E via 0xB622); cierra EXACTO en 0xB683
 
 # =============================================================================
 # TABLAS SUELTAS DE LA COLA, cada una con su consumidor leido
@@ -476,3 +476,1015 @@ C 0x87D6 y se marca: a partir de aqui 0xAAFF hara que este tesoro no vuelva a ap
 C 0x87A2 apaga la zona de peligro del tesoro, que ya no esta
 
 D 0xAE90 0xAE94 colores_del_tesoro Dos parejas (4B 00 4B 00) de las que solo se usa el primer byte de cada una: 0xAB1B copia el de 0xAE90 y 0xAB51 el de 0xAE92 a la VRAM 0x2013, el color del tile del tesoro. Los dos valen 0x4B, asi que lo que distingue a las dos barras es el patron y no el color
+
+# ---- Tramo 0x9A00-0x9FFF: el cuadro, los objetos, el marcador y el reloj ----
+
+L 0x9A88 recorre_objetos 0xE247 = cuantos hay; detras, un puntero por objeto
+L 0x9A90 recorre_objetos_bucle
+C 0x9A97 IX = la estructura del objeto
+C 0x9AAE anima
+C 0x9AB3 mueve el eje X, y con IX+6 el Y
+C 0x9AC2 bit 6 = tiene manejador propio
+C 0x9AD2 la vuelta se apila a mano: el manejador se llama con jp (hl)
+L 0x9AD7 vuelve_del_manejador
+L 0x9AD9 siguiente_objeto
+L 0x9AE0 fin_del_cuadro
+B 0x9AE0 0xC7 es `rst 0`, y 0x9AE0 es esta misma linea: el
+B 0x9AE0 codigo intenta machacarse con un reset. Esta en ROM,
+B 0x9AE0 asi que no pasa nada; solo morderia a quien copiase
+B 0x9AE0 el cartucho a RAM (?)
+C 0x9AE0 se escribe encima de si mismo, pero es ROM: no tiene efecto
+
+L 0x9AEC anima_objeto Bit 5 = animado. IX+0x0E cuenta, IX+0x0F es el fotograma
+C 0x9AF1 el contador propio de la animacion
+C 0x9AF9 IX+0x0C/0D = guion de fotogramas, pares (espera, patron)
+L 0x9B05 anima_objeto_busca
+L 0x9B09 anima_objeto_lee
+L 0x9B13 anima_objeto_guarda
+C 0x9B1B el patron nuevo, ya en la tabla de sprites (IY)
+
+L 0x9B1F mueve_objeto Bit 0 = movil. Suma IX+1/2 a la posicion
+C 0x9B24 la parte entera vive en el sprite; IX+5 es la fraccion
+C 0x9B37 bit 2 = tiene topes
+C 0x9B45 IX+3 y IX+4, los dos topes
+L 0x9B5A mueve_objeto_rebota
+C 0x9B5A bit 1 = rebota en vez de pararse
+C 0x9B60 complemento a dos: la velocidad cambia de signo
+
+L 0x9B6D reloj_de_inactividad
+B 0x9B6D APAGAR LA PANTALLA SI NADIE TOCA NADA
+B 0x9B6D Tres bytes en cascada (0xE25A/B/C), cada uno de 60. Si
+B 0x9B6D no llega entrada se van gastando; al agotarse los tres
+B 0x9B6D se apaga la pantalla y se espera a RETURN, STOP o ESC.
+C 0x9B6D bits 0-3 de 0xE05F: si hay entrada, se recarga la cuenta
+L 0x9B7D reloj_de_inactividad_cuenta
+C 0x9B8D registro 1 del VDP = 0x82: pantalla apagada
+L 0x9B93 espera_tecla_apagado
+C 0x9B99 cada 64 cuadros mira el teclado
+C 0x9BA9 fila 7, mascara 0x94 = RETURN, STOP o ESC
+L 0x9BAF vuelve_a_encender
+C 0x9BAF registro 1 = 0xE2: pantalla e interrupcion otra vez
+L 0x9BB5 espera_a_que_suelten
+
+L 0x9BCF empieza_el_final Deja un solo objeto y le mete el manejador de la despedida
+C 0x9BD1 solo queda un objeto vivo
+C 0x9BD8 el manejador de la secuencia final
+C 0x9BEF 0xE21C = 3: el cuadro ya no corre normal
+
+L 0x9BF3 lee_teclas_de_sistema
+C 0x9BF3 en demo no se lee nada
+C 0x9C0A RETURN, y solo si 0xE269 lo permite
+L 0x9C0F mira_stop_y_esc
+C 0x9C0F STOP arranca de cero por INIT
+C 0x9C18 0xE267 = por donde va el pulsar-soltar de la pausa
+L 0x9C2B pausa_espera_soltar
+L 0x9C3D pausa_segunda_pulsacion
+L 0x9C52 pausa_ultimo_soltar
+L 0x9C60 vuelve_sin_hacer_nada
+L 0x9C61 vuelve_al_titulo
+C 0x9C66 borra 0x17C bytes de estado de un golpe
+C 0x9C7C tabla de sprites a cero: se van todos de la pantalla
+
+L 0x9C94 pausa_activa Guarda cuantos objetos habia y pone cero: nada se mueve
+C 0x9C9C con un solo objeto no se puede pausar (es el final)
+L 0x9CAC pausa_reanuda
+L 0x9CD8 avanza_una_o_tres_escenas
+L 0x9CE2 mira_el_borde_izquierdo
+C 0x9CE2 0x16, y reaparece en 0xE3
+
+L 0x9D03 sprites_del_jugador Dos sprites mas, 16 pixeles por encima y con otro patron
+C 0x9D10 misma X, Y menos 16: la mitad de arriba
+C 0x9D24 los patrones de las dos capas de color
+L 0x9D30 anade_objeto Mete DE al final de la lista de 0xE247
+L 0x9D3A anade_objeto_busca_el_final
+L 0x9D3E anade_objeto_escribe
+L 0x9D42 rellena_vram_directo Escribe A en DE bytes de VRAM desde HL
+L 0x9D4B rellena_vram_directo_bucle
+
+L 0x9D54 pinta_marcador
+B 0x9D54 EL MARCADOR Y EL RELOJ
+B 0x9D54 Seis digitos sueltos en 0xE1D6-0xE1DB (0-9 en binario),
+B 0x9D54 que aqui se pasan a tiles en 0xE1DC y se vuelcan a la
+B 0x9D54 VRAM. El reloj de 0xE1D0 es distinto: ya esta guardado
+B 0x9D54 en tiles, y se cuenta atras sobre ellos.
+C 0x9D5C 0xC3 = blanco, para los ceros de delante
+C 0x9D62 en cuanto sale un digito no nulo se pasa a 0xB8 = '0'
+C 0x9D72 fila 1, columna 6 de la pantalla
+L 0x9D5E pinta_marcador_bucle
+L 0x9D64 pinta_marcador_digito
+L 0x9D7C resta_al_marcador A = que digito. Los llamantes usan 5 (una unidad) y 3 (cien)
+C 0x9D85 0xFF = se paso de cero, hay que llevarse una
+L 0x9D87 resta_al_marcador_bucle
+C 0x9D90 si la resta se lo come todo, el marcador se queda a cero
+L 0x9D9F suma_miles Suma A veces uno en el digito de los miles: los tesoros
+L 0x9DA2 suma_miles_bucle
+L 0x9DB4 suma_miles_sigue
+
+L 0x9DB8 reloj_de_partida Cuenta atras desde 20:00, un tick cada 60 cuadros
+C 0x9DB8 en pausa (0xE21C) no corre
+C 0x9DC2 0xE1D5 = cuantos cuadros faltan para el tick
+C 0x9DC9 0xB7 es el tile de antes del '0': asi se ve el prestamo
+C 0x9DD7 los segundos vuelven a 5 y 9
+C 0x9DD9 dos veces, porque en medio esta el ':'
+C 0x9DE8 al llegar la decena de minutos a '0' se pone 0xC4 (?)
+L 0x9DEA mira_si_se_acabo
+C 0x9DEA 0xC3 en la decena de minutos = se acabo el tiempo
+L 0x9DF1 pinta_reloj
+C 0x9DF4 fila 3, columna 7
+L 0x9DFE se_acabo_el_tiempo
+C 0x9E01 el reloj se deja clavado en 00:00
+
+L 0x9E0E anima_el_final
+C 0x9E12 0xE346 cuenta, 0xE347 recarga, 0xE348 es el fotograma
+L 0x9E36 anima_el_final_vram
+C 0x9E36 14 tiras de 8 bytes desde 0xA33E, con paso de 0x12 en la VRAM
+L 0x9E3F anima_el_final_bucle
+C 0x9E67 diez fotogramas y vuelta a empezar
+L 0x9E74 sprites_del_final Cuatro sprites que van saliendo segun avanza 0xE348
+L 0x9E8F sprites_del_final_coloca
+C 0x9E8F Y = 0xBC menos el fotograma: suben poco a poco
+C 0x9E9C el color de cada uno
+
+L 0x9EE6 monta_la_escena
+C 0x9EE6 se guarda el tipo anterior en 0xE226
+C 0x9EEF bits 0-2 del registro de pantalla = la variante
+C 0x9EFB bits 3-5 = el tipo de escena, 0..7
+C 0x9F2F tres objetos de salida: el jugador y sus dos capas
+C 0x9F62 la tabla de sprites entera a la VRAM
+L 0x9F10 monta_la_escena_repinta
+L 0x9F13 monta_la_escena_sigue
+
+# ---- Tramo 0xA400-0xAEFF: la liana, los troncos, los cocodrilos y el hoyo ----
+
+B 0xA43A ############################################################
+B 0xA43A LAS CAJAS DE COLISION, que es como el juego sabe que te pasa
+B 0xA43A ############################################################
+B 0xA43A 0xE229-0xE243 son registros de TRES bytes: clase, X izquierda
+B 0xA43A y X derecha. Las rutinas de escena escriben las suyas al montar
+B 0xA43A la pantalla, y 0x84EF, 0x8529 y 0x8589 las recorren con la X
+B 0xA43A del jugador mas 8. La clase elige manejador en la tabla 0x8AA0.
+B 0xA43A   0  apagada     0x87A2 la borra al coger el tesoro
+B 0xA43A   1  tronco      A751 A793 A7D7 -> 8640, resta dos puntos
+B 0xA43A   2  suelo       8D1B 8D35 A9F3 -> 8751
+B 0xA43A   3  charca      A8FC A938 AC91 -> 8361
+B 0xA43A   4  cocodrilo   A828 A841 A85A ADCA -> 8361, el mismo
+B 0xA43A   5  liana       A5B8 -> 8162
+B 0xA43A   6  mata        AAA2 AAEA -> 8221
+B 0xA43A   7  no se escribe nunca, y su entrada apunta a 874B
+B 0xA43A   8  tesoro      ABA2 ABFC AC56 -> 878C
+B 0xA43A   9  mata        A6B1 -> 8221
+B 0xA43A  10  escalera    A9B7 A9D6 -> 85EF, se baja al subterraneo
+B 0xA43A Las clases 2, 3 y 4 ajustan la Y del jugador en 0x8529: hacen
+B 0xA43A de suelo. Comprobado que la 7 no la escribe nadie: no hay un
+B 0xA43A solo `ld (ix+000h),007h` en todo el cartucho.
+
+L 0xA43A borra_dibujo_liana Pone a cero los 0x40 bytes de 0xE18A
+L 0xA448 pinta_punto_liana X en H, Y en C, sobre el mapa de bits de IY
+C 0xA44E de la fila 8 en adelante se salta al segundo patron
+L 0xA463 pinta_punto_liana_mascara
+C 0xA463 rota el bit hasta la columna que toca
+
+L 0xA471 mueve_la_liana
+B 0xA471 LA LIANA SE DIBUJA, NO SE GUARDA
+B 0xA471 No hay dibujos de liana en el cartucho: en cada paso se
+B 0xA471 traza una recta de 16 puntos sobre un mapa de bits en
+B 0xA471 0xE18A y se manda a la VRAM como patron de sprite. La
+B 0xA471 inclinacion sale de la tabla de 0xA61A indexada por la
+B 0xA471 fase (0xE1CB), que va y viene entre 1 y 0x20.
+C 0xA471 bit 7 = esta escena tiene liana
+C 0xA480 0xE1CB es la fase del balanceo, y cada una son 4 bytes
+C 0xA49B bit 7 de 0xE32F+0x16 = hacia que lado cae
+L 0xA4A8 mueve_la_liana_extremo
+C 0xA4A8 veinte veces la pendiente: el punto de abajo del todo
+L 0xA4D0 mueve_la_liana_bucle
+C 0xA4D0 dieciseis filas, una por linea del patron
+L 0xA4E8 mueve_la_liana_sprite2
+L 0xA511 mueve_la_liana_sprite3
+L 0xA530 mueve_la_liana_agarre
+C 0xA540 0xE1CD = la X donde se agarra el jugador
+L 0xA57F mueve_la_liana_vuelca
+L 0xA594 mueve_la_liana_a_vram
+C 0xA597 los dos patrones de sprite de la cuerda
+C 0xA5B8 la caja de la liana, clase 5
+L 0xA5EF mueve_la_liana_vuelve
+C 0xA5EF a 0x20 se acabo la ida y empieza la vuelta
+L 0xA5F9 lleva_al_jugador_colgado
+C 0xA5F9 mientras vas colgado, tu X la manda la liana
+
+L 0xA69E sigue_al_jugador Manejador de 0xE2ED: se acerca a la X del jugador
+C 0xA6A5 0xE292 es donde esta el bicho
+C 0xA6B1 su caja, clase 9
+C 0xA6C6 compara su X con la del jugador y decide el lado
+L 0xA6EA sigue_al_jugador_derecha
+L 0xA70A sigue_al_jugador_para
+C 0xA70A justo encima: se queda quieto
+
+L 0xA728 mueve_los_troncos Manejador de 0xE303
+C 0xA732 con variante 4 o mas los troncos no giran
+C 0xA751 caja del primer tronco, clase 1
+L 0xA741 mueve_los_troncos_quieto
+L 0xA745 coloca_los_troncos
+C 0xA763 los otros dos solo salen si la variante lo pide
+C 0xA7D7 caja del tercer tronco
+
+L 0xA7F5 mueve_los_cocodrilos Manejador de 0xE303 en la laguna: tres bocas
+C 0xA80C anchura de cada boca cerrada
+C 0xA812 0xFC = boca abierta, y entonces la caja crece
+L 0xA822 cocodrilos_cajas
+C 0xA828 los tres van en 0x50, 0x6F y 0x88, clase 4
+
+L 0xA870 abre_el_hoyo Manejador de 0xE2BF: pinta el hoyo mientras se ensancha
+B 0xA870 EL HOYO QUE SE ABRE Y SE CIERRA
+B 0xA870 0xE133 es lo ancho que esta (1 a 8) y 0xE132 hacia donde
+B 0xA870 va. Se pinta con cuatro tiras de tiles de 0xB0D0 cuya
+B 0xA870 longitud es esa anchura, y la caja de clase 3 se estira
+B 0xA870 con ella. El periodo del objeto alterna entre 0x96 y
+B 0xA870 0x44: abierto mas rato que cerrado.
+C 0xA874 mientras se mueve, un paso por cuadro
+C 0xA8FC la caja del hoyo, clase 3
+C 0xA911 al llegar a cero cambia de sentido
+L 0xA923 cierra_el_hoyo
+C 0xA952 a 8 se para: hoyo del todo abierto
+L 0xA962 hoyo_sin_pintar Igual que 0xA870 pero solo mueve la caja
+L 0xA987 hoyo_sin_pintar_cierra
+
+L 0xA99F despacha_por_variante HL = tabla, A = variante (0xE224)
+L 0xA9D0 hoyos_escalera_izquierda
+C 0xA9B7 la escalera, clase 10: por aqui se baja al subterraneo
+C 0xA9BB centrada en 0xD8 cuando son tres hoyos
+C 0xA9DA y en 0x31 cuando es uno
+L 0xA9ED hoyos_carga_sprites
+C 0xA9F3 caja clase 2
+C 0xAA37 se duplican patrones para tener la pareja de sprites
+
+L 0xAE13 monta_objeto_de_escena Comun a los tipos 5, 6 y 7
+C 0xAE24 la tabla de variantes: la 0xAEA4 solo para el tipo 5
+L 0xAE31 monta_objeto_de_escena_despacha
+L 0xAE38 monta_la_liana La llaman los tipos 2, 3 y 6
+L 0xAE46 monta_la_liana_objeto
+C 0xAE4E la plantilla del objeto de la liana
+C 0xAE56 y su manejador
+C 0xAE63 los tres sprites de la cuerda, uno debajo de otro
+
+# Anotaciones del tramo 0x8000-0x99FF de Pitfall! (Activision, 1984, MSX1).
+# Solo directivas L/C/B. Todas las L existen como L_XXXX en src/pitfall.asm
+# (verificado con grep). Nada de esto se ha escrito en src/.
+#
+# LO QUE SE HA AVERIGUADO EN ESTE TRAMO, y de donde sale:
+#
+# * 0xE05F es la ENTRADA, en formato de joystick del PSG: bit0 arriba,
+#   bit1 abajo, bit2 izquierda, bit3 derecha, bit4/5 los disparos. Se
+#   comprueba siguiendo el remapeo de teclado de 0xB26E: mete la fila 8
+#   (bit5 arriba, bit6 abajo, bit7 izquierda, bit0 espacio) en los bits
+#   0-4 con tres rlca y and 0x1F, y sale exactamente ese orden.
+#
+# * 0xE012 son LAS VIDAS QUE QUEDAN. 0x8A54 las pone a 2 al empezar,
+#   0x8975 resta una y 0x89A8 las pinta.
+#
+# * 0xE1D0-0xE1D4 es EL RELOJ y 0xE1D6-0xE1DB EL MARCADOR, los dos en la
+#   RAM. Los inicializadores lo confirman byte a byte: 0x8A69 vale
+#   BA B8 C2 B8 B8 = tiles "2 0 : 0 0", o sea 20:00, y 0x8A6F vale
+#   00 00 02 00 00 00 = 2000 puntos, que es la cifra que ya estaba
+#   documentada como marcador de salida.
+#
+# * IX+0x16 bit 0 dice DONDE ESTA EL JUGADOR: 1 en la superficie, 0 en
+#   el subterraneo. 0xACE4 lo pone a 1 al empezar la partida, 0x8751 lo
+#   apaga al caer por un hoyo y 0x849A lo enciende al salir de el.
+#
+# * Los sprites de mirar a la izquierda NO estan en la ROM: se fabrican
+#   al arrancar espejando los de mirar a la derecha (0x8B5E/0x8BC1). Los
+#   guiones de animacion lo cuadran: andar a la derecha usa los patrones
+#   0x20..0x30 y andar a la izquierda los 0x44..0x54, y 0x20+0x24 = 0x44,
+#   que es justo el desplazamiento de nueve sprites de cuatro patrones.
+#
+# * 0x8AE1, 0x8AED y 0x8AF9 (dentro del rango que las notas llaman
+#   tabla_de_incrementos) NO son incrementos: son GUIONES DE ANIMACION,
+#   parejas [duracion][patron] cerradas por 00 00. 0x8AE1 = andar a la
+#   derecha (03 20 / 03 24 / 03 28 / 03 2C / 03 30), 0x8AED = andar a la
+#   izquierda (03 44 ... 03 54), 0x8AF9 = trepar (01 3C / 01 60). Los
+#   cargan 0x892D, 0x8903 y 0x8411 en IX+0x0C/0x0D. La curva del salto
+#   propiamente dicha ocupa 0x8AB6-0x8AD7.
+#
+# * PENDIENTE, y aqui hay 186 bytes de los 192 sin explicar de
+#   0x8E46-0x8F05: son SEIS PATRONES DE SPRITE de 0x20 bytes en crudo,
+#   en 0x8E40, 0x8E60, 0x8E80, 0x8EA0, 0x8EC0 y 0x8EE0 (los dos ultimos
+#   con sus mitades en 0x8ED0 y 0x8EF0). Los copia 0x8BFB a los buferes
+#   de RAM 0xE138/0xE15E (0x8E40+0x8E60 mirando a la derecha,
+#   0x8EC0+0x8EE0 a la izquierda), 0x8CAB carga 0x8E80+0x8EA0, y 0x8314
+#   los manda a la VRAM 0x3D00/0x3AC0/0x3D10/0x3AD0. El primero arranca
+#   en 0x8E40, seis bytes DENTRO de tabla_tramos_fila13 (0x8E32-0x8E46),
+#   que son 0xFF: los dos bloques comparten esos seis bytes.
+
+# =============================================================================
+# ARRANQUE
+# =============================================================================
+
+B 0x8013 Borra 0xE000-0xEFFF, engancha 0x80F7 en H.KEYI y cae
+B 0x8013 en 0x8065. El bucle de 0x80F5 no hace nada mas: el
+B 0x8013 juego entero corre dentro de la interrupcion
+C 0x8017 0x1000 bytes: 0xE000-0xEFFF entero
+L 0x801A borra_la_ram_bucle
+C 0x8023 la pila, justo debajo del estado del juego
+C 0x802B PPI puerto C: fila 0 del teclado, motor y click apagados
+C 0x8030 registro 1 del VDP a 0x80: pantalla apagada
+C 0x8033 B es el valor y C el registro
+C 0x8036 registro 7: el color del borde
+C 0x803C los tres bytes de 0x8010 al gancho H.KEYI
+C 0x8047 registro 1 a 0xE2: pantalla encendida e interrupcion de cuadro
+C 0x805C la presentacion; al volver, 0x805F borra los 16 KB de VRAM
+
+L 0x8065 arranca_la_partida
+B 0x8065 Cada partida empieza aqui, tambien la segunda: 0x9C91
+B 0x8065 salta a esta direccion al pulsar RETURN en el final
+C 0x8075 la semilla del registro de pantalla: la primera escena
+C 0x808E la plantilla de objeto de 0xB02A a 0xE2BF
+C 0x809F monta la escena y la pinta
+
+L 0x80F5 espera_a_la_interrupcion
+C 0x80F5 se queda aqui para siempre: todo pasa en el gancho
+
+C 0x8103 los 0x54 bytes de atributos de sprite, de un golpe
+C 0x811A lee el estado del VDP: asi se reconoce la interrupcion
+
+# =============================================================================
+# EL JUGADOR: objeto 0xE2D5, sprite 0xE2A2
+# =============================================================================
+# Reparto de la estructura, leido en el recorrido de objetos de 0x9A88:
+# +0x00 banderas (bit0 movil, bit5 animado, bit6 tiene manejador), +0x07/8
+# velocidad, +0x0C/D guion de animacion, +0x0E/F contador y fotograma,
+# +0x10/11 periodo y cuenta, +0x12/13 manejador, +0x14/15 sus atributos de
+# sprite (IY), +0x16 banderas del jugador, +0x17 el paso del salto.
+# En IY: +0 la Y, +1 la X, +2 el patron, +3 el color.
+
+L 0x8125 espera_a_que_arranques   Manejador de salida: la animacion corre hasta que se pulsa una direccion
+C 0x8128 bits 0-3 de 0xE05F: las cuatro direcciones
+C 0x8132 a partir de aqui manda el manejador normal
+C 0x8140 0xE21C a cero: el cuadro ya corre entero
+
+L 0x8162 agarra_la_liana   Clase 5
+C 0x8184 0xE1CC y 0xE1CD, donde esta la liana ahora mismo
+L 0x819F agarra_la_liana_derecha
+
+L 0x81A4 columpia_en_la_liana
+C 0x81A7 sin el bit 1 (abajo) no se suelta
+C 0x81BD velocidad hacia la derecha, en 1/256 de pixel por cuadro
+L 0x81BD columpia_hacia_la_derecha
+L 0x81CA columpia_hacia_la_izquierda
+L 0x81D5 columpia_arranca
+L 0x81F9 suelta_la_liana   Cae al vacio con el manejador del aire
+
+# =============================================================================
+# PERDER UNA VIDA Y VOLVER
+# =============================================================================
+
+B 0x8221 Morir no repinta la escena: se esconde todo lo demas,
+B 0x8221 el jugador se dibuja por trozos hasta reaparecer
+B 0x8221 entero y cae al suelo. 0xE189 guarda cuantos objetos
+B 0x8221 habia para devolverlos al final
+L 0x8221 muere   Clases 6 y 9
+C 0x822D guarda cuantos objetos habia y deja uno: nada mas se mueve
+L 0x8240 muere_repinta_vidas
+L 0x8243 reaparece
+C 0x826A X = 0x20: reaparece pegado al borde izquierdo
+C 0x8280 bit 0 de IX+0x16: 1 en la superficie, 0 en el subterraneo
+C 0x8291 0xE1CF es la Y del suelo: 0xA4 abajo, 0x6C arriba
+L 0x8295 reaparece_arriba
+L 0x829F reaparece_cae
+L 0x82C5 reaparece_cuenta
+C 0x82CC 0xE184 baja de 0x1B a 0 mientras el jugador se dibuja
+L 0x82D9 reaparece_cuenta_sigue
+L 0x82E7 reaparece_termina
+C 0x82E7 devuelve los objetos que se habian escondido
+L 0x8314 cae_hasta_el_suelo
+C 0x831B cae hasta llegar a la Y del suelo
+
+L 0x8361 se_hunde   Clases 3 (charca) y 4 (cocodrilo)
+C 0x8377 tambien esconde los objetos hasta que acabe
+L 0x8393 se_hunde_paso
+C 0x83A7 baja un pixel por cuadro hasta la Y 0x7A
+L 0x83A0 se_hunde_borra
+L 0x83B9 se_hunde_termina
+
+# =============================================================================
+# LA ESCALERA
+# =============================================================================
+
+B 0x83D4 La escalera no tiene caja de colision: se comprueba a
+B 0x83D4 mano que la escena sea de las de hoyos y que la X del
+B 0x83D4 jugador caiga en 0x70-0x88, que es donde el guion de
+B 0x83D4 celdas 0x8F06 pinta la columna
+L 0x83D4 mira_la_escalera
+C 0x83DB solo los modos 0 y 1 tienen escalera
+C 0x83E8 la X de la columna de la escalera
+C 0x83F7 baja: apaga el bit de superficie
+L 0x8401 mira_la_escalera_sube
+L 0x8408 agarra_la_escalera
+C 0x8411 el guion de dos fotogramas de 0x8AF9: trepar
+C 0x8426 periodo 7: se trepa despacio
+L 0x8447 trepa_la_escalera
+C 0x8452 por encima de 0x83 hay que mirar los troncos
+C 0x845A a la altura 0x7B se puede salir del hoyo por los lados
+L 0x846C trepa_la_escalera_baja
+L 0x8483 trepa_llega_al_subsuelo
+C 0x848D el suelo del subterraneo esta en 0xA5
+L 0x849A sale_del_hoyo
+L 0x84E1 sale_del_hoyo_derecha
+
+L 0x84EF mira_los_troncos   Solo mientras se trepa
+C 0x84F4 0xE232, 0xE235 y 0xE238: las cajas de los tres troncos
+C 0x8501 sonido 10, el del golpe
+C 0x8506 el digito 5 dos veces: dos puntos menos
+C 0x851A y de vuelta escalera abajo
+L 0x84F9 mira_los_troncos_bucle
+L 0x8522 mira_los_troncos_siguiente
+
+# =============================================================================
+# LAS CAJAS DE COLISION
+# =============================================================================
+
+B 0x8529 0xE229-0xE243 son diez cajas de tres bytes: clase, X
+B 0x8529 izquierda y X derecha. Las escriben las escenas de
+B 0x8529 0xA5xx-0xACxx en cada cambio de pantalla, y de la 0 a
+B 0x8529 la 6 son de la superficie y la 8 y la 9 del subterraneo
+L 0x8529 mira_colisiones
+C 0x8530 la X del centro del jugador
+C 0x853A siete cajas arriba; abajo solo las dos de 0xE241
+C 0x8555 las clases 2, 3 y 4 empujan al jugador fuera de la caja
+C 0x8580 la clase 10 no vuelve al llamante: salta derecha a rebotar
+L 0x853A mira_colisiones_tabla
+L 0x854A mira_colisiones_bucle
+L 0x856C mira_colisiones_empuja_a_la_izquierda
+L 0x857B mira_colisiones_devuelve_la_clase
+L 0x8583 mira_colisiones_siguiente
+L 0x8588 mira_colisiones_vuelve
+
+L 0x8589 mira_colisiones_en_el_aire   La misma busqueda sobre 0xE23B, desde el salto
+C 0x85BC a mas de dos pixeles del suelo no se engancha nada
+L 0x859A mira_colisiones_en_el_aire_tabla
+L 0x85A8 mira_colisiones_en_el_aire_bucle
+L 0x85D2 mira_colisiones_en_el_aire_devuelve
+L 0x85D4 mira_colisiones_en_el_aire_siguiente
+L 0x85D7 mira_colisiones_en_el_aire_nada
+L 0x85D9 alcanza_la_liana
+C 0x85D9 la liana solo se agarra entre 7 y 20 pixeles por debajo de su Y
+
+L 0x85EF rebota_y_retrocede   Clase 10
+C 0x85F2 parado no rebota
+C 0x8613 le da la vuelta a la velocidad y retrocede tres pasos
+C 0x8631 bit 1 de IX+0x16: ademas se da la vuelta
+L 0x8600 rebota_y_retrocede_calcula
+
+# =============================================================================
+# EL TRONCO
+# =============================================================================
+
+B 0x8640 La clase 1 es la unica que no mata: te tumba y te va
+B 0x8640 restando un punto por cuadro mientras te pisa. Se sale
+B 0x8640 andando, y en cuanto la caja deja de dar clase 1 se
+B 0x8640 vuelve al manejador normal
+L 0x8640 arrollado_por_el_tronco   Clase 1
+C 0x8657 0xE268: repite el sonido 4 cada 0x20 cuadros
+L 0x8660 arrollado_pierde_puntos
+C 0x8674 un punto menos por cuadro
+L 0x8674 arrollado_resta
+L 0x8691 arrollado_patron_derecha
+L 0x8695 arrollado_mira_la_entrada
+C 0x8695 de la variante 4 en adelante todavia se puede mover de lado
+L 0x86BA arrollado_hacia_la_derecha
+L 0x86CF arrollado_comprueba
+
+L 0x86E3 cae_por_el_hoyo
+C 0x86EA 0xA5 es el fondo, y alli se recupera el mando
+L 0x8705 cae_por_el_hoyo_medio
+L 0x8714 cae_por_el_hoyo_medio_derecha
+L 0x8719 cae_por_el_hoyo_arriba
+L 0x872A cae_por_el_hoyo_arriba_derecha
+
+# =============================================================================
+# EL MANEJADOR NORMAL Y EL DESPACHADOR DE CLASES
+# =============================================================================
+
+B 0x872F Cada cuadro: anda, mira el boton, mira la escalera y
+B 0x872F mira las cajas. La clase que sale de 0x8529 es la que
+B 0x872F decide todo lo demas
+L 0x872F jugador
+C 0x8738 la clase que devuelve va derecha al despachador
+
+B 0x873B LAS DIEZ CLASES DE COLISION. La tabla es 0x8AA0 y el
+B 0x873B indice es la clase; la 0 no salta a ningun sitio.
+B 0x873B   1 tronco 8640    2 hoyo 8751     3 charca 8361
+B 0x873B   4 cocodrilo 8361 5 liana 8162    6 muerte 8221
+B 0x873B   7 sin uso 874B   8 tesoro 878C   9 muerte 8221
+B 0x873B  10 rebote 85EF
+L 0x873B despacha_la_clase
+L 0x874B deja_un_solo_objeto   Clase 7: nadie la escribe
+
+L 0x8751 cae_en_el_hoyo   Clase 2
+C 0x8762 apaga el bit de superficie: se acaba en el subterraneo
+C 0x8781 el digito 3: cien puntos menos por caer
+
+L 0x87CF marca_el_tesoro_monta_el_bit
+L 0x87D3 marca_el_tesoro_bucle
+L 0x87D6 marca_el_tesoro_guarda
+
+# =============================================================================
+# EL SALTO
+# =============================================================================
+
+B 0x8820 IX+0x17 cuenta de 0x1F a 0 y ese numero es el indice
+B 0x8820 en la curva de 0x8AB6, que se lee del final al
+B 0x8820 principio: 0xFF sube un pixel, 0x01 baja, 0x00 se
+B 0x8820 queda. No hay velocidad vertical, hay tabla
+L 0x87DD mira_el_boton
+C 0x87E0 bits 4 y 5 de 0xE05F: los dos disparos
+C 0x87E9 con el boton mantenido no se vuelve a saltar
+L 0x87E9 empieza_el_salto
+L 0x881B empieza_el_salto_derecha
+L 0x8820 en_el_aire
+C 0x882A la curva del salto, indexada por el paso que queda
+C 0x8835 el valor se suma a la Y: 0xFF sube, 0x01 baja
+C 0x884F al llegar a cero se aterriza
+L 0x8831 en_el_aire_busca_la_curva
+L 0x884B en_el_aire_patron_derecha
+L 0x884F en_el_aire_sigue
+L 0x885F en_el_aire_aterriza
+L 0x8886 en_el_aire_gira
+C 0x8896 solo se gira en los tres primeros pasos del salto
+C 0x88C3 recupera el avance perdido al cambiar de sentido
+L 0x88B9 en_el_aire_gira_guarda
+L 0x88D5 en_el_aire_gira_recupera
+
+# =============================================================================
+# ANDAR
+# =============================================================================
+
+L 0x88DF sonido_de_los_pasos
+C 0x88E8 sonido 3, el de las pisadas
+L 0x88ED anda
+C 0x8903 el guion de andar a la izquierda
+C 0x892D y el de andar a la derecha
+L 0x891E anda_a_la_derecha
+L 0x8948 se_para
+L 0x8970 se_para_derecha
+
+# =============================================================================
+# VIDAS, MARCADOR Y ARRANQUE DE PARTIDA
+# =============================================================================
+
+L 0x8975 quita_una_vida
+C 0x8975 0xE012 son las vidas que quedan
+C 0x897D si no ha habido acarreo aun queda alguna
+C 0x89A6 sin vidas se come el retorno: el jugador pasa a 0x9E0E
+
+B 0x89A8 Las vidas se ven de dos maneras a la vez: tres tiles
+B 0x89A8 en las filas 2 y 3, y el color de los sprites 12 y 13,
+B 0x89A8 que se pone a 0 -transparente- cuando esa vida se acaba
+L 0x89A8 pinta_las_vidas
+C 0x89AB tres filas de tiles distintas segun queden 0, 1 o 2
+C 0x89B2 color 0: ese sprite deja de verse
+L 0x89DA pinta_las_vidas_vram
+
+L 0x89F3 borra_las_cajas
+C 0x89FB 0x1E bytes: las diez cajas de tres
+
+B 0x8A01 El estado de una partida nueva: marcador a 2000,
+B 0x8A01 reloj a 20:00 y dos vidas de repuesto
+L 0x8A01 prepara_la_partida
+C 0x8A01 los 32 colores iniciales a la VRAM 0x2000
+C 0x8A1D 0xE1D0: los tiles BA B8 C2 B8 B8, o sea 20:00
+C 0x8A28 0xE1D6: los digitos 0 0 2 0 0 0, o sea 2000 puntos
+C 0x8A52 dos vidas de repuesto
+C 0x8A5D tres contadores a 60 cuadros
+
+# =============================================================================
+# CARGA DE PANTALLA Y DE SPRITES
+# =============================================================================
+
+B 0x8AFF Deja la pantalla lista: borra el name table,
+B 0x8AFF descomprime los patrones de tile y fabrica los
+B 0x8AFF espejados sin gastar ROM en dibujarlos dos veces
+L 0x8AFF prepara_la_pantalla
+C 0x8AFF 0x300 bytes: el name table entero al tile 0x2C
+C 0x8B10 las siete primeras filas, al tile 0x38
+C 0x8B2A B1D1 invierte los bits de cada patron: espejo horizontal
+C 0x8B42 B20B cruza los bytes: espejo vertical
+C 0x8B51 catorce tiles a la fila 23
+
+B 0x8B5E Los sprites solo estan dibujados mirando a la derecha.
+B 0x8B5E Los de mirar a la izquierda se fabrican aqui espejando
+B 0x8B5E los otros, nueve de golpe por bloque
+L 0x8B5E carga_los_sprites
+C 0x8B66 nueve sprites del patron 0x20 al 0x44, que es el mismo del reves
+
+B 0x8B92 Los patrones del jugador se montan en RAM (0xE138 y
+B 0x8B92 0xE15E) para poder borrarlos a trozos: asi se ve como
+B 0x8B92 se hunde en la charca y como reaparece despues
+L 0x8B92 borra_parte_del_patron
+C 0x8B95 0xE185 dice desde que byte y 0xE184 cuantos
+L 0x8BA4 borra_parte_del_patron_bucle
+L 0x8BA9 borra_parte_del_patron_segundo
+L 0x8BBB borra_parte_del_patron_segundo_bucle
+L 0x8BC0 borra_parte_del_patron_vuelve
+
+B 0x8BC1 Un sprite de 16x16 son dos mitades de 16 bytes, asi
+B 0x8BC1 que para espejarlo no basta con invertir los bits:
+B 0x8BC1 hay que cruzar ademas las dos mitades
+L 0x8BC1 espeja_nueve_sprites
+C 0x8BC2 numero de patron por 8 mas 0x3800: la tabla de sprites
+L 0x8BD0 espeja_nueve_sprites_bucle
+
+L 0x8BFB patron_hundiendose
+C 0x8BFB bit 7 de IX+0x06: hacia donde mira
+C 0x8C04 patrones en crudo de 0x8E40 y 0x8E60, sin comprimir
+L 0x8C19 patron_hundiendose_izquierda
+L 0x8C2F patron_hundiendose_vram
+L 0x8C72 patron_hundiendose_vram_izquierda
+L 0x8CA6 patron_hundiendose_vuelve
+L 0x8CAB patron_reapareciendo
+
+# =============================================================================
+# PINTAR LA ESCENA
+# =============================================================================
+
+L 0x8D01 pinta_los_hoyos
+C 0x8D04 el modo 1 es el que lleva hoyos; el 0 pinta el bloque entero
+C 0x8D1B clase 2: por aqui se cae al subterraneo
+C 0x8D1F dos hoyos, centrados en 0x54 y 0xA3, de 0x11 de ancho
+L 0x8D0F pinta_los_hoyos_con_cajas
+L 0x8D4A pinta_la_escalera_b
+L 0x8D5D pinta_la_escalera_a
+
+L 0x8D70 pinta_el_layout
+C 0x8D71 filas 4-7 del name table, en crudo
+C 0x8D82 una sola fila que se repite seis veces
+C 0x8DA7 el byte del tramo es a la vez desplazamiento, longitud y avance
+C 0x8DDA y al final, el guion de celdas que cierra el layout
+L 0x8D84 pinta_el_layout_filas
+L 0x8DA0 pinta_el_layout_fila12
+L 0x8DC3 pinta_el_layout_fila13
+
+B 0x8DDE El subsuelo de fondo, filas 14 a 22 con un tile fijo
+B 0x8DDE cada franja. Solo se repinta al entrar o salir de las
+B 0x8DDE escenas de hoyos, que pintan el suyo propio encima
+L 0x8DDE pinta_el_subsuelo
+C 0x8DE8 filas 14-15 al tile 0x30
+C 0x8DF7 filas 16-17 al 0x40
+C 0x8E06 filas 18-21 al 0x2C
+C 0x8E15 fila 22 al 0x48
+
+# Anotaciones del tramo 0xB000-0xBFFF de Pitfall! (Activision, 1984).
+# Todo sale de leer el codigo y de comprobar con grep quien llama a que.
+# Lo que es suposicion va con "(?)".
+
+# =============================================================================
+# LA CAPA DE VDP (0xB113-0xB248)
+# =============================================================================
+
+B 0xB113 ############################################################
+B 0xB113 LA CAPA DE VDP
+B 0xB113 ############################################################
+B 0xB113 Puerto 0x98 datos, 0x99 direccion y registros. Fuera de este
+B 0xB113 bloque solo tocan el VDP 0x811A y 0x9D44.
+
+L 0xB113 borra_la_vram   Los 16 KB de VRAM a cero. La llama INIT dos veces
+
+B 0xB11E El mismo descompresor que 0xB142 pero escribiendo en RAM.
+B 0xB11E NADIE lo llama: ni un call, ni un salto, ni un puntero.
+L 0xB11E descomprime_rle_a_ram   Gemelo de 0xB142 que escribe en RAM; sin uso
+L 0xB12D descomprime_rle_a_ram_repite
+L 0xB133 descomprime_rle_a_ram_literales
+L 0xB13B descomprime_rle_a_ram_salta
+L 0xB13F descomprime_rle_a_ram_sigue
+
+L 0xB142 descomprime_rle_a_vram   Vuelca a la VRAM el bloque RLE apuntado por HL
+C 0xB142 los dos primeros bytes del bloque: la direccion de VRAM
+C 0xB149 +0x40 = marcar escritura; D se guarda ya con el bit puesto
+L 0xB14E descomprime_rle_siguiente_token
+L 0xB14F descomprime_rle_token
+C 0xB150 contador en los 6 bits bajos; 0 termina
+C 0xB154 bit 7 salta N, bit 6 N literales, ninguno repite N veces
+L 0xB15E descomprime_rle_repite
+C 0xB161 los dos nop son el retardo que pide el VDP entre escrituras
+L 0xB167 descomprime_rle_literales
+L 0xB170 descomprime_rle_salta
+L 0xB174 descomprime_rle_redirecciona
+
+L 0xB17C escribe_registro_vdp   B = valor, C = numero de registro
+C 0xB180 el 0x80 convierte el numero en el comando del VDP
+L 0xB185 direcciona_vram_escritura
+C 0xB189 bit 14 a 1: escritura
+C 0xB18D push/pop af: retardo obligado antes de tocar el puerto de datos
+L 0xB190 direcciona_vram_lectura
+L 0xB199 escribe_byte_en_vram   Sin uso: nadie la llama
+L 0xB1A1 lee_byte_de_vram   Sin uso: nadie la llama
+L 0xB1A7 rellena_vram   HL destino, BC cuantos, A valor
+L 0xB1AC rellena_vram_bucle
+L 0xB1B6 lee_bloque_de_vram   VRAM HL -> RAM DE, BC bytes
+L 0xB1B9 lee_bloque_de_vram_bucle
+L 0xB1C3 copia_bloque_a_vram   RAM HL -> VRAM DE, BC bytes
+L 0xB1C7 copia_bloque_a_vram_bucle
+
+B 0xB1D1 Invierte cada byte bit a bit: la fila queda del reves, o sea
+B 0xB1D1 el dibujo en ESPEJO. Asi el cartucho guarda media pareja.
+L 0xB1D1 copia_patrones_en_espejo   BC patrones de VRAM HL a VRAM DE
+C 0xB1E4 rr saca el bit 0 y rl a lo mete por el bit 0: A acaba invertido
+L 0xB1E2 copia_patrones_en_espejo_fila
+L 0xB1E4 copia_patrones_en_espejo_bits
+
+B 0xB20B Igual que 0xB1D1 pero cambiando el orden de los ocho bytes:
+B 0xB20B el patron queda volteado en VERTICAL.
+L 0xB20B copia_patrones_volteados   BC patrones de VRAM HL a VRAM DE
+C 0xB21A el primero contra el ultimo, cuatro intercambios
+L 0xB220 copia_patrones_volteados_bucle
+
+# =============================================================================
+# LA ENTRADA (0xB249-0xB2F9)
+# =============================================================================
+
+L 0xB249 lee_joysticks   Los dos puertos, a 0xE05F y 0xE061
+C 0xB249 registro 15 del PSG: seleccion del puerto de mando
+C 0xB24D 0xAF: bit 6 a 0, puerto 1
+C 0xB257 el PSG los entrega al reves; cpl deja 1 = pulsado
+C 0xB25F 0xDF: bit 6 a 1, puerto 2
+
+B 0xB26E La fila 8 del teclado -espacio y cursores- se recoloca bit a
+B 0xB26E bit hasta quedar en formato de joystick, y se mezcla con los
+B 0xB26E dos mandos: teclado y palanca son la misma cosa.
+L 0xB26E lee_teclado_como_joystick
+C 0xB26E fila 8 por el PPI: 0xAA selecciona, 0xA9 lee
+C 0xB279 bit 0, espacio -> disparo (bit 1)
+C 0xB281 bit 7, derecha -> bit 0
+C 0xB289 bit 4, izquierda -> bit 7
+C 0xB28F tres rotaciones y 0x1F: 0 arriba 1 abajo 2 izq 3 der 4 disparo
+L 0xB27F lee_teclado_como_joystick_derecha
+L 0xB287 lee_teclado_como_joystick_izquierda
+L 0xB28F lee_teclado_como_joystick_monta
+
+B 0xB2A4 Explorador de teclado con antirrebote y codigo de tecla.
+B 0xB2A4 NADIE lo llama, ni el ni las dos de debajo: biblioteca
+B 0xB2A4 que quedo dentro sin usarse.
+L 0xB2A4 explora_el_teclado   Nueve filas; la tecla nueva a 0xE266. Sin uso
+C 0xB2A6 0xE25D-0xE265: como estaba cada fila la vuelta anterior
+C 0xB2C7 codigo = fila*8 + columna
+C 0xB2CF bit 7 = hay tecla nueva
+L 0xB2A9 explora_el_teclado_fila
+L 0xB2B8 explora_el_teclado_tecla
+L 0xB2D7 explora_el_teclado_suelta
+L 0xB2DF explora_el_teclado_sigue
+L 0xB2E8 coge_la_tecla   Z si no hay ninguna. Sin uso
+L 0xB2F4 espera_una_tecla   Sin uso
+
+# =============================================================================
+# EL SONIDO
+# =============================================================================
+
+B 0xB2FA ############################################################
+B 0xB2FA EL SONIDO NO TOCA EL PSG: TOCA 0xE20E-0xE21B
+B 0xB2FA ############################################################
+B 0xB2FA Catorce bytes de RAM que son copia de los registros 0 a 13, y
+B 0xB2FA que 0xB37B vuelca enteros al final de cada cuadro. Fuera de
+B 0xB2FA 0xB382 nadie escribe en el puerto 0xA1. El reparto sale del
+B 0xB2FA propio bucle de volcado, que cuenta de 13 a 0 con outd:
+B 0xB2FA   0xE20E/0F periodo A     0xE216 volumen A
+B 0xB2FA   0xE210/11 periodo B     0xE217 volumen B
+B 0xB2FA   0xE212/13 periodo C     0xE218 volumen C
+B 0xB2FA   0xE214 periodo del ruido    0xE215 mezclador
+B 0xB2FA   0xE219/1A periodo de envolvente  0xE21B forma
+L 0xB2FA reinicia_el_sonido   Vectores al RET vacio y PSG callado
+C 0xB2FA 0xB392 es un RET solo: el vector que no hace nada
+C 0xB2FF 0xE1EE a 0 mientras se tocan los vectores; 0xB35B no los recorre
+C 0xB326 0xBF en el mezclador: tono y ruido apagados en los tres canales
+L 0xB32B reinicia_el_sonido_vuelca
+
+B 0xB32E A = numero de sonido, y la tabla de 0xB393 dice en que ranura
+B 0xB32E se instala y con que rutina. La ranura fija el canal: 0 = A,
+B 0xB32E 1 = B, 2 = ruido en C. Leido de la tabla:
+B 0xB32E   0 y 1 -> 0xB392, y ademas en la ranura 3, que 0xB35B ni
+B 0xB32E     siquiera recorre: son sonidos MUDOS
+B 0xB32E   2 B3CE  3 B52E  4 B475  5 B3B4  6 B5E4
+B 0xB32E   7 B5BE  8 B564  9 B49F  10 B4E6
+L 0xB32E arranca_un_sonido   A = numero de sonido (0..10)
+C 0xB33A A*3: registros de tres bytes
+C 0xB344 la ranura, doblada, es el desplazamiento dentro de 0xE1E6
+
+B 0xB35B Los tres vectores y el volcado, cada cuadro. La cuarta
+B 0xB35B ranura, 0xE1EC, se inicializa pero no se ejecuta nunca.
+L 0xB35B atiende_el_sonido
+C 0xB35B si 0xE1EE esta a cero no hay nada instalado
+L 0xB368 salta_al_vector_a
+L 0xB369 atiende_el_sonido_canal_b
+L 0xB371 salta_al_vector_b
+L 0xB372 atiende_el_sonido_canal_c
+L 0xB37A salta_al_vector_c
+L 0xB37B vuelca_registros_psg   0xE20E-0xE21B a los registros 0-13
+C 0xB37E outd escribe y decrementa a la vez el registro y el puntero
+L 0xB380 vuelca_registros_psg_bucle
+L 0xB392 vector_de_sonido_vacio
+
+# =============================================================================
+# LOS DIEZ SONIDOS
+# =============================================================================
+# Dos motores. El de 0xB3F0 (canal B) lee guiones de OCHO bytes y
+# barre a la vez el tono y el volumen; el de 0xB5EA (canal A) lee
+# guiones de CUATRO bytes, con tono y volumen fijos por nota. Los
+# otros tres (0xB49F, 0xB4E6, 0xB52E) no llevan guion: el barrido
+# esta escrito en el codigo.
+
+L 0xB3B4 sonido_5   Canal B, guion de 0xB3BD
+L 0xB3CE sonido_2   Canal B, guion de 0xB3D7
+
+B 0xB3F0 Guion de OCHO bytes por nota, medido por donde va a parar
+B 0xB3F0 cada uno: [cuadros][volumen][periodo alto][periodo bajo]
+B 0xB3F0 [paso del periodo][paso del volumen], los dos pasos de 16
+B 0xB3F0 bits con signo y el alto delante. El volumen lleva parte
+B 0xB3F0 fraccionaria en 0xE1FC/FD y solo sale el byte alto.
+L 0xB3F0 arranca_barrido_canal_b   Se instala en la ranura 1
+C 0xB3F9 bit 1 del mezclador a 0: tono del canal B encendido
+L 0xB403 barrido_canal_b   Un cuadro: nota nueva o seguir barriendo
+C 0xB411 un 0 en el guion es el final
+C 0xB423 bit 1 del mezclador a 1: canal B apagado
+L 0xB429 barrido_canal_b_nota
+C 0xB438 0xE211/0xE210: periodo del canal B
+L 0xB458 barrido_canal_b_avanza
+C 0xB45F periodo += paso, cada cuadro
+C 0xB471 el byte alto del acumulador es el volumen que ve el PSG
+
+L 0xB475 sonido_4   Canal A, guion de 0xB47E
+
+B 0xB49F Barrido sin guion: 19 cuadros con el periodo del canal A
+B 0xB49F subiendo de 0x00F9 de 0x14 en 0x14, o sea el tono cayendo.
+L 0xB49F sonido_9   Canal A, barrido descendente escrito en el codigo
+C 0xB4A8 bit 0 del mezclador a 0: tono del canal A encendido
+C 0xB4AD volumen del canal A
+L 0xB4BD sonido_9_paso
+L 0xB4DB sonido_9_avanza
+C 0xB4DB mas periodo es menos tono: el sonido cae
+
+B 0xB4E6 Tres cuadros con el periodo del canal B bajando de 0x0382 de
+B 0xB4E6 0x7F en 0x7F: un chasquido que sube.
+L 0xB4E6 sonido_10   Canal B, chasquido ascendente de tres cuadros
+C 0xB4F4 volumen del canal B
+L 0xB504 sonido_10_paso
+L 0xB522 sonido_10_avanza
+
+B 0xB52E El unico sonido de RUIDO: apaga el tono del canal C y pone
+B 0xB52E el ruido en su sitio, un solo cuadro.
+L 0xB52E sonido_3   Un cuadro de ruido en el canal C
+C 0xB537 bit 5 a 0 enciende el ruido en C, bit 2 a 1 apaga su tono
+C 0xB53E periodo del ruido
+C 0xB543 volumen del canal C
+L 0xB54D sonido_3_paso
+
+L 0xB564 sonido_8   Canal A, guion de 0xB56D: el de recoger el tesoro
+L 0xB5BE sonido_7   Canal A, guion de 0xB5C7
+L 0xB5E4 sonido_6   Canal A, guion de 0xB632
+
+B 0xB5EA Guion de CUATRO bytes por nota, leidos por 0xB683:
+B 0xB5EA [cuadros][periodo alto][periodo bajo][volumen]. Aqui el tono
+B 0xB5EA no barre: cada nota se queda quieta hasta la siguiente.
+L 0xB5EA arranca_guion_canal_a   Se instala en la ranura 0
+C 0xB5F8 bit 0 del mezclador a 0: tono del canal A encendido
+L 0xB5FD guion_canal_a_paso
+C 0xB60B si 0xB683 no devuelve nada es que el guion acabo
+L 0xB622 guion_canal_a_nota
+C 0xB626 DE al periodo del canal A
+C 0xB62B C al volumen del canal A
+L 0xB683 lee_registro_de_guion   B cuadros, DE periodo, C volumen; A=0 si acabo
+C 0xB683 un 0 en el primer byte cierra el guion
+
+# =============================================================================
+# LA PRESENTACION Y LA DEMO (0xB6B1-0xB9E3)
+# =============================================================================
+
+B 0xB6B1 ############################################################
+B 0xB6B1 LA PRESENTACION VA EN SCREEN 2; EL JUEGO, EN SCREEN 1
+B 0xB6B1 ############################################################
+B 0xB6B1 INIT llama aqui una sola vez, en 0x805C. Pone el registro 0
+B 0xB6B1 del VDP a 0x02 -modo grafico 2- para el rotulo de entrada, y
+B 0xB6B1 al salir lo devuelve a 0x00, modo grafico 1: de ahi que la
+B 0xB6B1 tabla de colores del juego sean solo 32 bytes. Y no sale por
+B 0xB6B1 una tecla: sale cuando el guion de la demo gasta 7 entradas.
+L 0xB6B1 secuencia_de_presentacion
+C 0xB6B2 registro 0 = 0x02: modo grafico 2
+C 0xB6B8 registro 1 = 0xE2: 16K, pantalla e interrupcion activas, sprites 16x16
+C 0xB6BE registro 4 = 0x03: patrones en 0x0000
+C 0xB6C4 registro 3 = 0xFF: colores en 0x2000, los tres bancos
+C 0xB714 se le calza a mano el manejador de 0xB7F1 al objeto 0xE2BF
+C 0xB74D 0xE221 = 1: modo DEMO, la entrada sale de 0xE259
+L 0xB751 secuencia_de_presentacion_espera
+C 0xB751 +0x0B lo sube 0xB9C8: a la septima entrada del guion se sale
+C 0xB776 registro 1 = 0xA2: pantalla apagada
+C 0xB782 0x11 en toda la tabla de colores: todo a negro
+C 0xB788 registro 0 = 0x00: de vuelta a modo grafico 1, el del juego
+C 0xB79A registro 3 = 0x80 y registro 4 = 0x00: las tablas del juego
+
+B 0xB7A2 Fin de la presentacion: se monta el jugador y se le pasa el
+B 0xB7A2 mando al guion grabado de 0xB9C8.
+L 0xB7A2 arranca_la_demo
+C 0xB7DB a partir de aqui el objeto 0xE2BF es el que lee el guion
+
+B 0xB7F1 El rotulo no se pinta: se revela. Cada cuadro desplaza un
+B 0xB7F1 pixel los diez patrones de 0xE132 y los vuelca a la tabla de
+B 0xB7F1 patrones; cada ocho cuadros recarga el dibujo y avanza una
+B 0xB7F1 columna, hasta la 0x18.
+L 0xB7F1 revela_el_dibujo   Saca el rotulo de entrada, un pixel por cuadro
+C 0xB7F8 uno de cada ocho cuadros toca columna nueva
+C 0xB810 columna 0x18: se acabo, y toma el relevo 0xB8C3
+L 0xB7FF revela_el_dibujo_columna
+L 0xB833 revela_el_dibujo_color
+C 0xB839 0x20B8 = tabla de colores, entrada del tile 0x17
+L 0xB84B revela_el_dibujo_desplaza
+C 0xB84E a partir de la columna 12 aparece el sprite 9 y echa a andar
+C 0xB86E scf: por la izquierda entran unos, que es el fondo
+C 0xB86F diez patrones, uno cada 8 bytes: la fila se corre un pixel
+C 0xB883 0x00B0 = tabla de patrones, tile 0x16
+L 0xB869 revela_el_dibujo_columna_bits
+L 0xB86F revela_el_dibujo_bits
+C 0xB891 los tres sprites de abajo no salen hasta la columna 5
+C 0xB897 0xE26B es la X del sprite 0: se mueve a la izquierda
+L 0xB8A7 revela_el_dibujo_sprite_2
+L 0xB8B5 revela_el_dibujo_sprite_3
+
+B 0xB8C3 La franja de las filas 15 y 16 se abre y se cierra desde la
+B 0xB8C3 columna 16 hacia los dos lados. El bit 0 de +0x0B alterna:
+B 0xB8C3 abre, cierra (y cambia el color), abre y arranca la demo.
+L 0xB8C3 anima_la_franja
+C 0xB8CB el bit 1 elige cual de las dos parejas de tiles se carga
+C 0xB8EF 0x19F0 = fila 15, columna 16: el centro desde donde se abre
+C 0xB902 0xE2CE es el +0x0F del propio objeto: anchura y contador a la vez
+C 0xB967 bit 0 de +0x0B: 1 abre, 0 cierra
+C 0xB986 tercera pasada terminada: a la demo
+L 0xB8DF anima_la_franja_variante_b
+L 0xB8EB anima_la_franja_pinta
+L 0xB990 anima_la_franja_cierra
+C 0xB99F 0xA1 en los bancos de color de abajo: la franja cambia de tono
+
+B 0xB9AB Copia patrones sueltos leyendo de 0x10 en 0x10. NADIE la
+B 0xB9AB llama: ni un call ni un puntero apuntan aqui.
+L 0xB9AB copia_patrones_salteados   Sin uso: nadie la llama
+C 0xB9B2 add hl,0: no hace nada, resto de otra version (?)
+
+B 0xB9C8 LA DEMO ESTA GRABADA: la tabla de 0xB9E4 son parejas
+B 0xB9C8 [cuadros][entrada], y la entrada viene en el formato que
+B 0xB9C8 saca 0xB26E. Las seis primeras son la partida: 0x48 quieto,
+B 0xB9C8 0x3A a la derecha, 0x20 saltando a la derecha, 0xBA quieto,
+B 0xB9C8 0x10 agachado, 0x40 a la derecha, y tres esperas de 0xFF
+B 0xB9C8 cuadros. Lo que sigue (01 02 03 04...) parece relleno (?).
+L 0xB9C8 avanza_el_guion_de_la_demo
+C 0xB9CF +0x0B es la entrada del guion, doblada porque son parejas
+C 0xB9DD la entrada que 0x9A7E le mete al jugador
+
+# ---- Cierre: lo que quedaba suelto de 0x9F00-0xAE00 y los seis RET ----
+
+L 0x9F8E vuelve_del_tipo_de_escena La direccion que el despachador apila antes del jp (hl)
+L 0x9FAD escoge_decorado_indice
+C 0x9FAE 0xE223 = de que mitad de la tabla de tesoros se tira
+L 0x9FE6 pinta_celdas Interprete de guiones: primer byte = cuantas celdas, luego pares (posicion, tile)
+L 0x9FE9 pinta_celdas_bucle
+C 0x9FEE la posicion es un desplazamiento sobre la tabla de nombres, 0x1800
+L 0xA002 repone_decorado Vuelve a poner los patrones de sprite y el juego de tiles guardado en 0xE227
+
+L 0xA457 pinta_punto_liana_fila
+L 0xA4B5 mueve_la_liana_sprite1
+L 0xA540 mueve_la_liana_guarda_agarre
+L 0xA609 lleva_al_jugador_colgado_y
+
+B 0xAA74 Las variantes que ponen el estorbo de la derecha. Cada una
+B 0xAA74 carga sus patrones de sprite, pinta un dibujo de 3x2 celdas
+B 0xAA74 en el mismo hueco y declara su caja. QUE dibujo es cada una
+B 0xAA74 esta sin identificar: hace falta cruzarlas con las capturas.
+L 0xAA74 monta_estorbo_tiles_90 Guion 0xB040, sprites de 0x9989, caja clase 6
+C 0xAAA2 clase 6, de 0xC3 a 0xD2
+L 0xAAB7 monta_estorbo_tiles_a0 Guion 0xB0C2, sprites de 0x9865, caja clase 6
+L 0xAB85 monta_estorbo_tiles_98 Guion 0xB0A8, caja clase 8
+C 0xABA2 clase 8, centrada en 0xCB
+
+L 0xAB11 tesoro_ya_cogido_bit
+L 0xAB14 tesoro_ya_cogido_rota
+L 0xAB18 tesoro_ya_cogido_decide
+
+L 0xAC8B charca_cajas_y_rotulo Comun a la brea y al agua: la caja del charco y el rotulo
+C 0xAC91 clase 3, de 0x50 a 0xB0: todo el ancho del charco
+L 0xACB5 variante_que_no_hace_nada Entrada de tabla que es solo un ret
+L 0xACB6 monta_el_que_sigue Carga sus sprites y suelta el objeto 0xE2ED
+L 0xACE4 coloca_al_jugador Copia las cuatro posiciones iniciales del jugador y sus capas
+
+L 0xAD1F monta_los_troncos Plantilla 0xAFC2 a 0xE303; su manejador es 0xA728
+L 0xAD50 monta_los_troncos_separacion
+C 0xAD54 con variante 4 o mas el tercero se queda parado
+L 0xAD64 monta_los_troncos_variante_1
+C 0xAD6A solo si el jugador esta pasado de 0xE2
+
+# LOS SEIS RET HUERFANOS
+# Un solo byte 0xC9 -`ret`- pegado detras del final de una rutina. Ninguno
+# se alcanza: ni hay salto que caiga ahi, ni hay en todo el cartucho una
+# palabra que valga su direccion (comprobado byte a byte sobre los 16 KB).
+# Cinco de los seis van justo despues de un `jp` que se lleva el control
+# fuera, o sea que son el `ret` de cierre que el ensamblador escribio y que
+# nunca llega a ejecutarse.
+D 0x9CBD 0x9CBE ret_huerfano_9cbd Un `ret` detras del `ret` que cierra 0x9CAC
+D 0xAA73 0xAA74 ret_huerfano_aa73 Un `ret` detras del `jp` de 0xAA70
+D 0xACB4 0xACB5 ret_huerfano_acb4 Un `ret` detras del `jp` de 0xACB1
+D 0xADE7 0xADE8 ret_huerfano_ade7 Un `ret` detras del `jp` de 0xADE4
+D 0xAE37 0xAE38 ret_huerfano_ae37 Un `ret` detras del `jp` de 0xAE34
+D 0xB6B0 0xB6B1 ret_huerfano_b6b0 Un `ret` detras del que cierra la rutina que retrocede el registro de pantalla
