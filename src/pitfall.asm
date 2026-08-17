@@ -438,10 +438,12 @@ se_hunde_termina:
 	ret			;83d3
 
 ; ----------------------------------------------------------------------
-; La escalera no tiene caja de colision: se comprueba a
-; mano que la escena sea de las de hoyos y que la X del
-; jugador caiga en 0x70-0x88, que es donde el guion de
-; celdas 0x8F06 pinta la columna
+; La escalera no tiene caja de colision: aqui se comprueba a
+; mano que el tipo de escena (0xE225) sea 0 o 1 y que la X del
+; jugador caiga entre 0x70 y 0x87. El mastil que pinta el guion
+; de 0x8F06 esta en la columna 16 (0x80-0x87) y su cabecera en
+; las columnas 15-17, asi que la ventana que se acepta es mas
+; ancha por la izquierda que el dibujo.
 ; ----------------------------------------------------------------------
 mira_la_escalera:
 	ld a,(0e05fh)		;83d4
@@ -585,10 +587,10 @@ mira_los_troncos_siguiente:
 	ret			;8528
 
 ; ----------------------------------------------------------------------
-; 0xE229-0xE243 son diez cajas de tres bytes: clase, X
-; izquierda y X derecha. Las escriben las escenas de
-; 0xA5xx-0xACxx en cada cambio de pantalla, y de la 0 a
-; la 6 son de la superficie y la 8 y la 9 del subterraneo
+; 0xE229-0xE246 son DIEZ cajas de tres bytes: clase, X
+; izquierda y X derecha. Diez, no nueve: 0x8545 recorre desde
+; 0xE241 con B=2, o sea que llega a la de 0xE244, y el borrado
+; de 0x89F3 se lleva por delante hasta 0xE246.
 ; ----------------------------------------------------------------------
 mira_colisiones:
 	ld iy,0e2a2h		;8529
@@ -696,7 +698,7 @@ mira_colisiones_en_el_aire_nada:
 	xor a			;85d7
 	ret			;85d8
 alcanza_la_liana:
-	ld hl,0e2a2h		;85d9   ; la liana solo se agarra entre 7 y 20 pixeles por debajo de su Y
+	ld hl,0e2a2h		;85d9   ; no compara con la Y de la liana: exige (0xE1CC)-7 < Y del jugador y a la vez Y <= (0xE1CC)-0x14, que solo se cumplen juntas si la resta se desborda. En la practica solo engancha con 0xE1CC entre 7 y 0x13, y 0xE1CC es el paso del balanceo de la tabla 0xA61A, no una coordenada
 	ld a,(0e1cch)		;85dc
 	sub 007h		;85df
 	cp (hl)			;85e1
@@ -707,7 +709,7 @@ alcanza_la_liana:
 	jr c,mira_colisiones_en_el_aire_nada		;85ea
 	ld a,005h		;85ec
 	ret			;85ee
-rebota_y_retrocede:		; Clase 10
+rebota_y_retrocede:		; Clase 10: invierte la velocidad y retrocede tres pasos. NO baja al subterraneo
 	ld a,(ix+007h)		;85ef
 	or a			;85f2   ; parado no rebota
 	ret z			;85f3
@@ -747,10 +749,11 @@ rebota_y_retrocede_calcula:
 	ret			;863f
 
 ; ----------------------------------------------------------------------
-; La clase 1 es la unica que no mata: te tumba y te va
-; restando un punto por cuadro mientras te pisa. Se sale
-; andando, y en cuanto la caja deja de dar clase 1 se
-; vuelve al manejador normal
+; La clase 1 no mata: te tumba y te va restando un punto por
+; cuadro mientras te pisa, y se sale andando. Tampoco matan la
+; 2, la 5, la 8 ni la 10. Las unicas que cuestan una vida son
+; la 6 y la 9, por 0x8226, y la 3 y la 4, por 0x83B9: esos son
+; los dos unicos llamantes de quita_una_vida en el cartucho.
 ; ----------------------------------------------------------------------
 arrollado_por_el_tronco:		; Clase 1
 	ld iy,0e2a2h		;8640
@@ -976,10 +979,12 @@ empieza_el_salto_derecha:
 	ret			;881f
 
 ; ----------------------------------------------------------------------
-; IX+0x17 cuenta de 0x1F a 0 y ese numero es el indice
-; en la curva de 0x8AB6, que se lee del final al
-; principio: 0xFF sube un pixel, 0x01 baja, 0x00 se
-; queda. No hay velocidad vertical, hay tabla
+; IX+0x17 es el indice en la curva de 0x8AB6, que se lee del
+; final al principio: 0xFF sube un pixel, 0x01 baja y 0x00 se
+; queda. No hay velocidad vertical, hay tabla. El salto y la
+; salida del hoyo lo arrancan en 0x1F, pero soltarse de la
+; liana lo arranca en (0xE1E2), que vale 1 o 2: esa caida usa
+; uno o dos pasos de curva, no treinta y uno.
 ; ----------------------------------------------------------------------
 en_el_aire:
 	call en_el_aire_gira		;8820
@@ -1229,7 +1234,7 @@ prepara_la_partida:
 ;   0x8a69..0x8a6f  (6 bytes)
 ; DATOS inicializador_e1d6: Seis bytes que 0x8A2E copia a 0xE1D6
 ;   0x8a6f..0x8a75  (6 bytes)
-; DATOS fila_tiles_c3: Un 0x00 y dieciocho tiles C3/C5/C6: la fila que 0x89AB (ld hl,08A76h) usa sobre las estructuras de 0xE29A/0xE29E
+; DATOS tiles_de_las_vidas: Un 0x00 de relleno y TRES filas de seis tiles C3/C5/C6, una por cuenta de vidas: 0x8A76 ninguna, 0x8A7C una, 0x8A82 dos. 0x89AB elige la que toca y 0x89DA y 0x89E9 suben sus dos mitades de tres bytes a la VRAM 0x1843 y 0x1863
 ;   0x8a75..0x8a88  (19 bytes)
 ; DATOS inicializador_e29a: Cuatro bytes que 0x8A39 copia a 0xE29A
 ;   0x8a88..0x8a8c  (4 bytes)
@@ -1245,8 +1250,16 @@ prepara_la_partida:
 ;   0x8a9c..0x8aa0  (4 bytes)
 ; DATOS tabla_del_despachador_874a: Once punteros de palabra. El despachador de 0x873B los consume con el indice en A (sla / add hl / jp (hl)); con A=0 vuelve sin saltar. En 0x8AB6 las palabras dejan de ser punteros a ROM y empiezan los pares 0x0100/0x0101 de la tabla siguiente
 ;   0x8aa0..0x8ab6  (22 bytes)
-; DATOS tabla_de_incrementos: Setenta y tres bytes de valores 0x00/0x01/0xFF: el manejador 0x8820 los indexa con el contador IX+0x17 (bucle inc hl/djnz en 0x8831) y SUMA el valor a IY+0x00, o sea una curva de desplazamiento paso a paso
-;   0x8ab6..0x8aff  (73 bytes)
+; DATOS curva_del_salto: Treinta y cuatro bytes 0x00/0x01/0xFF que 0x8820 indexa con IX+0x17 (de 0x1F a 1, o sea leidos de atras adelante) sumando el valor a IY+0x00. El indice no pasa de 0x1F, asi que la curva se acaba en 0x8AD5
+;   0x8ab6..0x8ad8  (34 bytes)
+; DATOS datos_sin_identificar_8ad8: Nueve bytes (03 4C 5C 76 83 9C AD 00 00) a los que no apunta ninguna palabra del cartucho
+;   0x8ad8..0x8ae1  (9 bytes)
+; DATOS guion_anda_derecha: 03 20 / 03 24 / 03 28 / 03 2C / 03 30 / 00 00: cinco fotogramas de tres cuadros. Lo carga 0x892D
+;   0x8ae1..0x8aed  (12 bytes)
+; DATOS guion_anda_izquierda: Los mismos tiempos con los patrones espejados, 0x44 a 0x54. Lo carga 0x8903
+;   0x8aed..0x8af9  (12 bytes)
+; DATOS guion_trepa: 01 3C / 01 60 / 00 00: dos fotogramas de un cuadro. Lo carga 0x8411
+;   0x8af9..0x8aff  (6 bytes)
 ; ----------------------------------------------------------------------
 	defb 0bah,0b8h,0c2h,0b8h,0b8h,03ch,000h,000h,002h,000h,000h,000h,000h,0c3h,0c3h,0c3h	; 8a69  .....<..........
 	defb 0c3h,0c3h,0c3h,0c5h,0c3h,0c3h,0c6h,0c3h,0c3h,0c5h,0c3h,0c5h,0c6h,0c3h,0c6h,00fh	; 8a79  ................
@@ -1529,7 +1542,7 @@ pinta_los_hoyos_con_cajas:
 	push ix		;8d15
 	ld ix,0e229h		;8d17
 	ld (ix+000h),002h		;8d1b   ; clase 2: por aqui se cae al subterraneo
-	ld a,054h		;8d1f   ; dos hoyos, centrados en 0x54 y 0xA3, de 0x11 de ancho
+	ld a,054h		;8d1f   ; dos hoyos de 0x11 de ancho: las cajas van de 0x54 a 0x65 y de 0xA3 a 0xB4, o sea que esos dos numeros son el borde IZQUIERDO, no el centro
 	sub 000h		;8d21
 	ld (ix+001h),a		;8d23
 	ld a,054h		;8d26
@@ -1563,9 +1576,9 @@ pinta_la_escalera_a:
 	ld hl,0b08eh		;8d69
 	call pinta_celdas		;8d6c
 	ret			;8d6f
-pinta_el_layout:
+pinta_el_layout:		; Vuelca el decorado: 0x71 bytes en crudo desde la fila 4, una fila de 32 que se repite seis veces, los tramos de las filas 12 y 13 y un guion de celdas
 	push hl			;8d70
-	ld de,0188fh		;8d71   ; filas 4-7 del name table, en crudo
+	ld de,0188fh		;8d71   ; 0x71 bytes a 0x188F, o sea desde la fila 4 columna 15: no son cuatro filas enteras
 	ld bc,00071h		;8d74
 	call copia_bloque_a_vram		;8d77
 	pop hl			;8d7a
@@ -1636,9 +1649,11 @@ pinta_el_layout_fila13:
 	ret			;8ddd
 
 ; ----------------------------------------------------------------------
-; El subsuelo de fondo, filas 14 a 22 con un tile fijo
-; cada franja. Solo se repinta al entrar o salir de las
-; escenas de hoyos, que pintan el suyo propio encima
+; El subsuelo de fondo, filas 14 a 22 con un tile fijo por
+; franja. Lo pinta el arranque de partida (0x809C) y
+; monta_la_escena en TODA escena de tipo 2 a 7 (0x9F04), mas
+; al entrar en una de tipo 0 o 1 viniendo de tipo 2 o mayor
+; (0x9F0B). Lo unico que no lo repinta es pasar de 0/1 a 0/1.
 ; ----------------------------------------------------------------------
 pinta_el_subsuelo:
 	ld hl,01800h		;8dde
@@ -1670,9 +1685,9 @@ pinta_el_subsuelo:
 ; ----------------------------------------------------------------------
 ; DATOS tabla_tramos_fila12: Veintitres bytes: la rampa de tiles F0..FE,F0..F7 de la que salen los tramos de la fila 12 (primera pasada, base cargada en 0x8DA7, VRAM 0x1980)
 ;   0x8e1b..0x8e32  (23 bytes)
-; DATOS tabla_tramos_fila13: Catorce bytes, todos 0xFF: los tramos de la fila 13 (segunda pasada, base cargada en 0x8DCA, VRAM 0x19A0). El consumidor puede llegar a leer hasta 0x8E46 -0x8E32 mas 2x0x0A-, seis bytes mas alla de donde se acaban los 0xFF; esos seis ya son el principio del sprite de 0x8E40, y no valen 0xFF
+; DATOS tabla_tramos_fila13: Catorce bytes 0xFF, los tramos de la fila 13 (segunda pasada). 0x8DCA carga 0x8E32 FIJO y copia tantos bytes como diga el tramo, sin indexar: no lleva el `add hl,bc` que si tiene la fila 12 en 0x8DAA. Con el tramo mayor que hay en los cuatro layouts, 0x0A, la lectura mas lejana es 0x8E3B, o sea que nunca llega al sprite de 0x8E40
 ;   0x8e32..0x8e40  (14 bytes)
-; DATOS sprite_hundiendose_derecha_1: Primera capa del jugador mirando a la derecha. La copia 0x8C0F a 0xE138. OJO: empieza seis bytes dentro de lo que 0x8DCA puede llegar a leer como tramos de la fila 13, y esos seis bytes (00 00 00 00 03 03) son ya las dos primeras filas del dibujo, no relleno
+; DATOS sprite_hundiendose_derecha_1: Primera capa del jugador mirando a la derecha. La copia 0x8C0F a 0xE138
 ;   0x8e40..0x8e60  (32 bytes)
 ; DATOS sprite_hundiendose_derecha_2: Segunda capa de la misma pose. La copia 0x8C04 a 0xE15E
 ;   0x8e60..0x8e80  (32 bytes)
@@ -1680,21 +1695,21 @@ pinta_el_subsuelo:
 ;   0x8e80..0x8ea0  (32 bytes)
 ; DATOS sprite_hundiendose_4: Segunda capa de esa pose, que carga 0x8CAE a 0xE15E
 ;   0x8ea0..0x8ec0  (32 bytes)
-; DATOS sprite_hundiendose_izquierda_1: El espejo de 0x8E40, bit a bit. La copia 0x8C27 a 0xE138, y ademas 0x8330 sube sus dos mitades de 16 bytes a la VRAM 0x3D00 y 0x3AC0 cuando el jugador acaba de caer
+; DATOS sprite_hundiendose_izquierda_1: El espejo de 0x8E60 dandole la vuelta a los bits de cada byte, y falla en uno solo de los 32 (el byte 23 vale 0x0F donde saldria 0x0E). La copia 0x8C27 a 0xE138, y 0x8330 sube sus dos mitades a la VRAM 0x3D00 y 0x3AC0
 ;   0x8ec0..0x8ee0  (32 bytes)
-; DATOS sprite_hundiendose_izquierda_2: El espejo de 0x8E60. La copia 0x8C1C a 0xE15E, y 0x8348 sube sus mitades a la VRAM 0x3D10 y 0x3AD0
+; DATOS sprite_hundiendose_izquierda_2: El espejo de 0x8E40 con los bits de cada byte del reves, y este EXACTO: los 32 bytes. La copia 0x8C1C a 0xE15E, y 0x8348 sube sus mitades a 0x3D10 y 0x3AD0
 ;   0x8ee0..0x8f00  (32 bytes)
 ; DATOS reloj_inicial_duplicado: Los mismos cinco tiles del reloj de salida que hay en 0x8A69 -BA B8 C2 B8 B8, que se lee "20:00"- pero con 0x00 detras en vez del divisor 0x3C. Nadie lo copia: la unica palabra del cartucho que vale 0x8F00 esta en 0xA3A3, dentro de una tabla de patrones, o sea que es coincidencia de bytes y no un puntero. Una segunda copia que se quedo sin usar
 ;   0x8f00..0x8f06  (6 bytes)
-; DATOS guion_celdas_columna: Guion de 16 celdas para 0x9FE6: una columna de 3 de ancho por 8 de alto en filas 14-21, columnas 15-17, tiles 0x20-0x36. Lo llaman 0x8D4D y 0x8D60
+; DATOS guion_celdas_columna: Guion de 16 celdas: cabecera de tres columnas (15-17) en las filas 14-17 y un mastil de UNA sola columna, la 16, con el tile 0x20, en las filas 18-21. Tiles 0x20-0x36. Lo llaman 0x8D4D y 0x8D60
 ;   0x8f06..0x8f48  (66 bytes)
-; DATOS guion_celdas_bloque_a: Guion de 24 celdas: un bloque en filas 14-17, columnas 10-22, tiles 0x2A-0x56. Variante A de la misma zona que el guion siguiente. Lo llama 0x8D12
+; DATOS guion_celdas_bloque_a: Guion de 24 celdas: DOS bloques de 3 columnas por 4 filas, en las filas 14-17 y las columnas 10-12 y 20-22. El centro, de la 13 a la 19, no se toca. Tiles 0x2A-0x56. Lo llama 0x8D12
 ;   0x8f48..0x8faa  (98 bytes)
-; DATOS guion_celdas_bloque_b: Guion de 24 celdas: mismas filas 14-17 y columnas 10-22 que el anterior, tiles 0x30-0x40. Variante B. Lo llama 0x8D0B
+; DATOS guion_celdas_bloque_b: Los mismos dos bloques de 3x4 en las columnas 10-12 y 20-22, con el tile 0x30 arriba y el 0x40 abajo. Lo llama 0x8D0B
 ;   0x8faa..0x900c  (98 bytes)
-; DATOS guion_celdas_franja_a: Guion de 16 celdas: franja baja en filas 18-21, columnas 5-27, tiles 0x18-0x2C. Variante A. Lo llama 0x8D66
+; DATOS guion_celdas_pilares_a: Guion de 16 celdas: dos pilares de dos columnas de ancho en las filas 18-21, columnas 5-6 y 26-27. No es una franja que cruce la pantalla: entre los dos pilares no se pinta nada. Tiles 0x18/0x19/0x1A a la derecha y 0x2C a la izquierda. Lo llama 0x8D66
 ;   0x900c..0x904e  (66 bytes)
-; DATOS guion_celdas_franja_b: Guion de 16 celdas: misma franja 18-21 que el anterior, tiles 0x18-0x2C. Variante B. Lo llama 0x8D53
+; DATOS guion_celdas_pilares_b: Los mismos dos pilares con los tiles cambiados de lado. Lo llama 0x8D53
 ;   0x904e..0x9090  (66 bytes)
 ; DATOS fila_de_tiles_23: Catorce numeros de tile en crudo que 0x8B51-0x8B5A copia con B1C3 a la VRAM 0x1AE2, o sea la fila 23 del name table, columnas 2-15
 ;   0x9090..0x909e  (14 bytes)
@@ -2930,24 +2945,29 @@ repone_decorado:		; Vuelve a poner los patrones de sprite y el juego de tiles gu
 ; ############################################################
 ; LAS CAJAS DE COLISION, que es como el juego sabe que te pasa
 ; ############################################################
-; 0xE229-0xE243 son registros de TRES bytes: clase, X izquierda
-; y X derecha. Las rutinas de escena escriben las suyas al montar
-; la pantalla, y 0x84EF, 0x8529 y 0x8589 las recorren con la X
-; del jugador mas 8. La clase elige manejador en la tabla 0x8AA0.
+; 0xE229-0xE246 son DIEZ registros de tres bytes: clase, X
+; izquierda y X derecha. Las rutinas de escena escriben las
+; suyas al montar la pantalla, y 0x84EF, 0x8529 y 0x8589 las
+; recorren con la X del jugador mas 8. La clase elige manejador
+; en la tabla 0x8AA0.
 ; 0  apagada     0x87A2 la borra al coger el tesoro
 ; 1  tronco      A751 A793 A7D7 -> 8640, resta dos puntos
-; 2  suelo       8D1B 8D35 A9F3 -> 8751
-; 3  charca      A8FC A938 AC91 -> 8361
+; 2  suelo       8D1B 8D35 A9F3 -> 8751, resta cien
+; 3  charca      A8FC A938 AC91 -> 8361, mata
 ; 4  cocodrilo   A828 A841 A85A ADCA -> 8361, el mismo
-; 5  liana       A5B8 -> 8162
+; 5  liana       A5B8 -> 8162, engancha
 ; 6  mata        AAA2 AAEA -> 8221
 ; 7  no se escribe nunca, y su entrada apunta a 874B
-; 8  tesoro      ABA2 ABFC AC56 -> 878C
+; 8  tesoro      ABA2 ABFC AC56 -> 878C, suma miles
 ; 9  mata        A6B1 -> 8221
-; 10  escalera    A9B7 A9D6 -> 85EF, se baja al subterraneo
-; Las clases 2, 3 y 4 ajustan la Y del jugador en 0x8529: hacen
-; de suelo. Comprobado que la 7 no la escribe nadie: no hay un
-; solo `ld (ix+000h),007h` en todo el cartucho.
+; 10  rebote      A9B7 A9D6 -> 85EF, da la vuelta y retrocede
+; Solo matan la 3, la 4, la 6 y la 9: son las que acaban
+; llamando a quita_una_vida. Y OJO con la 10, que no es la
+; escalera por mucho que salga en las escenas que la tienen:
+; al subterraneo se baja por 0x83D4, que comprueba el tipo de
+; escena y la X a mano, sin caja ninguna.
+; Comprobado que la 7 no la escribe nadie: no hay un solo
+; `ld (ix+000h),007h` en todo el cartucho.
 ; ----------------------------------------------------------------------
 borra_dibujo_liana:		; Pone a cero los 0x40 bytes de 0xE18A
 	ld hl,0e18ah		;a43a
@@ -3581,7 +3601,7 @@ escena_tipo_0_y_1_hoyos:
 	jr z,hoyos_escalera_izquierda		;a9af
 	push ix		;a9b1
 	ld ix,0e241h		;a9b3
-	ld (ix+000h),00ah		;a9b7   ; la escalera, clase 10: por aqui se baja al subterraneo
+	ld (ix+000h),00ah		;a9b7   ; clase 10 (0xE241), que NO es la escalera: 0x85EF la usa para rebotar
 	ld a,0d8h		;a9bb   ; centrada en 0xD8 cuando son tres hoyos
 	sub 00ch		;a9bd
 	ld (ix+001h),a		;a9bf
