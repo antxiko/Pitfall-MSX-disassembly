@@ -79,7 +79,13 @@ def lee_png(ruta):
     return w, h, filas
 
 
-def escribe_png(ruta, w, h, filas):
+def escribe_png(ruta, w, h, filas, alfa=False):
+    """Con alfa=True las filas llevan cuatro bytes por pixel en vez de tres.
+
+    Hace falta para los sprites: un sprite tiene fondo transparente, y guardarlo
+    como negro lo convierte en un rectangulo negro en cuanto la pagina que lo
+    ensena no tiene el fondo negro.
+    """
     crudo = bytearray()
     for fila in filas:
         crudo.append(0)                       # filtro 0: sin filtrar
@@ -89,7 +95,8 @@ def escribe_png(ruta, w, h, filas):
                 struct.pack(">I", zlib.crc32(clase + cuerpo) & 0xFFFFFFFF))
     with open(ruta, "wb") as f:
         f.write(b"\x89PNG\r\n\x1a\n")
-        f.write(trozo(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)))
+        f.write(trozo(b"IHDR", struct.pack(">IIBBBBB", w, h, 8,
+                                           6 if alfa else 2, 0, 0, 0)))
         f.write(trozo(b"IDAT", zlib.compress(bytes(crudo), 9)))
         f.write(trozo(b"IEND", b""))
 

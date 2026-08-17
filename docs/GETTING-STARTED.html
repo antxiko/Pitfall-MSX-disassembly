@@ -1,4 +1,4 @@
-<title>GETTING-STARTED — Pitfall! (1984)</title>
+<title>Getting started — Pitfall! (1984)</title>
 <style>
 :root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
   --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
@@ -81,5 +81,39 @@ footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
 audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
 </style>
 <div class="w"><nav class="top"><a href="index.html">Home</a><a href="GETTING-STARTED.html" style=color:var(--tinta)>Start</a><a href="THE-GAME.html">The game</a><a href="THE-CARTRIDGE.html">The cartridge</a><a href="THE-CODE.html">The code</a><a href="FINDINGS.html">Findings</a><a href="OPEN-QUESTIONS.html">Open questions</a><a href="es/EMPEZAR.html" style="margin-left:auto;color:var(--oro)">Castellano</a></nav>
-<h1 id="getting-started">GETTING-STARTED</h1>
+<h1 id="getting-started">Getting started</h1>
+<h2 id="what-you-need">What you need</h2>
+<p><code>pasmo</code> and <code>z80dasm</code> to assemble and disassemble, and Python 3 for the tools. Nothing else: there are no dependencies to install and no environment to set up.</p>
+<p>The cartridge is not distributed with this repository, only the documentation work, so you need your own copy named <code>pitfall.rom</code> in the root of the project. It is 16384 bytes exactly and has to give this sha256:</p>
+<pre><code>4d899d6258a8b06dfae8c91a8c57230fa23ff364136d6a243fafeaf282c8be58</code></pre>
+<p>If yours doesn&#x27;t, it is another dump and the listing will not reassemble. <code>make comprueba</code> tells you in one line.</p>
+<h2 id="the-commands">The commands</h2>
+<pre><code>make          # traces, generates the listing and checks everything
+make verify   # just the acid test: does the cartridge come back out?
+make sanity   # what reassembling CANNOT catch
+make test     # the thirteen tests on the listing, which don&#x27;t need the cartridge</code></pre>
+<p>Plain <code>make</code> does the whole cycle and fails if anything doesn&#x27;t add up: if the listing stops reproducing the cartridge byte for byte, if the tracer has walked into an area declared as data, if an entry point falls inside that area, or if a single one of the 16384 bytes is left without an owner.</p>
+<h2 id="the-test-that-decides">The test that decides</h2>
+<p>The only thing that makes a disassembly trustworthy is that it gives the original back. Here that is <code>make verify</code>, and what it does is assemble the published listing and compare its sha256 with the cartridge&#x27;s:</p>
+<pre><code>ensamblado : 16384 bytes  4d899d62...82c8be58
+original   : 16384 bytes  4d899d62...82c8be58
+OK: reproducible byte a byte</code></pre>
+<p>As long as that line comes out, not one comment in this repository can have eaten a byte along the way.</p>
+<h2 id="the-second-test-the-one-almost-nobody-runs">The second test, the one almost nobody runs</h2>
+<p>A listing can reassemble perfectly and still be lying: if some artwork is being read as instructions, the bytes don&#x27;t change —only what we say about them does— and the sha256 comes out the same. <code>make sanity</code> is exactly that check, and it ends with the full share-out:</p>
+<pre><code>  codigo trazado              9467   57.78 %
+  datos identificados         6917   42.22 %
+  sin explicar                   0    0.00 %
+  ==========================================
+  explicado                  16384  100.00 %</code></pre>
+<h2 id="without-the-cartridge">Without the cartridge</h2>
+<p>You can still read the listing in <code>src/pitfall.asm</code> and the notes, which is where the work is: 5716 lines with 337 routines and tables named, 302 comments anchored to their address and 130 ranges of data with their explanation beside them. The thirteen tests run just the same, because not one of them needs the binary.</p>
+<h2 id="how-it-is-organised">How it is organised</h2>
+<p>The listing is <b>never edited by hand</b>. It is generated, and three files govern it:</p>
+<table><tr><th></th><th></th></tr><tr><td><code>src/pitfall.entries</code></td><td>the entry points: where the tracing starts</td></tr><tr><td><code>src/pitfall.nocode</code></td><td>the areas that are NOT code, and how we know</td></tr><tr><td><code>src/pitfall.notes</code></td><td>the names, the comments and the data ranges</td></tr></table>
+<p><code>src/pitfall.asm</code> comes out of those. If you want to change a comment or name a routine, it goes in the <code>.notes</code>, anchored to its address; that way the comment survives a re-trace and never comes unstuck from the instruction it explains.</p>
+<p>The <code>.entries</code> is longer here than usual: this cartridge declares <b>a single entry point</b> —the BIOS reads the header and calls 0x8013— and everything else arrives by paths no static tracer can follow. The interrupt hook (0x80F7), the object handlers that travel inside templates copied into RAM, the four dispatch tables and the sound vectors are declared one by one, each with the instruction that writes it noted beside it.</p>
+<h2 id="the-tools">The tools</h2>
+<p>Everything is in <code>tools/</code>, and each one carries in its header what it does and why it was done that way:</p>
+<table><tr><th></th><th></th></tr><tr><td><code>z80trace.py</code></td><td>follows the flow from the entry points</td></tr><tr><td><code>mkasm.py</code></td><td>builds the listing with the notes anchored in place</td></tr><tr><td><code>presupuesto.py</code></td><td>the share-out of the 16384 bytes, and what is left ownerless</td></tr><tr><td><code>refs.py</code></td><td>which instructions point into a range, without inventing pointers</td></tr><tr><td><code>quien_apunta.py</code></td><td>for each gap, who reads it from the traced code</td></tr><tr><td><code>busca_autoescritura.py</code></td><td>looks for writes to the ROM: the effect of a protection, not one particular shape of it</td></tr><tr><td><code>mapa_escenas.py</code></td><td>reproduces the ring of 255 scenes from the cartridge</td></tr><tr><td><code>busca_escaleras.py</code></td><td>which scenes let you climb down to the tunnel</td></tr><tr><td><code>ruta_optima.py</code></td><td>the shortest route that collects all 32 treasures</td></tr><tr><td><code>monta_mapa_guion.py</code></td><td>the 255 scenes in a labelled grid</td></tr><tr><td><code>dibuja_guion.py</code></td><td>that route drawn out, one cell per screen</td></tr><tr><td><code>omsx_*.tcl</code></td><td>the openMSX harnesses: boot, captures and the walk around the world</td></tr></table>
 <footer><p><em>Pitfall!</em> was published by Activision in 1984 for the MSX. There isn't a single line of text in the cartridge, and the only thing it signs is the <b>Copyright 1982, 1984</b> drawn at the foot of the screen: 1982 is the date of the Atari 2600 original and 1984 that of this conversion. All rights in the game remain with their holders. This is preservation, study and documentation work.</p></footer></div>

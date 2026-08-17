@@ -85,11 +85,10 @@ def enlinea(t):
 
 
 # La web se sirve desde docs/, asi que lo que este fuera de esa carpeta no
-# existe para el navegador: esos enlaces se mandan al repositorio. El nombre
-# del repositorio todavia no esta decidido; hasta que lo este, se cambia sin
-# tocar el codigo con la variable de entorno.
+# existe para el navegador: esos enlaces se mandan al repositorio. Se puede
+# cambiar sin tocar el codigo con la variable de entorno.
 REPO = os.environ.get("PITFALL_REPO",
-                      "https://github.com/antxiko/Pitfall-disassembly")
+                      "https://github.com/antxiko/Pitfall-MSX-disassembly")
 
 
 def ruta(href):

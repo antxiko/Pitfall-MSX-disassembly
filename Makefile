@@ -123,6 +123,16 @@ imagenes: $(ROM) $(OMSX)/mapa
 	        $(WORK)/ruta_optima.tsv | tail -4
 	python3 tools/dibuja_guion.py docs/imagenes/mapa-del-mundo.png \
 	        $(WORK)/ruta_optima.tsv docs/imagenes/guion-de-la-partida-perfecta.png | tail -1
+	@# Los fotogramas del protagonista salen de la VRAM volcada, que la deja
+	@# tools/omsx_arranque.tcl junto con la captura del rotulo. Si no esta, la
+	@# portada se genera igual: sin Harry andando encima del titulo.
+	@# La de 1x es la que anima la portada; la de 4x es para verla en la pagina.
+	@if [ -f $(OMSX)/demo.vram.bin ]; then \
+	    python3 tools/render_jugador.py $(OMSX)/demo.vram.bin docs/imagenes/jugador.png | head -1; \
+	    python3 tools/render_jugador.py $(OMSX)/demo.vram.bin docs/imagenes/jugador-tira.png 4 | head -1; \
+	 else \
+	    echo "  (sin $(OMSX)/demo.vram.bin: la portada sale sin la animacion)"; \
+	 fi
 
 web: imagenes
 	python3 tools/md2html.py docs en

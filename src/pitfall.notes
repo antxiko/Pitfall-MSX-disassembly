@@ -1,7 +1,7 @@
-
-L 0x8D70 pinta_el_layout Vuelca el decorado: 0x71 bytes en crudo desde la fila 4, una fila de 32 que se repite seis veces, los tramos de las filas 12 y 13 y un guion de celdas
-L 0xB85E revela_el_dibujo_sigue
-zado del binario. Directivas: L=etiqueta, C=comentario de linea,
+# Anotaciones de Pitfall! (Activision, 1984, MSX1).
+#
+# Cada linea esta anclada a una direccion, asi que los comentarios sobreviven a
+# un retrazado del binario. Directivas: L=etiqueta, C=comentario de linea,
 # B=cabecera de bloque, D=rango de datos.
 #
 # TODO lo que hay aqui sale de leer el codigo que lo usa, no de que "parezca".
@@ -1334,7 +1334,8 @@ L 0xB4DB sonido_9_avanza
 C 0xB4DB mas periodo es menos tono: el sonido cae
 
 B 0xB4E6 Tres cuadros con el periodo del canal B bajando de 0x0382 de
-B 0xB4E6 0x7F en 0x7F: un chasquido que sube.
+B 0xB4E6 0x7F en 0x7F -o en 0x80: el sbc de 0xB528 se lleva el
+B 0xB4E6 acarreo y nadie lo limpia antes-: un chasquido que sube.
 L 0xB4E6 sonido_10   Canal B, chasquido ascendente de tres cuadros
 C 0xB4F4 volumen del canal B
 L 0xB504 sonido_10_paso
@@ -1401,6 +1402,7 @@ B 0xB7F1 pixel los diez patrones de 0xE132 y los vuelca a la tabla de
 B 0xB7F1 patrones; cada ocho cuadros recarga el dibujo y avanza una
 B 0xB7F1 columna, hasta la 0x18.
 L 0xB7F1 revela_el_dibujo   Saca el rotulo de entrada, un pixel por cuadro
+L 0xB85E revela_el_dibujo_sigue
 C 0xB7F8 uno de cada ocho cuadros toca columna nueva
 C 0xB810 columna 0x18: se acabo, y toma el relevo 0xB8C3
 L 0xB7FF revela_el_dibujo_columna
@@ -1513,7 +1515,7 @@ D 0xB6B0 0xB6B1 ret_huerfano_b6b0 Un `ret` detras del que cierra la rutina que r
 
 D 0xAF52 0xAF58 guion_anim_sigue_derecha 03 00 / 03 04 / 00 00: dos fotogramas de tres cuadros. Lo carga 0xA6EE cuando el bicho de 0xE2ED va hacia la derecha
 D 0xAF58 0xAF5E guion_anim_sigue_izquierda 03 08 / 03 0C / 00 00: los mismos tiempos con los otros dos patrones. Lo carga 0xA6CF, el camino de la izquierda
-D 0xAF84 0xAF98 guion_anim_sin_usar Un guion entero y bien formado -diez fotogramas, patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384 palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma es lento, de rotulo o de decorado, no de bicho
+D 0xAF84 0xAF98 guion_anim_sin_usar Un guion entero y bien formado -nueve fotogramas, patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384 palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma es lento, de rotulo o de decorado, no de bicho
 D 0xAFB0 0xAFB6 guion_anim_troncos 0A F8 / 0A FC / 00 00: dos patrones alternandose cada diez cuadros, que es el tronco rodando. Lo apunta el campo +0x0C de la plantilla de 0xAFC2, cuyo manejador es 0xA728
 D 0xAFBA 0xAFC2 inicializadores_troncos_2_y_3 Dos bloques de cuatro bytes (Y, X, patron, color) iguales entre si -6F E0 F8 06- y hermanos del de 0xAFB6, que es el primer tronco. Nadie los copia: 0xAD2E se lleva solo los cuatro del primero y 0xA745 coloca los otros dos por codigo a partir de el. O sea que los datos estan escritos y no se usan
 D 0xAFD8 0xAFDE guion_anim_cocodrilos 01 F8 / 01 FC / 00 00: los mismos dos patrones que el tronco pero cambiando cada cuadro, que es la boca del cocodrilo. Lo apunta la plantilla de 0xAFEA, manejador 0xA7F5

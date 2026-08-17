@@ -44,6 +44,48 @@ resto de la rutina de interrupción de la BIOS no llega a correr nunca.
 5. los dos sprites de encima del jugador (0x9D03);
 6. y el cierre (0x9AE0): las teclas de sistema y el reloj de inactividad.
 
+## El muñeco son tres sprites, uno por color
+
+Un sprite del MSX1 es de un solo color, así que un jugador de tres colores son
+tres sprites. 0x9D03 monta los otros dos a partir del principal: la misma X,
+**16 píxeles más arriba**, y los patrones (P-0x20)+0x68 y (P-0x20)+0xB0. Los
+colores los escribe la rutina que monta la escena: 0x0C en 0xE2A5, 0x06 en 0xE2A9
+y 0x0F en 0xE2AD. No es la única que los toca: `reaparece` los pone a cero para
+esconder al muñeco (0x8247) y los vuelve a encender a destiempo al volver
+(0x82D4-0x82E1), que es de dónde sale el parpadeo.
+
+O sea que Harry mide 16x32, y no son tres capas superpuestas: los dos sprites de
+arriba se solapan entre ellos —dos colores en la mitad de arriba— y el principal
+va debajo, un color para las piernas. Sacado de la memoria de vídeo volcada y
+recompuesto así (`tools/render_jugador.py`), sale la tira de los doce fotogramas
+que nombran los guiones de animación del propio cartucho:
+
+![Los doce fotogramas del protagonista](../imagenes/jugador-tira.png)
+
+Los tiempos también son los del cartucho: andar son cinco fotogramas de tres
+cuadros cada uno (0x8AE1), y trepar dos de un cuadro (0x8AF9). Andar a la
+izquierda usa los patrones 0x44 a 0x54 (0x8AED), que **son el espejo exacto** de
+los 0x20 a 0x30: comprobado píxel a píxel sobre la tira, los cinco. Los doce son
+los de los guiones y nada más: los dos de estar parado, 0x34 y 0x58, no salen ahí
+porque no vienen de un guion, los clava a mano `se_para` (0x8970 y 0x896B).
+
+Y el orden de las capas no es el que se supone: en el TMS9918 **el sprite de
+número más bajo va delante**, así que el de 0xE2A6 tapa al de 0xE2AA. Eso importa
+en los dos fotogramas de trepar, los únicos donde las dos capas de arriba se
+solapan: cinco píxeles cada uno, que con el orden al revés saldrían blancos en
+vez de rojos.
+
+Y la velocidad tampoco es una impresión: `anda` (0x88ED) escribe 0x00C8 en el
+campo de velocidad, que va en 1/256 de píxel por cuadro —200/256, o sea 0,78
+píxeles por cuadro— y 0xFF38 para el otro lado, que es el mismo número en
+negativo.
+
+El emulador coincide con la cuenta: volcando la RAM con el juego corriendo salen
+tres entradas de sprite en 0xE2A2 con la misma X, la Y 109 la principal y 93 las
+otras dos —dieciséis líneas por encima— y los patrones 0x34, 0x7C y 0xC4, que es
+exactamente 0x34, (0x34-0x20)+0x68 y (0x34-0x20)+0xB0. El 0x34 de ese volcado es
+el de estar parado, que por eso no está en la tira.
+
 ## Los objetos: seis bytes por eje, y un contador por cabeza
 
 0xE247 dice cuántos objetos hay vivos y detrás va un puntero por cada uno. De
@@ -107,7 +149,7 @@ La de 0xAEA4 solo la carga 0xAE2E, y solo cuando el tipo de escena es el 5.
 
 ## Las cajas de colisión
 
-0xE229-0xE243 son diez registros de tres bytes: la clase, la X por la izquierda
+0xE229-0xE246 son diez registros de tres bytes: la clase, la X por la izquierda
 y la X por la derecha. Las escriben las rutinas de escena al montar la pantalla,
 y las recorren 0x84EF, 0x8529 y 0x8589 con la X del jugador más ocho, o sea con
 su centro.
@@ -128,9 +170,11 @@ de 0x873B:
 | 7 | — | apunta a 0x874B, y no la escribe nadie |
 | 8 | tesoro | 0x878C: te lo llevas |
 | 9 | mata | 0x8221 |
-| 10 | escalera | 0x85EF: rebotas y retrocedes |
+| 10 | rebote | 0x85EF: inviertes la marcha y retrocedes tres pasos. **No es la escalera** |
 
-Las clases 2, 3 y 4 además ajustan la Y del jugador en 0x8529: hacen de suelo.
+Las clases 2, 3 y 4 además empujan al jugador **de lado** para sacarlo de la caja
+(0x8555-0x8578). Lo que se ajusta es su X, que es el campo +0x01 del atributo de
+sprite; la Y no la toca nadie ahí.
 
 ## El mundo no está guardado: se calcula
 
@@ -157,7 +201,8 @@ tipo y la variante, y a partir de ahí:
   donde empieza el siguiente;
 - **el juego de 16 casillas** del decorado, de la tabla de 0xA086;
 - y **los guiones de celdas**, que es un intérprete de tres líneas (0x9FE6): el
-  primer byte dice cuántas celdas, y detrás van registros de cuatro bytes con la
+  primer byte dice cuántas celdas, el segundo se salta sin leerlo —0x9FE7 y 0x9FE8
+  son dos `inc hl` seguidos— y detrás van registros de cuatro bytes con la
   posición dentro de la tabla de nombres y el número de casilla. Con eso se
   pintan la columna de la escalera, las franjas del suelo y los objetos de 3x2
   que hay a la derecha.
@@ -183,8 +228,9 @@ juego no sabe cuál estás usando. Y la demo se aprovecha de eso: le escribe a
 
 0xE20E-0xE21B es una copia de los registros 0 a 13 del chip de sonido, y 0xB37B
 la vuelca entera con un bucle de `outd` que cuenta de 13 a 0, una vez por cuadro
-y en cuanto los vectores han terminado de tocarla. Fuera de esa rutina, nadie
-escribe en el puerto 0xA1 en todo el cartucho.
+y en cuanto los vectores han terminado de tocarla. Fuera de esa rutina solo se
+escribe el puerto 0xA1 en 0xB24F y 0xB261, y no para sonar: es el registro 15,
+con el que el lector de mandos elige puerto de joystick.
 
 Encima de eso van cuatro vectores en 0xE1E6-0xE1ED. Pedir un sonido es llamar a
 0xB32E con un número de 0 a 10; la tabla de 0xB393 —once registros de tres bytes
@@ -198,7 +244,8 @@ fraccionaria en 0xE1FC de la que solo sale el byte alto (0xB471); el de 0xB5EA
 lee guiones de cuatro bytes y deja cada nota quieta hasta la siguiente. Los tres
 que no llevan guion —0xB49F, 0xB4E6 y 0xB52E— tienen el barrido metido en el
 propio código: 19 cuadros subiendo el periodo de 0x14 en 0x14, tres cuadros
-bajándolo de 0x7F en 0x7F, y un único cuadro de ruido.
+bajándolo de 0x7F en 0x7F —o de 0x80, porque el `sbc hl,bc` de 0xB528 se lleva el
+acarreo y nadie lo limpia antes— y un único cuadro de ruido.
 
 ## La liana se traza, no se dibuja
 

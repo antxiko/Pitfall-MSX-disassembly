@@ -47,9 +47,10 @@ describe con un byte, y por eso el mundo se puede escribir entero sin jugar.
 
 El bit 7 hace además **un segundo trabajo**, que es el detalle que más cuesta
 ver: aparte de ir dentro del índice del decorado, se vuelve a leer suelto en
-0xA9AA, en las escenas de hoyos, y decide dónde va la escalera —centrada en 0xD8
-con el bit encendido, en 0x31 con él apagado— y cuál de los dos dibujos se
-pinta.
+0xA9AA, en las escenas de hoyos, y decide dónde va la **caja de rebote** —la de
+clase 10, centrada en 0xD8 con el bit encendido y en 0x31 con él apagado— y cuál
+de los dos dibujos de hoyos se pinta. La escalera no se mueve: las dos ramas
+pintan el mismo guion, 0x8F06.
 
 El reparto que sale del anillo es prácticamente uniforme, y también se puede
 contar sin jugar: 31 escenas del tipo 0 y 32 de cada uno de los otros siete; 63
@@ -89,8 +90,9 @@ dice si estás en la superficie— y el registro se hace girar **un paso o tres*
 Por debajo, tres escenas de golpe.
 
 Eso convierte al subterráneo en un atajo de verdad, y se puede medir: la ruta
-más corta que se lleva los 32 tesoros son **190 pantallas** yendo siempre a la
-derecha, contra 238 sin bajar nunca. Un 20 % menos.
+más corta que se lleva los 32 tesoros son **190 pantallas** cruzadas, contra 238
+sin bajar nunca. Un 20 % menos. Y no son 190 a la derecha: 186 lo son, y en
+cuatro el cálculo retrocede para encadenar dos tesoros.
 
 Para bajar hace falta una escalera, y las escaleras se contaron sobre las 255
 capturas del recorrido. El resultado es limpio de una manera poco habitual: es
@@ -98,6 +100,11 @@ capturas del recorrido. El resultado es limpio de una manera poco habitual: es
 —que es decorado— o tiene 8, que es escalera. Las de 8 son 63, y son exactamente
 las 63 escenas de tipos 0 y 1, que es lo que la lectura del código ya decía. Dos
 métodos que no comparten nada dando el mismo número.
+
+El anillo entero es [el mapa del mundo](../imagenes/mapa-del-mundo.png), las 255
+escenas en rejilla y etiquetadas, y la ruta es [el guion de la partida
+perfecta](../imagenes/guion-de-la-partida-perfecta.png), una casilla por pantalla
+cruzada.
 
 ## En este cartucho no hay ni una letra
 
@@ -154,8 +161,8 @@ el `7B 7B 7B` que devuelve el charco al agua es el mismo que ya está dentro de
 la tabla de colores inicial, en 0xB0FB, y 0xAC6B lo copia de ahí.
 
 Y el mismo truco está en los tesoros. Las dos barras —la de 3000 y la de 4000—
-comparten color: los dos bytes de 0xAE90 valen 0x4B. Lo que las distingue es el
-patrón, no el color.
+comparten color: el byte de color vale 0x4B tanto en 0xAE90 como en 0xAE92. Lo
+que las distingue es el patrón, no el color.
 
 ## El juego se queda con la interrupción y no se la devuelve a la BIOS
 
@@ -192,10 +199,12 @@ cuadro. Pero es una lectura, no una medida.
 
 ## El sonido no toca el chip: toca catorce bytes de RAM
 
-En todo el cartucho hay **un solo sitio** que escribe en el puerto del chip de
-sonido: el bucle de `outd` de 0xB380. Lo que hay en 0xE20E-0xE21B es una copia
-en RAM de los registros 0 a 13, y 0xB37B la vuelca entera una vez por cuadro,
-contando de 13 a 0.
+En todo el cartucho hay **un solo sitio** que escribe los registros de sonido: el
+bucle de `outd` de 0xB380. Lo que hay en 0xE20E-0xE21B es una copia en RAM de los
+registros 0 a 13, y 0xB37B la vuelca entera una vez por cuadro, contando de 13 a
+0. Al puerto 0xA1 se escribe en otros dos sitios, 0xB24F y 0xB261, pero no es
+sonido: es el registro 15, con el que el lector de mandos elige qué puerto de
+joystick mira.
 
 Encima de eso van cuatro vectores en 0xE1E6-0xE1ED, y la tabla de 0xB393 dice
 qué rutina se instala en cuál para cada uno de los once sonidos.
@@ -269,8 +278,9 @@ la dirección en 0xE132. La caja de colisión de clase 3 se estira con él, así
 el peligro no es un dibujo: es una caja que crece y mengua.
 
 Y el periodo del objeto alterna entre 0x96 y 0x44. O sea que el ciclo **no es
-simétrico**: el hoyo se queda abierto más del doble de tiempo del que se queda
-cerrado.
+simétrico**, y va al contrario de lo que uno esperaría: son 0x96 cuadros con el
+hoyo estrecho (0xA913) contra 0x44 con el hoyo abierto del todo (0xA952). Está
+cerrado más del doble de tiempo del que está abierto.
 
 ## Lo que sobró dentro del cartucho
 
@@ -286,10 +296,12 @@ aparece su dirección.
   el juego no usa porque le basta con la fila 8.
 - **Seis `ret` huérfanos** (0x9CBD, 0xAA73, 0xACB4, 0xADE7, 0xAE37, 0xB6B0): un
   solo byte 0xC9 pegado detrás del final de una rutina, sin nadie que lo apunte.
-  Cinco de los seis van justo después de un `jp` que se lleva el control fuera,
-  o sea que son el cierre que el ensamblador escribió y que nunca se ejecuta.
-- **Un guion de animación entero y bien formado** en 0xAF84 —diez fotogramas,
-  patrones de 0x20 a 0x40, cincuenta cuadros cada uno— que no carga nadie.
+  Cuatro de los seis van justo después de un `jp` que se lleva el control fuera;
+  los otros dos (0x9CBD y 0xB6B0) van detrás de otro `ret`. En los dos casos son
+  el cierre que el ensamblador escribió y que nunca se ejecuta.
+- **Un guion de animación entero y bien formado** en 0xAF84 —nueve fotogramas,
+  patrones de 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno— que no
+  carga nadie.
   Cincuenta cuadros por fotograma es lento: eso no es un bicho.
 - **Una segunda copia del reloj de salida** en 0x8F00, con los mismos cinco
   números de casilla que se leen «20:00» que hay en 0x8A69, pero con un 0x00

@@ -4185,7 +4185,7 @@ monta_la_liana_objeto:
 ;   0xaf7c..0xaf80  (4 bytes)
 ; DATOS inicializador_e2aa: Cuatro bytes que 0xAD03 copia a 0xE2AA
 ;   0xaf80..0xaf84  (4 bytes)
-; DATOS guion_anim_sin_usar: Un guion entero y bien formado -diez fotogramas, patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384 palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma es lento, de rotulo o de decorado, no de bicho
+; DATOS guion_anim_sin_usar: Un guion entero y bien formado -nueve fotogramas, patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384 palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma es lento, de rotulo o de decorado, no de bicho
 ;   0xaf84..0xaf98  (20 bytes)
 ; DATOS plantilla_objeto_e2d5: Plantilla de objeto de 24 bytes que 0xAD0E copia a 0xE2D5. Su manejador es 0x8125
 ;   0xaf98..0xafb0  (24 bytes)
@@ -4957,7 +4957,8 @@ sonido_9_avanza:
 
 ; ----------------------------------------------------------------------
 ; Tres cuadros con el periodo del canal B bajando de 0x0382 de
-; 0x7F en 0x7F: un chasquido que sube.
+; 0x7F en 0x7F -o en 0x80: el sbc de 0xB528 se lleva el
+; acarreo y nadie lo limpia antes-: un chasquido que sube.
 ; ----------------------------------------------------------------------
 sonido_10:		; Canal B, chasquido ascendente de tres cuadros
 	ld hl,sonido_10_paso		;b4e6

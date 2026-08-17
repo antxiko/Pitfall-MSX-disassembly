@@ -39,6 +39,32 @@ class TestListado(unittest.TestCase):
         n = asm().count("DATOS sin identificar")
         self.assertEqual(n, 0, "hay %d bloques de datos sin identificar" % n)
 
+    def test_ninguna_etiqueta_declarada_dos_veces(self):
+        """Una direccion declarada dos veces infla la cuenta de etiquetas.
+
+        Paso: 0x8D70 estaba declarada dos veces con el mismo texto -una de ellas
+        arrastrada al principio del fichero por una escritura que se comio la
+        cabecera-, asi que la web publicaba 338 etiquetas cuando el listado
+        tenia 337. El listado sale igual, y nadie se enteraba.
+        """
+        vistas, repetidas = set(), []
+        for l in notas():
+            if not l.startswith("L "):
+                continue
+            d = l.split()[1]
+            if d in vistas:
+                repetidas.append(d)
+            vistas.add(d)
+        self.assertEqual(repetidas, [], "etiquetas declaradas dos veces: %s"
+                         % " ".join(repetidas))
+
+    def test_la_cabecera_de_las_notas_esta_entera(self):
+        """El fichero empieza por su cabecera de comentarios, no por una linea
+        de datos: si empieza por una directiva, algo se ha comido el principio."""
+        primera = next((l for l in notas() if l.strip()), "")
+        self.assertTrue(primera.startswith("#"),
+                        "las notas empiezan por %r y no por la cabecera" % primera[:40])
+
     def test_ninguna_etiqueta_declarada_con_equ(self):
         """Un `equ` suelto senala una direccion que el listado no ha colocado.
 
@@ -177,6 +203,94 @@ class TestNadaDeOtroJuego(unittest.TestCase):
                              os.path.join(RAIZ, "src", "pitfall.nocode")])
         self.assertEqual(malos, [], "material de otro proyecto: %s"
                          % "; ".join(malos))
+
+
+class TestLaWebNoMiente(unittest.TestCase):
+    """Que las cifras publicadas sigan siendo las del arbol.
+
+    Este test existe porque ya pasó: la pagina de EMPEZAR publicaba «5679
+    lineas» y «119 rangos de datos» cuando el listado tenia 5715 y 130. Nadie lo
+    caza -la web se genera igual, los enlaces no se rompen y el reensamblado no
+    tiene nada que ver-, y una cifra vieja publicada como hecho es exactamente
+    lo que este repositorio dice no hacer.
+
+    Todas las cifras se cuentan sobre src/, sin el cartucho: el reparto de bytes
+    tambien, porque los datos son la suma de los rangos declarados y el codigo
+    es lo que queda de los 16384.
+    """
+
+    CARTUCHO = 16384
+
+    def cifras(self):
+        ls = notas()
+        datos = sum(int(l.split()[2], 16) - int(l.split()[1], 16)
+                    for l in ls if l.startswith("D "))
+        return {
+            "lineas": len(asm().splitlines()),
+            "etiquetas": sum(1 for l in ls if l.startswith("L ")),
+            "comentarios": sum(1 for l in ls if l.startswith("C ")),
+            "rangos": sum(1 for l in ls if l.startswith("D ")),
+            "datos": datos,
+            "codigo": self.CARTUCHO - datos,
+        }
+
+    # Como se escribe cada cifra en las paginas, en los dos idiomas. El numero
+    # va suelto en la prosa o dentro de una fila de tabla, y puede llevar el
+    # separador de miles de su idioma (9.467 en castellano, 9,467 en ingles).
+    PATRONES = {
+        "lineas": r"([\d.,]+)\s+(?:líneas|lines)\b",
+        "etiquetas": r"(?:^\|\s*(?:etiquetas bautizadas|named labels)\s*\|\s*([\d.,]+)"
+                     r"|([\d.,]+)\s+(?:etiquetas|rutinas y tablas bautizadas"
+                     r"|labels|routines and tables named))",
+        "comentarios": r"(?:^\|\s*(?:comentarios anclados|anchored comments)\s*\|\s*([\d.,]+)"
+                       r"|([\d.,]+)\s+comentarios\b|([\d.,]+)\s+comments\b)",
+        "rangos": r"(?:^\|\s*(?:rangos de datos con explicación"
+                  r"|data ranges with an explanation)\s*\|\s*([\d.,]+)"
+                  r"|([\d.,]+)\s+(?:rangos de datos|ranges of data))",
+        "codigo": r"(?:^\|\s*(?:bytes de código|bytes of code)\s*\|\s*([\d.,]+)"
+                  r"|([\d.,]+)\s+(?:de código|of code)\b)",
+        "datos": r"(?:^\|\s*(?:bytes de datos|bytes of data)\s*\|\s*([\d.,]+)"
+                 r"|([\d.,]+)\s+(?:de datos|of data)\b)",
+    }
+
+    def paginas(self):
+        docs = os.path.join(RAIZ, "docs")
+        out = []
+        for base, _, ficheros in os.walk(docs):
+            if "imagenes" in base:
+                continue
+            out += [os.path.join(base, f) for f in ficheros if f.endswith(".md")]
+        out += [os.path.join(RAIZ, f) for f in ("README.md", "README.es.md")
+                if os.path.exists(os.path.join(RAIZ, f))]
+        return out
+
+    def test_las_cifras_publicadas_son_las_del_arbol(self):
+        esperado = self.cifras()
+        malas = []
+        for ruta in self.paginas():
+            with open(ruta, encoding="utf-8") as f:
+                texto = f.read()
+            for clave, patron in self.PATRONES.items():
+                for m in re.finditer(patron, texto, re.M):
+                    visto = next(g for g in m.groups() if g)
+                    n = int(visto.replace(".", "").replace(",", ""))
+                    if n != esperado[clave]:
+                        malas.append("%s: %s dice %s y son %d"
+                                     % (os.path.relpath(ruta, RAIZ), clave,
+                                        visto, esperado[clave]))
+        self.assertEqual(malas, [], "cifras desfasadas: %s" % "; ".join(malas))
+
+    def test_cada_cifra_se_publica_al_menos_una_vez(self):
+        """Si un patron deja de encontrar nada, el test de arriba pasa en vacio."""
+        trozos = []
+        for ruta in self.paginas():
+            with open(ruta, encoding="utf-8") as f:
+                trozos.append(f.read())
+        texto = "\n".join(trozos)
+        sin = [c for c, p in self.PATRONES.items()
+               if not re.search(p, texto, re.M)]
+        self.assertEqual(sin, [], "estas cifras ya no aparecen en la web, asi que"
+                                  " nadie las vigila: %s" % ", ".join(sin))
 
 
 if __name__ == "__main__":

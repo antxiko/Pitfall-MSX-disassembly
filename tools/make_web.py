@@ -296,6 +296,84 @@ TIPOS = [
 # -el negro del MSX le sale con un tinte-, de ahi el umbral.
 UMBRAL, MARGEN, ESCALA = 40, 4, 2
 
+# ---------------------------------------------------------------------------
+# Harry andando encima del titulo
+# ---------------------------------------------------------------------------
+# NI EL DIBUJO NI EL RITMO SE ELIGEN AQUI: los doce fotogramas de
+# docs/imagenes/jugador.png los saca tools/render_jugador.py de la VRAM volcada
+# montando las tres capas de sprite como las monta 0x9D03, y los tiempos son
+# los del guion de animacion del cartucho.
+#
+#   guion_anda_derecha (0x8AE1)  cinco fotogramas de TRES interrupciones cada
+#   uno -> 15 interrupciones por zancada, 0,25 s a 60 Hz.
+#   anda (0x88ED)  escribe 0x00C8 en la velocidad del jugador, que va en 1/256
+#   de pixel por cuadro: 200/256 = 0,78125 px por interrupcion, 46,875 px/s.
+#
+# La banda que cruza es el ancho del rotulo que hay debajo, medido sobre
+# logo.png y no elegido a ojo, y Harry se dibuja a la misma escala que el
+# rotulo: asi los pixeles de arriba y los de abajo son del mismo tamano.
+# Cruzarla, a 46,875 px/s, sale de dividir. La vuelta se hace VOLTEANDO el
+# dibujo en vez de usar los patrones de la izquierda porque se ha comprobado
+# sobre la tira que los cinco de 0x44-0x54 son el espejo exacto de los de
+# 0x20-0x30: se ve exactamente lo mismo.
+#
+# El "a 60 Hz" es la unica suposicion: en una maquina de 50 Hz el cartucho
+# anda mas despacio, porque cuenta interrupciones y no segundos.
+FOTOGRAMAS_ANDA = 5                 # los del guion 0x8AE1
+ZANCADA = 5 * 3 / 60                # 0,25 s: cinco fotogramas de tres cuadros
+PXS = 0x00C8 / 256 * 60             # 46,875 px por segundo: la velocidad de 0x893E
+ANCHO_LOGO = 640                    # lo que mide el rotulo en la portada (CSS)
+
+# TODO va en PORCENTAJES, y a proposito: la banda tiene que medir exactamente lo
+# mismo que el rotulo que hay debajo, y el rotulo se pinta con
+# `width:min(100%,640px)`. Con `100vw` no cuadraba -100vw incluye la barra de
+# scroll y el 100% del rotulo no-, asi que la banda salia unos pixeles mas ancha
+# y encima podia empujar scroll horizontal. Con el mismo min() y un
+# aspect-ratio, los pixeles de arriba y los de abajo miden igual a cualquier
+# ancho de pantalla, y sin una sola medida absoluta mas.
+ANIM = """
+.paseo{{position:relative;margin:0 auto;width:min(100%,{logo}px);
+  aspect-ratio:{ancho}/32;border-bottom:1px solid var(--linea);overflow:hidden}}
+.paseo b{{position:absolute;left:0;top:0;height:100%;
+  width:calc(100%*16/{ancho});animation:va {viaje:.4g}s linear infinite}}
+.paseo i{{display:block;width:100%;height:100%;overflow:hidden;
+  animation:mira {viaje:.4g}s steps(2,jump-none) infinite}}
+.paseo u{{display:block;width:{sabana}%;height:100%;image-rendering:pixelated;
+  background:url({img}) 0 0/100% 100%;
+  animation:paso {zancada:.4g}s steps({fot}) infinite}}
+@keyframes va{{0%{{transform:translateX(0)}}
+  50%{{transform:translateX(calc(100%*{recorrido}/16))}}
+  100%{{transform:translateX(0)}}}}
+@keyframes paso{{from{{transform:translateX(0)}}
+  to{{transform:translateX(-{avance:.6g}%)}}}}
+@keyframes mira{{from{{transform:scaleX(1)}}to{{transform:scaleX(-1)}}}}
+@media(prefers-reduced-motion:reduce){{.paseo b,.paseo i,.paseo u{{animation:none}}}}
+"""
+
+
+def paseo_css(ruta_jug, ruta_logo):
+    """El CSS de la animacion, con las medidas sacadas del rotulo y del binario.
+
+    El ancho de la banda son los pixeles de MSX que ocupa el rotulo -logo.png
+    lleva dos pixeles por cada uno del MSX, que es la ESCALA con que se
+    recorta-, y de ahi sale su aspect-ratio. Si no hay rotulo, se usa la
+    pantalla entera del MSX: 256 px.
+    """
+    if os.path.exists(ruta_logo):
+        ancho = lee_png(ruta_logo)[0] // ESCALA
+    else:
+        ancho = 256
+    recorrido = ancho - 16                     # Harry ocupa 16 px de los suyos
+    # Cuantos fotogramas trae la tira se cuenta en la propia tira, no aqui: es
+    # su ancho entre 16, y si algun dia sale a otra escala, su alto entre 32.
+    w_tira, h_tira, _ = lee_png(ruta_jug)
+    fotogramas = w_tira // (16 * (h_tira // 32))
+    return ANIM.format(img=img64(ruta_jug), ancho=ancho, logo=ANCHO_LOGO,
+                       recorrido=recorrido, zancada=ZANCADA,
+                       viaje=2 * recorrido / PXS,      # el ciclo es IDA Y VUELTA
+                       fot=FOTOGRAMAS_ANDA, sabana=100 * fotogramas,
+                       avance=100 * FOTOGRAMAS_ANDA / fotogramas)
+
 
 def img64(ruta):
     with open(ruta, "rb") as f:
@@ -393,6 +471,16 @@ def main(argv):
     cabecera = (f'<img src="{img64(ruta_logo)}" alt="Pitfall! (1984)">'
                 if os.path.exists(ruta_logo) else "<h1>Pitfall! (1984)</h1>")
 
+    # Harry anda encima del titulo si esta la tira de fotogramas; si no la hay
+    # -sale de la VRAM volcada, que no se versiona-, la portada va sin el.
+    ruta_jug = os.path.join(imgdir, "jugador.png")
+    anim = paseo = ""
+    if os.path.exists(ruta_jug):
+        anim = paseo_css(ruta_jug, ruta_logo)
+        # tres cajas: la que viaja (b), la ventana de un fotograma que voltea (i)
+        # y la sabana de doce que se corre por dentro (u)
+        paseo = '<div class="paseo" aria-hidden="true"><b><i><u></u></i></b></div>'
+
     nav = "".join(f'<a href="{h}">{x}</a>' for h, x in t["nav"])
     nav += "".join(f'<a href="{h}">{x}</a>' for h, x in t["docnav"])
     nav += (f'<a href="{t["otro"][0]}" style="margin-left:auto;color:var(--oro)">'
@@ -411,8 +499,9 @@ def main(argv):
     html = f"""<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{t['titulo']}</title>
-<style>{ESTILO}</style>
+<style>{ESTILO}{anim}</style>
 <header class="top">
+  {paseo}
   {cabecera}
   <p class="claim">{t['claim']}</p>
   <p class="ficha">{' · '.join(t['ficha'])}</p>

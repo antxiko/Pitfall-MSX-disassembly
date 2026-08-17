@@ -1,4 +1,4 @@
-<title>OPEN-QUESTIONS — Pitfall! (1984)</title>
+<title>Open questions — Pitfall! (1984)</title>
 <style>
 :root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
   --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
@@ -81,5 +81,35 @@ footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
 audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
 </style>
 <div class="w"><nav class="top"><a href="index.html">Home</a><a href="GETTING-STARTED.html">Start</a><a href="THE-GAME.html">The game</a><a href="THE-CARTRIDGE.html">The cartridge</a><a href="THE-CODE.html">The code</a><a href="FINDINGS.html">Findings</a><a href="OPEN-QUESTIONS.html" style=color:var(--tinta)>Open questions</a><a href="es/PREGUNTAS-ABIERTAS.html" style="margin-left:auto;color:var(--oro)">Castellano</a></nav>
-<h1 id="open-questions">OPEN-QUESTIONS</h1>
+<h1 id="open-questions">Open questions</h1>
+<p>Every byte of the cartridge has an owner, the listing gives the original back byte for byte and its 337 labels have names. What that does <b>not</b> mean is that all of them have what they do written down: 79 carry their explanation on the label itself and the rest lean on the 302 line comments and the 50 block headers, so there are named routines of which only the name is stated. This page says what those figures mean exactly, and what is left to find out.</p>
+<h2 id="the-clock-doesn-t-add-up-and-it-isn-t-being-glossed-over">The clock doesn&#x27;t add up, and it isn&#x27;t being glossed over</h2>
+<p>The code says something very precise: 0x9DB8 spends one frame per pass and ticks once every 60 (0xE1D5). Sixty frames.</p>
+<p>What <b>cannot</b> be said from there is how long that is in seconds. Sixty frames are a second only if the loop runs at one frame per interrupt and none is lost, and a measurement in the emulator gave something of the order of nine real seconds per tick. That difference is still unexplained.</p>
+<p>So how long a game of «20:00» lasts is not settled. What is measured is the period —60 frames— and what is needed is to measure the tick for real, with the emulator&#x27;s clock beside it, and see where the frames are going.</p>
+<h2 id="no-winning-condition-turns-up">No winning condition turns up</h2>
+<p>The only two ways out of a game there are in the code are running out of lives (0x8975) and running out of clock (0x9DEA). Both end up in the same place: the closing sequence at 0x9E0E.</p>
+<p>That collecting all 32 treasures does anything is <b>neither proved nor ruled out</b>. What can be stated is what was looked for and isn&#x27;t there: in the traced code there there is no comparison against 32 that has anything to do with the treasures —the only one there is compares the phase of the vine&#x27;s swing, at 0xA5F0— and apart from the 32 bits of treasures taken (0xE21D-0xE220) no counter of how many you are carrying turns up. If there is an ending for having collected them all, it doesn&#x27;t come from there.</p>
+<h2 id="the-190-screen-route-is-a-calculation-not-a-game">The 190-screen route is a calculation, not a game</h2>
+<p>The number is soundly made —it comes from walking the ring of 255 scenes with the cartridge&#x27;s own screen-change rules, counting the tunnel shortcut— but it measures <b>screens crossed</b>, and nothing else.</p>
+<p>What is not in the count: time, the 20:00 clock, running, jumping, waiting for a log to go by, and going down or up a ladder, which are counted as free. It is not a recorded game.</p>
+<p>It still needs running in the emulator to check two things: that the 32 treasures turn up and that the score reaches 114000.</p>
+<h2 id="which-creature-is-which-and-which-obstacle-is-which">Which creature is which, and which obstacle is which</h2>
+<p>Three routines (0xAA74, 0xAAB7 and 0xAB85) paint a 3x2-cell drawing in the same gap on the screen, each with its own sprite patterns and its own collision box —class 6 for the first two, which kill, and class 8 for the third, which is a treasure—. What is inside is known in full. <b>Which is which to look at, no.</b></p>
+<p>The same goes for the object at 0xA69E, which closes in on the player&#x27;s X and stops when it has him right overhead, with its class 9 box: it kills, it moves like that, and what animal it is has to be seen.</p>
+<p>It is an afternoon of emulator crossing captures against routines, not an investigation.</p>
+<h2 id="sixteen-bytes-with-an-owner-and-no-use">Sixteen bytes with an owner and no use</h2>
+<p>At 0xBAA2 there are two lists of eight bytes, and the second is the first with the nibbles swapped: 61 against 16, 91 against 19, B1 against 1B. The range is bounded on both sides —the initialiser that ends right there and the compressed block that begins right after— so the sixteen bytes are declared and counted.</p>
+<p>But they have no consumer: not one traced instruction reads them, and none of the 16384 words of the cartridge is worth their address. They are explained as data, not as use, and that is the difference the «100 %» doesn&#x27;t tell apart.</p>
+<p>By the same yardstick: the animation script at 0xAF84 and the second copy of the clock at 0x8F00 are perfectly identified and nobody uses them either.</p>
+<h2 id="what-backs-each-figure-and-what-doesn-t">What backs each figure, and what doesn&#x27;t</h2>
+<p>So that it is clear what is behind the numbers in this repository:</p>
+<ul><li><b>It reassembles byte for byte.</b> The published listing is assembled and the sha256 of the result is the cartridge&#x27;s. If a comment had eaten a byte, that line wouldn&#x27;t come out.</li><li><b>Not one byte unexplained.</b> The 16384 share out into 9467 of code the tracer reaches by following the flow for real and 6917 inside a declared range, each one with the instruction that reads it written beside it.</li><li><b>No area of data is read as code.</b> That is a separate check, and it is needed: a disassembly can reassemble perfectly and still be lying, if some artwork is being read as instructions. The bytes don&#x27;t change, only what we say about them does.</li><li><b>No entry point falls inside an area of data.</b> Seeding the tracer with a badly deduced address inflates the coverage without setting off any alarm, so there is a rule for exactly that.</li></ul>
+<p>And what that 100 % does <b>not</b> mean: that what every byte is for is known. It means that every byte is inside a named range, and that the name comes from having read the instruction that consumes it. The three cases in the section above are precisely the exception, and that is why they are written down.</p>
+<p>The comments in the listing are verified by sampling —the dispatcher table at 0x8AA0 matches the ROM byte for byte, and the six dead routines were confirmed by a second route— but not line by line.</p>
+<h2 id="four-warnings-for-whoever-comes-after">Four warnings for whoever comes after</h2>
+<p><b>A period is not a speed, and a frame counter is not a clock.</b> Sixty frames per tick is what the code says; how long that lasts is another question, and confusing the two is what left the clock section open.</p>
+<p><b>Writing 0xE222 by hand repaints nothing.</b> The only way a scene ever gets built is 0x9EE6, and it is reached from the start of a game (0x809F) and from the screen change (0x9CBE and 0x9CF9), and from nowhere else. To walk the world in the emulator you have to write 0xE7 into 0xE2A3 —the player&#x27;s X— and let the game change screen by itself.</p>
+<p><b>And then the captures are out by one.</b> The walk photographs after taking the step, so capture number N is not scene N. They are crossed by their screen register value, which is in the file name, and not by the number.</p>
+<p><b>Hunting for pointers by brute force lies.</b> A run of repeated bytes looks like a pointer, and reading an operand from the middle of an instruction gives plausible addresses that don&#x27;t exist. Every lead that comes from there is confirmed against the listing before being believed; it is the reason the tools in this repository walk only instruction starts.</p>
 <footer><p><em>Pitfall!</em> was published by Activision in 1984 for the MSX. There isn't a single line of text in the cartridge, and the only thing it signs is the <b>Copyright 1982, 1984</b> drawn at the foot of the screen: 1982 is the date of the Atari 2600 original and 1984 that of this conversion. All rights in the game remain with their holders. This is preservation, study and documentation work.</p></footer></div>

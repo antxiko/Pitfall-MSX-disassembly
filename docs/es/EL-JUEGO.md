@@ -44,9 +44,10 @@ nulos: solo el tipo 0 se queda con una escena menos.
 
 Los tipos 0 y 1 comparten rutina, así que esas 63 escenas son la misma clase de
 pantalla. Lo que las parte en dos es **otro bit**: 0xA9AA lee suelto el bit 7 del
-registro y con él decide dónde va la escalera —centrada en 0xD8 con el bit
-encendido, en 0x31 con él apagado— y cuál de los dos dibujos de hoyos se pinta,
-el de uno o el de tres.
+registro y con él decide dónde va la **caja de rebote** —la de clase 10, centrada
+en 0xD8 con el bit encendido y en 0x31 con él apagado— y cuál de los dos dibujos
+de hoyos se pinta, el de uno o el de tres. La escalera no se mueve de sitio: las
+dos ramas pintan el mismo guion de celdas, 0x8F06 (0x8D4A y 0x8D5D).
 
 Y los tipos 2 y 3 son **el mismo dibujo con distinto color**: 0xAC7C escribe `1B 1B
 1B` en la tabla de colores, que deja el charco negro —brea—, y 0xAC6B escribe
@@ -71,8 +72,8 @@ cada una, sale un tesoro de cada clase ocho veces:
 | 0xABB7 | 5000 | 8 |
 
 Son cuatro dibujos: el saco de dinero, dos barras y el anillo con la piedra, que
-es el más caro. Las dos barras comparten hasta el color —los dos bytes de 0xAE90
-valen 0x4B—, y lo único que las distingue es el patrón.
+es el más caro. Las dos barras comparten hasta el color —el byte de color vale
+0x4B en 0xAE90 y también en 0xAE92—, y lo único que las distingue es el patrón.
 
 Ocho por cada una, y ni uno más: 8 × (2000+3000+4000+5000) = **112000 puntos**
 repartidos por el mundo. El marcador arranca en 2000 (0x8A28), así que el techo
@@ -88,8 +89,9 @@ el tesoro no vuelve a aparecer.
 Por los hoyos se baja al subterráneo, y también por la escalera que llevan las
 escenas de tipos 0 y 1 —63 de las 255—. La escalera no tiene caja de colisión:
 se comprueba a mano que la escena sea de esas y que la X del jugador caiga entre
-0x70 y 0x88, que es justo donde el guion de celdas de 0x8F06 pinta la columna
-(0x83D4).
+0x70 y 0x88 (0x83D4). Esa ventana es **más ancha que el dibujo**: el mástil que
+pinta el guion de celdas de 0x8F06 es la columna 16, o sea de 0x80 a 0x87, así que
+se baja también desde un poco antes de pisarlo.
 
 Y ahí abajo el mundo corre al triple. El bit 0 de 0xE2EB dice si estás en la
 superficie —0xACE4 lo enciende al empezar la partida, 0x8751 lo apaga al caer
@@ -98,15 +100,18 @@ cruzar una pantalla hace girar el registro **tres pasos en vez de uno** (0x9CD2)
 Tres escenas de golpe.
 
 Sobre esas dos reglas se puede calcular la ruta más corta que se lleva los 32
-tesoros: **190 pantallas** yendo siempre hacia la derecha, contra 238 si no se
-baja nunca. El atajo ahorra un 20 %.
+tesoros: **190 pantallas** cruzadas, contra 238 si no se baja nunca: el atajo
+ahorra un 20 %. No son 190 a la derecha; 186 lo son, y en cuatro el cálculo
+retrocede para encadenar dos tesoros.
 
 Es un cálculo, no una partida: el coste está medido en pantallas cruzadas, la
 escalera se cuenta como gratis, y el reloj no entra en la cuenta.
 
 ## Lo que te cuesta puntos, y lo que te cuesta una vida
 
-Solo hay una cosa en todo el juego que no mata:
+De las diez clases de caja solo cuatro cuestan una vida: la 3 y la 4 por 0x83B9,
+y la 6 y la 9 por 0x8226, que son los dos únicos sitios del cartucho desde los
+que se llama a quitar una vida. Esto es lo que hacen las demás:
 
 - **el tronco** (clase de colisión 1, manejador 0x8640) te tumba y te va restando
   **un punto por cuadro** mientras te pisa (0x8674). Se sale andando, y en cuanto
@@ -171,21 +176,27 @@ pausar, porque eso quiere decir que lo que corre es la secuencia final.
 ## Si nadie toca nada, la pantalla se apaga
 
 0x9B6D lleva tres contadores en cascada, 0xE25A, 0xE25B y 0xE25C, cada uno de
-60. Mientras llegue entrada se recargan; cuando se agotan los tres, el registro 1
+60. Mientras llegue entrada se recargan los dos de fuera, 0xE25B y 0xE25C
+(0x9B74); el primero sigue contando y se recarga él solo al llegar a cero
+(0x9B82). Cuando se agotan los tres, el registro 1
 del chip gráfico se pone a 0x82 y la pantalla se apaga (0x9B8D). A partir de ahí
-el teclado se mira cada 64 cuadros, y solo despiertan RETURN, STOP o ESC
-(0x9BA9). Al volver, el registro 1 vuelve a 0xE2 (0x9BAF).
+el juego se queda en un bucle de espera con la interrupción deshabilitada —el `di`
+va antes de apagar, en 0x9B8C—, así que ahí no hay cuadros que contar. Despierta
+cualquiera de las cuatro direcciones o de los dos botones (0x9B99) y, por la fila
+7 del teclado, RETURN, STOP o ESC (0x9BA9). Al volver, el registro 1 vuelve a
+0xE2 (0x9BAF).
 
-## La demo se juega sola, y va grabada
+## La demo se juega sola, y va grabada byte a byte
 
-La presentación (0xB6B1) no sale por una tecla: sale cuando el guion de la demo
-gasta siete entradas (0xB751). A partir de ahí, 0xE221 vale 1 y la entrada del
+De la presentación (0xB6B1) no se sale con una tecla: se sale cuando el guion de
+la demo ha gastado siete de sus entradas (0xB751). A partir de ahí, 0xE221 vale 1 y la entrada del
 jugador ya no se lee: cada cuadro se le mete la que dicta la tabla de 0xB9E4,
 que son parejas [cuántos cuadros][qué se pulsa] en el mismo formato que sale del
 teclado (0xB9C8).
 
 Con seis parejas se acaba la partida de la demo, y detrás vienen tres esperas de
-0xFF cuadros: no hay ninguna inteligencia jugando, hay doce bytes.
+0xFF cuadros: no hay ninguna inteligencia jugando, hay dieciocho bytes —doce de
+partida y seis de espera—.
 
 ## El final
 

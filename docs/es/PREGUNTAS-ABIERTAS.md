@@ -1,9 +1,11 @@
 # Preguntas abiertas
 
 Cada byte del cartucho tiene dueño, el listado vuelve a dar el original byte a
-byte y las 338 etiquetas tienen escrito qué hacen. Eso no es una lista de
-deberes tachados: esta página cuenta qué significan esas cifras exactamente, y
-qué queda por saber.
+byte y sus 337 etiquetas tienen nombre. Lo que **no** quiere decir eso es que
+todas lleven escrito qué hacen: 79 llevan su explicación en la propia etiqueta y
+el resto se apoya en los 302 comentarios de línea y en las 50 cabeceras de
+bloque, así que hay rutinas bautizadas de las que solo está dicho el nombre. Esta
+página cuenta qué significan esas cifras exactamente, y qué queda por saber.
 
 ## El reloj no cuadra, y no se disimula
 
@@ -27,8 +29,10 @@ secuencia final de 0x9E0E.
 
 Que llevarse los 32 tesoros haga algo **no está demostrado ni descartado**. Lo
 que se puede afirmar es lo que se ha buscado y no está: en el código trazado no
-hay ni una comparación contra 32, y aparte de los 32 bits de tesoros cogidos
-(0xE21D-0xE220) no aparece ningún contador de cuántos llevas. Si hay final por
+no hay ninguna comparación contra 32 que tenga que ver con los tesoros —la única
+que hay compara la fase del balanceo de la liana, en 0xA5F0—, y aparte de los 32
+bits de tesoros cogidos (0xE21D-0xE220) no aparece ningún contador de cuántos
+llevas. Si hay final por
 haberlos recogido todos, no sale de ahí.
 
 ## La ruta de 190 pantallas es un cálculo, no una partida
@@ -107,8 +111,8 @@ Sesenta cuadros por tick es lo que dice el código; cuánto dura eso es otra
 pregunta, y confundirlas es lo que dejó abierto el apartado del reloj.
 
 **Escribir 0xE222 a pelo no repinta nada.** La única vía por la que se monta una
-escena es 0x9EE6, y solo se llega a ella desde el cambio de pantalla (0x9CBE y
-0x9CF9). Para recorrer el mundo en el emulador hay que escribir 0xE7 en 0xE2A3
+escena es 0x9EE6, y se llega a ella desde el arranque de la partida (0x809F) y
+desde el cambio de pantalla (0x9CBE y 0x9CF9), y de ningún otro sitio. Para recorrer el mundo en el emulador hay que escribir 0xE7 en 0xE2A3
 —la X del jugador— y dejar que el juego cambie de pantalla él solo.
 
 **Y entonces las capturas van corridas una.** El recorrido fotografía después de
