@@ -1,0 +1,161 @@
+<title>Hallazgos — Pitfall! (1984)</title>
+<style>
+:root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
+  --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+@media (prefers-color-scheme:light){:root{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;
+  --panel:#f7f6f2;--linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}}
+:root[data-theme="dark"]{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;
+  --linea:#23262e;--rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+:root[data-theme="light"]{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;--panel:#f7f6f2;
+  --linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);padding:0 1.25rem 6rem;
+  font:15px/1.7 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.w{max-width:1120px;margin:0 auto}
+.n{max-width:68ch}
+h1,h2,h3,h4{font-weight:400;text-wrap:balance}
+a{color:var(--cyan)}
+img{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+header.top{display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding:4rem 0 2rem;text-align:center}
+header.top img{width:min(100%,640px)}
+.claim{max-width:60ch;color:var(--suave);font-size:1.05rem}
+.claim b{color:var(--tinta);font-weight:400}
+.ficha{display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5rem;width:100%;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);padding:.85rem 0}
+.ficha b{color:var(--rojo);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:1.25rem;justify-content:center;padding:1.25rem 0;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav a{color:var(--suave);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover,nav a:focus{color:var(--tinta);border-bottom-color:var(--rojo)}
+nav.docs{border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);
+  margin-bottom:1rem}
+section{margin-top:4.5rem;scroll-margin-top:1rem}
+section>h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;
+  border-left:3px solid var(--rojo);padding-left:.9rem;margin:0 0 1.5rem}
+.cifras{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cifra{background:var(--panel);padding:1.1rem}
+.cifra b{display:block;font-size:1.7rem;color:var(--oro);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.cifra span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--suave)}
+.hall{border-top:1px solid var(--linea);padding-top:1.75rem;margin-top:2.5rem}
+.hall:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.hall h3{margin:0 0 .75rem;font-size:1.15rem;color:var(--rojo)}
+.hall h4{color:var(--oro);margin:1.5rem 0 .5rem;font-size:.95rem}
+.hall p{margin:0 0 1rem}
+pre.asm{background:var(--panel);border-left:2px solid var(--verde);margin:1.25rem 0;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:13px;line-height:1.6;color:var(--tinta)}
+.par{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:820px){.par{grid-template-columns:1fr 1fr}}
+.par figure{margin:0}
+table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:13px;display:block;
+  overflow-x:auto}
+th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--linea)}
+th{color:var(--suave);font-weight:400;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+td.num{font-variant-numeric:tabular-nums;color:var(--oro)}
+.nivel{margin-top:2rem}
+.nivel h3{margin:0 0 .9rem;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.nivel em{color:var(--cyan);font-style:normal}
+.sep{color:var(--suave);margin:0 .6rem}
+.rejilla{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.rejilla figure{margin:0;background:var(--panel);box-shadow:0 0 0 1px var(--linea)}
+.rejilla figcaption{display:flex;justify-content:space-between;padding:.45rem .65rem;
+  font-size:11px;color:var(--suave);border-top:1px solid var(--linea)}
+.dir{font-variant-numeric:tabular-nums;color:var(--verde)}
+footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
+  color:var(--suave);font-size:12px}
+
+/* Aviso de trabajo en curso: tiene que verse antes que las cifras, porque un
+   100% mal leido hace mas dano que no ponerlo. */
+.aviso{background:#3a2a10;border-left:3px solid var(--oro);margin:1.5rem auto;
+  padding:1rem 1.2rem;max-width:900px;border-radius:4px}
+.aviso p{margin:0;color:var(--tinta);font-size:15px;line-height:1.65}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;margin:1.5rem 0}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;image-rendering:pixelated;
+  border:1px solid var(--linea);border-radius:3px}
+.galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
+audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+</style>
+<div class="w"><nav class="top"><a href="index.html">Portada</a><a href="EMPEZAR.html">Empezar</a><a href="EL-JUEGO.html">El juego</a><a href="EL-CARTUCHO.html">El cartucho</a><a href="EL-CODIGO.html">El código</a><a href="HALLAZGOS.html" style=color:var(--tinta)>Hallazgos</a><a href="PREGUNTAS-ABIERTAS.html">Preguntas abiertas</a><a href="../FINDINGS.html" style="margin-left:auto;color:var(--oro)">English</a></nav>
+<h1 id="hallazgos">Hallazgos</h1>
+<p>Lo que apareció al desmontar el cartucho, con la evidencia al lado. Todo lo de esta página se comprueba leyendo el binario; lo que todavía no está cerrado está en <a href="PREGUNTAS-ABIERTAS.html">Preguntas abiertas</a>.</p>
+<h2 id="el-mundo-no-esta-guardado-se-calcula">El mundo no está guardado: se calcula</h2>
+<p>Las 255 pantallas de este juego no ocupan ni un byte de mapa. No hay lista, ni índice, ni tabla de escenas: la pantalla en la que estás <b>es</b> el contenido de un byte de RAM, 0xE222, y cambiar de pantalla es hacerlo girar un paso.</p>
+<p>El giro está en 0xB68F, y son dieciséis bytes de <code>rla</code> y <code>xor (hl)</code>. Leídos y comprobados sobre los 256 valores posibles, lo que hacen es un registro de desplazamiento realimentado:</p>
+<pre><code>bit nuevo = b7 xor b5 xor b4 xor b3      (máscara 0xB8)</code></pre>
+<p>Con esa realimentación el anillo es <b>máximo</b>: recorre los 255 valores no nulos y vuelve al principio. El 0x00 se queda fuera, porque de un registro así nadie sale del cero, y por eso el juego lo usa para la pantalla del título: el estado que no pertenece al mundo.</p>
+<p>Y hay una segunda rutina, 0xB69F, que es <b>la función inversa exacta</b>: desplaza al revés y deshace lo que hizo la otra. Salir de una pantalla por la izquierda te devuelve exactamente a la de antes. Las dos juntas ocupan 33 bytes, y eso es todo el mapa de este juego.</p>
+<p>Sembrando con 0xC4, que es lo que hace el arranque en 0x8075, sale el orden concreto en el que se recorre el mundo yendo siempre a la derecha. Ese orden se reprodujo por dos caminos independientes: simulando las dos rutinas sobre los datos, y capturando las 255 escenas en el emulador. <b>Coinciden las 255 de 255.</b></p>
+<h2 id="los-ocho-bits-del-registro-de-pantalla-no-desperdician-ninguno">Los ocho bits del registro de pantalla no desperdician ninguno</h2>
+<p>Ese byte no es solo un contador de posición. Al montar la escena (0x9EE6) se parte en tres trozos, y cada trozo elige una cosa distinta:</p>
+<table><tr><th>bits</th><th>qué eligen</th><th>dónde se leen</th></tr><tr><td>6-7</td><td>cuál de los cuatro decorados se pinta</td><td>0x9F91</td></tr><tr><td>3-5</td><td>el tipo de escena, de 0 a 7</td><td>0x9EFB</td></tr><tr><td>0-2</td><td>la variante dentro de ese tipo</td><td>0x9EEF</td></tr></table>
+<p>Ocho bits, tres trabajos, cero desperdicio. Una pantalla entera de este juego se describe con un byte, y por eso el mundo se puede escribir entero sin jugar.</p>
+<p>El bit 7 hace además <b>un segundo trabajo</b>, que es el detalle que más cuesta ver: aparte de ir dentro del índice del decorado, se vuelve a leer suelto en 0xA9AA, en las escenas de hoyos, y decide dónde va la escalera —centrada en 0xD8 con el bit encendido, en 0x31 con él apagado— y cuál de los dos dibujos se pinta.</p>
+<p>El reparto que sale del anillo es prácticamente uniforme, y también se puede contar sin jugar: 31 escenas del tipo 0 y 32 de cada uno de los otros siete; 63 del decorado 0 y 64 de cada uno de los otros tres. Los desajustes de uno son el 0x00 que falta.</p>
+<h2 id="el-techo-del-juego-son-114000-puntos-y-se-cuenta-sin-jugar">El techo del juego son 114000 puntos, y se cuenta sin jugar</h2>
+<p>Los tesoros son <b>exactamente</b> las 32 escenas de tipo 5. No hace falta recorrerlas: el tipo 5 es el único que despacha por la tabla de 0xAEA4, esa tabla lleva cuatro rutinas repetidas de dos en dos, y las ocho variantes se reparten a cuatro escenas cada una. Sale un tesoro de cada clase ocho veces: 8+8+8+8 = 32, y ni uno más.</p>
+<p>Cada rutina escribe en 0xE188 lo que vale el suyo —2, 3, 4 o 5, o sea miles de puntos— y 0x878C lo suma al recogerlo. Así que el mundo entero guarda</p>
+<pre><code>8 x (2000 + 3000 + 4000 + 5000) = 112000 puntos</code></pre>
+<p>y con los 2000 con los que arranca el marcador (0x8A28), <b>114000</b>. Ese es el techo del juego, y sale de leer una tabla de dieciséis bytes.</p>
+<p>Lo que ya te has llevado se recuerda en 32 bits justos: 0xE21D-0xE220, un byte por clase de tesoro y un bit por tesoro, con el índice dentro de la clase en 0xE223.</p>
+<p>Y la comprobación de «este ya está cogido» se resuelve de una manera que no se ve a la primera. 0xAAFF rota el bit hasta el acarreo; si estaba a cero vuelve normal y quien la llamó pinta el tesoro, pero si estaba a uno hace <code>pop hl</code> y <code>ret</code> (0xAB19): <b>se come su propia dirección de retorno</b>, salta por encima del código que pintaría el tesoro y devuelve el control dos niveles más arriba.</p>
+<h2 id="el-subterraneo-recorre-el-mundo-al-triple">El subterráneo recorre el mundo al triple</h2>
+<p>En 0x9CD2, al cambiar de pantalla, se mira el bit 0 de 0xE2EB —que es el que dice si estás en la superficie— y el registro se hace girar <b>un paso o tres</b>. Por debajo, tres escenas de golpe.</p>
+<p>Eso convierte al subterráneo en un atajo de verdad, y se puede medir: la ruta más corta que se lleva los 32 tesoros son <b>190 pantallas</b> yendo siempre a la derecha, contra 238 sin bajar nunca. Un 20 % menos.</p>
+<p>Para bajar hace falta una escalera, y las escaleras se contaron sobre las 255 capturas del recorrido. El resultado es limpio de una manera poco habitual: es <b>bimodal, sin un solo caso intermedio</b>. O una escena tiene 3 rayas verticales —que es decorado— o tiene 8, que es escalera. Las de 8 son 63, y son exactamente las 63 escenas de tipos 0 y 1, que es lo que la lectura del código ya decía. Dos métodos que no comparten nada dando el mismo número.</p>
+<h2 id="en-este-cartucho-no-hay-ni-una-letra">En este cartucho no hay ni una letra</h2>
+<p>Ni una cadena, ni un alfabeto, ni un mensaje escondido de los programadores.</p>
+<p>La fuente que carga el juego son <b>doce casillas</b>: los diez dígitos (0xB8-0xC1), los dos puntos (0xC2) y el blanco (0xC3). Con eso se escriben el marcador y el reloj, y no da para una sola letra.</p>
+<p>Todo lo demás que parece texto en la pantalla es <b>dibujo</b> partido en casillas consecutivas, una por posición. Por eso una búsqueda de cadenas en la ROM no devuelve nada legible: lo poco que sale son coincidencias de bytes de gráficos y de código.</p>
+<p>La única firma de los autores es la línea del pie de la presentación, y también es un dibujo: dos fechas, 1982 y 1984.</p>
+<h2 id="la-liana-no-esta-dibujada-se-traza">La liana no está dibujada: se traza</h2>
+<p>No hay ningún gráfico de liana en el cartucho, y no lo hay porque no hace falta. En cada paso, 0xA471 dibuja una recta de 16 puntos sobre un mapa de bits de 0x40 bytes que vive en la RAM (0xE18A) y lo sube a la memoria de vídeo como patrón de sprite (0xA594). La inclinación sale de la tabla de 0xA61A, indexada por la fase del balanceo (0xE1CB), que va y viene entre 1 y 0x20.</p>
+<p>O sea que la liana es un sprite que el juego se dibuja a sí mismo cuadro a cuadro. Guardar los fotogramas costaría bastante más que las instrucciones que los calculan.</p>
+<h2 id="los-sprites-de-mirar-a-la-izquierda-no-estan-en-la-rom">Los sprites de mirar a la izquierda no están en la ROM</h2>
+<p>Solo está dibujada la mitad. Los de mirar a la izquierda se fabrican al arrancar espejando los otros (0x8B5E), y hay dos rutinas para eso: 0xB1D1, que invierte cada byte bit a bit —lo que da el espejo horizontal—, y 0xB20B, que además cambia el orden de los ocho bytes.</p>
+<p>Hace falta el espejo de verdad y no solo invertir bits, porque un sprite de 16x16 en un MSX son <b>dos mitades de 16 bytes</b>, así que para darle la vuelta hay que cruzar además las dos mitades (0x8BC1).</p>
+<p>Los guiones de animación lo cuadran sin dejar dudas: andar a la derecha usa los patrones 0x20 a 0x30 y andar a la izquierda los 0x44 a 0x54. La diferencia es 0x24, que son exactamente nueve sprites de cuatro patrones, que es lo que el bucle del espejo procesa de una vez.</p>
+<h2 id="la-brea-y-el-agua-son-el-mismo-dibujo-y-les-separan-tres-bytes">La brea y el agua son el mismo dibujo, y les separan tres bytes</h2>
+<p>Los tipos de escena 2 y 3 pintan lo mismo. Lo único que cambia es que 0xAC7C escribe <code>1B 1B 1B</code> en la posición 0x200B de la tabla de colores —negro, brea— y 0xAC6B escribe encima <code>7B 7B 7B</code> —cian, agua—.</p>
+<p>El parche gasta tres bytes propios, en 0xB110. La restauración no gasta ninguno: el <code>7B 7B 7B</code> que devuelve el charco al agua es el mismo que ya está dentro de la tabla de colores inicial, en 0xB0FB, y 0xAC6B lo copia de ahí.</p>
+<p>Y el mismo truco está en los tesoros. Las dos barras —la de 3000 y la de 4000— comparten color: los dos bytes de 0xAE90 valen 0x4B. Lo que las distingue es el patrón, no el color.</p>
+<h2 id="el-juego-se-queda-con-la-interrupcion-y-no-se-la-devuelve-a-la-bios">El juego se queda con la interrupción y no se la devuelve a la BIOS</h2>
+<p>El gancho de interrupción no termina con un <code>ret</code> normal. Termina con **once <code>pop</code> seguidos** (0x810F-0x8122), que desapilan uno a uno los registros que la BIOS había guardado al entrar —incluidos los alternativos, tras el <code>ex af,af&#x27;</code> y el <code>exx</code> de 0x8118—, con un <code>in a,(099h)</code> metido en medio (0x811A) que lee el estado del chip gráfico, que es lo que da la interrupción por atendida.</p>
+<p>El primer <code>pop hl</code> se lleva la dirección de retorno a la BIOS, y el <code>ei</code> / <code>ret</code> de 0x8123 devuelve el control directamente al programa interrumpido. El resto de la rutina de interrupción de la BIOS no llega a ejecutarse nunca.</p>
+<h2 id="hay-un-rst-0-que-intenta-machacar-el-codigo-del-propio-juego">Hay un <code>rst 0</code> que intenta machacar el código del propio juego</h2>
+<p>Al final de cada cuadro, en 0x9AE0, hay estas dos instrucciones:</p>
+<pre><code>fin_del_cuadro:
+    ld hl,fin_del_cuadro      ; 9ae0
+    ld (hl),0c7h              ; 9ae3</code></pre>
+<p>0xC7 es <code>rst 0</code>, y la dirección que se escribe es la de esa misma línea. O sea que el cuadro termina, cada vez, intentando escribir sobre sí mismo un salto al arranque de la máquina.</p>
+<p>En un cartucho eso no hace nada, porque 0x9AE0 es ROM y la escritura se pierde por el camino. Lo que hace está comprobado leyendo los bytes; <b>para qué está no se puede demostrar desde el binario</b>. La lectura que encaja es que sea un guardián contra correr el juego desde RAM: la escritura solo llega a alguna parte si eso de ahí no es ROM, y entonces el juego se suicida en el primer cuadro. Pero es una lectura, no una medida.</p>
+<h2 id="el-sonido-no-toca-el-chip-toca-catorce-bytes-de-ram">El sonido no toca el chip: toca catorce bytes de RAM</h2>
+<p>En todo el cartucho hay <b>un solo sitio</b> que escribe en el puerto del chip de sonido: el bucle de <code>outd</code> de 0xB380. Lo que hay en 0xE20E-0xE21B es una copia en RAM de los registros 0 a 13, y 0xB37B la vuelca entera una vez por cuadro, contando de 13 a 0.</p>
+<p>Encima de eso van cuatro vectores en 0xE1E6-0xE1ED, y la tabla de 0xB393 dice qué rutina se instala en cuál para cada uno de los once sonidos.</p>
+<p>De ahí sale un detalle que no se ve jugando: <b>los sonidos 0 y 1 son mudos, y por partida doble</b>. Su entrada en la tabla apunta a 0xB392, que es un <code>ret</code> suelto, y además los instala en la ranura 3, que es la única de las cuatro que la cadena de 0xB35B ni siquiera recorre.</p>
+<h2 id="el-rotulo-de-entrada-no-se-pinta-se-revela">El rótulo de entrada no se pinta: se revela</h2>
+<p>La presentación (0xB7F1) no vuelca un dibujo. Cada cuadro desplaza <b>un píxel</b> los diez patrones que tiene cargados en 0xE132 y los sube a la tabla de patrones; cada ocho cuadros recarga el dibujo y avanza una columna, hasta llegar a la 0x18.</p>
+<p>Por la izquierda entran unos, que es el fondo (el <code>scf</code> de 0xB86E), y a partir de la columna 12 aparece un sprite que echa a andar. El resultado es el rótulo apareciendo por franjas, y no cuesta ni un fotograma guardado.</p>
+<p>La presentación tampoco sale por una tecla: sale cuando el guion grabado de la demo gasta siete entradas (0xB751).</p>
+<h2 id="la-presentacion-va-en-un-modo-de-pantalla-y-el-juego-en-otro">La presentación va en un modo de pantalla y el juego en otro</h2>
+<p>En 0xB6B2, el registro 0 del chip gráfico se pone a 0x02: modo gráfico 2, el de los tres bancos independientes, que es el que hace falta para el rótulo de entrada. Al salir, en 0xB788, vuelve a 0x00, que es modo gráfico 1.</p>
+<p>Ese cambio explica una cifra que si no descoloca: <b>la tabla de colores del juego son 32 bytes</b>, no 6144. En el modo del juego el color va por grupo de ocho casillas, así que los 32 bytes de 0xB0F0 son la paleta entera.</p>
+<p>Hay una segunda consecuencia, más útil todavía para leer el cartucho: los registros 2, 5 y 6 —los que dicen dónde están la tabla de nombres, los atributos de sprite y los patrones de sprite— <b>no los escribe nadie en todo el binario</b>. El juego se queda con lo que dejó la BIOS y escribe en 0x1800, 0x1B00 y 0x3800 sin declararlo.</p>
+<h2 id="los-bloques-cierran-unos-contra-otros-y-eso-es-lo-que-fija-su-tamano">Los bloques cierran unos contra otros, y eso es lo que fija su tamaño</h2>
+<p>Saber dónde acaba una tabla suele ser lo peor de un desensamblado, porque el tamaño no está escrito en ninguna parte y equivocarse no da ningún error.</p>
+<p>Aquí casi todo se delimita solo, porque los datos van pegados sin un byte de hueco. Los cinco bloques grandes de gráficos comprimidos (0x909E-0x95FE), los nueve de sprites de los manejadores de escena (0x981E-0x99AF), los seis de la presentación (0xBAB2-0xBC61), los cinco guiones de celdas (0x8F06-0x9090) y los cuatro layouts de escena (0xA096-0xA33E) cierran cada uno <b>exactamente</b> donde empieza el siguiente, y el último cierra contra la primera instrucción del código que viene detrás.</p>
+<p>Se prueba con N entradas y solo una N cierra. Con eso, el tamaño deja de ser una suposición.</p>
+<h2 id="un-byte-que-es-tres-cosas-a-la-vez">Un byte que es tres cosas a la vez</h2>
+<p>El detalle de programación más apretado del cartucho está en cómo se pintan los tramos de suelo de las filas 12 y 13. El layout de la escena lleva cinco bytes para eso, y cada uno de esos bytes es, al mismo tiempo, <b>desplazamiento dentro de la tabla, longitud de la copia y avance en la memoria de vídeo</b> (0x8DA7): cada tramo copia de <code>tabla+N</code> a <code>tabla+2N</code>.</p>
+<p>Se lee en 0x8DA0-0x8DB6, y tiene un efecto lateral que ayuda a delimitar los datos: los N que usan los cuatro layouts son 3, 4, 5, 6, 7, 8 y 0x0A, así que el uso llega justo hasta <code>tabla+0x14</code> y ni un byte más.</p>
+<h2 id="el-hoyo-esta-mas-rato-abierto-que-cerrado">El hoyo está más rato abierto que cerrado</h2>
+<p>El hoyo que se abre y se cierra (0xA870) tiene su anchura en 0xE133, de 1 a 8, y la dirección en 0xE132. La caja de colisión de clase 3 se estira con él, así que el peligro no es un dibujo: es una caja que crece y mengua.</p>
+<p>Y el periodo del objeto alterna entre 0x96 y 0x44. O sea que el ciclo <b>no es simétrico</b>: el hoyo se queda abierto más del doble de tiempo del que se queda cerrado.</p>
+<h2 id="lo-que-sobro-dentro-del-cartucho">Lo que sobró dentro del cartucho</h2>
+<p>Al cerrar los 16384 bytes aparecieron unas cuantas cosas que están y no sirven para nada. Ninguna es una sospecha: todas se comprobaron barriendo las 16384 palabras del cartucho, y no solo el código trazado, para ver si alguna vez aparece su dirección.</p>
+<ul><li><b>Seis rutinas que nadie llama</b>: 0xB11E, 0xB199, 0xB1A1, 0xB2A4, 0xB2F4 y 0xB9AB. La primera es especialmente reveladora: es el descompresor de 0xB142 <b>gemelo, pero escribiendo a memoria en vez de al puerto de vídeo</b>. Y 0xB2A4 es un explorador de teclado completo, con antirrebote y código de tecla, que el juego no usa porque le basta con la fila 8.</li><li>**Seis <code>ret</code> huérfanos** (0x9CBD, 0xAA73, 0xACB4, 0xADE7, 0xAE37, 0xB6B0): un solo byte 0xC9 pegado detrás del final de una rutina, sin nadie que lo apunte. Cinco de los seis van justo después de un <code>jp</code> que se lleva el control fuera, o sea que son el cierre que el ensamblador escribió y que nunca se ejecuta.</li><li><b>Un guion de animación entero y bien formado</b> en 0xAF84 —diez fotogramas, patrones de 0x20 a 0x40, cincuenta cuadros cada uno— que no carga nadie. Cincuenta cuadros por fotograma es lento: eso no es un bicho.</li><li><b>Una segunda copia del reloj de salida</b> en 0x8F00, con los mismos cinco números de casilla que se leen «20:00» que hay en 0x8A69, pero con un 0x00 detrás en vez del divisor. Nadie la copia.</li><li><b>Los datos de los troncos segundo y tercero</b> (0xAFBA), escritos y sin usar: 0xAD2E se lleva solo los del primero y 0xA745 coloca los otros dos por código.</li><li><b>Una clase de colisión que no existe</b>: la tabla de 0x8AA0 tiene once entradas y la número 7 apunta a 0x874B, pero no hay en todo el cartucho una sola instrucción que escriba un 7 en el campo de la clase.</li><li>Y <b>dos listas de ocho bytes</b> en 0xBAA2 que son la misma con los nibbles intercambiados (61 contra 16, 91 contra 19, B1 contra 1B). Esa sigue sin consumidor; está en <a href="PREGUNTAS-ABIERTAS.html">Preguntas abiertas</a>.</li></ul>
+<footer><p><em>Pitfall!</em> lo publicó Activision en 1984 para MSX. En el cartucho no hay ni una línea de texto, y lo único que firma es el <b>Copyright 1982, 1984</b> dibujado al pie de la pantalla: 1982 es la fecha del original de Atari 2600 y 1984 la de esta conversión. Todos los derechos sobre el juego siguen siendo de sus titulares. Este trabajo es de preservación, estudio y documentación.</p></footer></div>

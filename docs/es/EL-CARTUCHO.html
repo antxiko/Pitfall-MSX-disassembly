@@ -1,0 +1,117 @@
+<title>El cartucho — Pitfall! (1984)</title>
+<style>
+:root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
+  --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+@media (prefers-color-scheme:light){:root{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;
+  --panel:#f7f6f2;--linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}}
+:root[data-theme="dark"]{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;
+  --linea:#23262e;--rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+:root[data-theme="light"]{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;--panel:#f7f6f2;
+  --linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);padding:0 1.25rem 6rem;
+  font:15px/1.7 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.w{max-width:1120px;margin:0 auto}
+.n{max-width:68ch}
+h1,h2,h3,h4{font-weight:400;text-wrap:balance}
+a{color:var(--cyan)}
+img{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+header.top{display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding:4rem 0 2rem;text-align:center}
+header.top img{width:min(100%,640px)}
+.claim{max-width:60ch;color:var(--suave);font-size:1.05rem}
+.claim b{color:var(--tinta);font-weight:400}
+.ficha{display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5rem;width:100%;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);padding:.85rem 0}
+.ficha b{color:var(--rojo);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:1.25rem;justify-content:center;padding:1.25rem 0;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav a{color:var(--suave);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover,nav a:focus{color:var(--tinta);border-bottom-color:var(--rojo)}
+nav.docs{border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);
+  margin-bottom:1rem}
+section{margin-top:4.5rem;scroll-margin-top:1rem}
+section>h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;
+  border-left:3px solid var(--rojo);padding-left:.9rem;margin:0 0 1.5rem}
+.cifras{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cifra{background:var(--panel);padding:1.1rem}
+.cifra b{display:block;font-size:1.7rem;color:var(--oro);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.cifra span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--suave)}
+.hall{border-top:1px solid var(--linea);padding-top:1.75rem;margin-top:2.5rem}
+.hall:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.hall h3{margin:0 0 .75rem;font-size:1.15rem;color:var(--rojo)}
+.hall h4{color:var(--oro);margin:1.5rem 0 .5rem;font-size:.95rem}
+.hall p{margin:0 0 1rem}
+pre.asm{background:var(--panel);border-left:2px solid var(--verde);margin:1.25rem 0;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:13px;line-height:1.6;color:var(--tinta)}
+.par{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:820px){.par{grid-template-columns:1fr 1fr}}
+.par figure{margin:0}
+table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:13px;display:block;
+  overflow-x:auto}
+th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--linea)}
+th{color:var(--suave);font-weight:400;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+td.num{font-variant-numeric:tabular-nums;color:var(--oro)}
+.nivel{margin-top:2rem}
+.nivel h3{margin:0 0 .9rem;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.nivel em{color:var(--cyan);font-style:normal}
+.sep{color:var(--suave);margin:0 .6rem}
+.rejilla{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.rejilla figure{margin:0;background:var(--panel);box-shadow:0 0 0 1px var(--linea)}
+.rejilla figcaption{display:flex;justify-content:space-between;padding:.45rem .65rem;
+  font-size:11px;color:var(--suave);border-top:1px solid var(--linea)}
+.dir{font-variant-numeric:tabular-nums;color:var(--verde)}
+footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
+  color:var(--suave);font-size:12px}
+
+/* Aviso de trabajo en curso: tiene que verse antes que las cifras, porque un
+   100% mal leido hace mas dano que no ponerlo. */
+.aviso{background:#3a2a10;border-left:3px solid var(--oro);margin:1.5rem auto;
+  padding:1rem 1.2rem;max-width:900px;border-radius:4px}
+.aviso p{margin:0;color:var(--tinta);font-size:15px;line-height:1.65}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;margin:1.5rem 0}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;image-rendering:pixelated;
+  border:1px solid var(--linea);border-radius:3px}
+.galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
+audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+</style>
+<div class="w"><nav class="top"><a href="index.html">Portada</a><a href="EMPEZAR.html">Empezar</a><a href="EL-JUEGO.html">El juego</a><a href="EL-CARTUCHO.html" style=color:var(--tinta)>El cartucho</a><a href="EL-CODIGO.html">El código</a><a href="HALLAZGOS.html">Hallazgos</a><a href="PREGUNTAS-ABIERTAS.html">Preguntas abiertas</a><a href="../THE-CARTRIDGE.html" style="margin-left:auto;color:var(--oro)">English</a></nav>
+<h1 id="el-cartucho">El cartucho</h1>
+<p>Son 16384 bytes, y ya está. No hay cargador, ni bloques, ni nada que esperar: el MSX mapea el cartucho en 0x8000-0xBFFF —la página 2— y lo que hay ahí es lo que hay para siempre. Una sola foto de la memoria, sin solapes: ninguna dirección significa dos cosas distintas en dos momentos distintos.</p>
+<h2 id="por-donde-entra">Por dónde entra</h2>
+<p>Los primeros dieciséis bytes son la cabecera que lee la BIOS:</p>
+<pre><code>41 42 13 80 00 00 00 00 00 00 00 00 00 00 00 00
+&#x27;A&#x27; &#x27;B&#x27;  \_ INIT = 0x8013</code></pre>
+<p>Las dos letras son la firma que le dice a la máquina que ahí hay un cartucho ejecutable, y detrás van cuatro vectores de dos bytes. Solo el primero está puesto: los otros tres —STATEMENT, DEVICE y TEXT, los que servirían para añadir instrucciones al BASIC o para declarar un dispositivo— están a cero. Este cartucho es un juego y nada más.</p>
+<p>Detrás de la cabecera, en 0x8010, hay tres bytes que no son cabecera y tampoco se ejecutan nunca aquí: <code>C3 F7 80</code>, o sea un <code>jp 0x80F7</code> ya montado. El arranque los copia tal cual al gancho de interrupción, y es ahí donde se ejecutan.</p>
+<h2 id="lo-que-hace-el-arranque">Lo que hace el arranque</h2>
+<p>INIT (0x8013) es corto y muy medido:</p>
+<ul><li>borra los 4 KB de 0xE000 a 0xEFFF de un tirón (0x8017), que es donde va a vivir todo el estado del juego, y pone la pila en 0xE54B (0x8023);</li><li>calla el chip de sonido (0x8026) y deja a cero los 16 KB de memoria de vídeo (0x802D);</li><li>copia los tres bytes de 0x8010 al gancho H.KEYI, en 0xFD9A (0x803C-0x8046);</li><li>pasa por la presentación (0x805C), vuelve, vuelve a borrar la memoria de vídeo y carga los sprites;</li><li>prepara la partida y se mete en un bucle de dos bytes, en 0x80F5.</li></ul>
+<p>Ese bucle vacío es el programa principal. <b>A partir de ahí el juego entero corre dentro de la interrupción</b>, cincuenta o sesenta veces por segundo, y el hilo que arrancó la máquina no vuelve a hacer nada nunca.</p>
+<h2 id="donde-vive-el-estado">Dónde vive el estado</h2>
+<p>En el cartucho no hay ni una variable, porque es ROM. Todo lo que el juego apunta vive en la RAM del MSX a partir de 0xE000, y por eso el listado está lleno de direcciones que empiezan por 0xE0: no son datos del cartucho, son variables.</p>
+<p>Las que más se leen:</p>
+<table><tr><th></th><th></th></tr><tr><td>0xE012</td><td>las vidas que quedan</td></tr><tr><td>0xE05F</td><td>lo que se está pulsando, en formato de joystick</td></tr><tr><td>0xE1D0-0xE1D4</td><td>el reloj, guardado ya como números de casilla</td></tr><tr><td>0xE1D6-0xE1DB</td><td>los seis dígitos del marcador</td></tr><tr><td>0xE1E6-0xE1ED</td><td>los cuatro vectores de sonido</td></tr><tr><td>0xE20E-0xE21B</td><td>la copia de los catorce registros del chip de sonido</td></tr><tr><td>0xE21D-0xE220</td><td>los 32 bits de los tesoros que ya te has llevado</td></tr><tr><td>0xE221</td><td>si lo que corre es la demo</td></tr><tr><td>0xE222</td><td><b>el registro de pantalla</b>: el mundo entero cabe aquí</td></tr><tr><td>0xE224 / 0xE225</td><td>la variante y el tipo de la escena, sacados de 0xE222</td></tr><tr><td>0xE229-0xE243</td><td>las diez cajas de colisión</td></tr><tr><td>0xE247</td><td>cuántos objetos vivos hay, y detrás un puntero por objeto</td></tr><tr><td>0xE26A-0xE2BE</td><td>la tabla de atributos de sprite, que se vuelca entera cada cuadro</td></tr></table>
+<p>Y detrás de esa tabla van las estructuras de los objetos, una pegada a la otra sin un hueco: 0xE2BF, 0xE2D5 (el jugador), 0xE2ED, 0xE303, 0xE319 y 0xE32F. La del jugador ocupa 24 bytes y las otras cinco 22, que es justo lo que hace falta para que la cadena cierre en 0xE345.</p>
+<h2 id="la-pantalla-y-los-tres-registros-que-el-juego-no-toca">La pantalla, y los tres registros que el juego no toca</h2>
+<p>El cartucho escribe los registros del chip gráfico en cinco sitios contados, y solo escribe cinco de los ocho: el 0 y el 1 (modo y pantalla), el 3 y el 4 (las bases de color y de dibujo) y el 7 (el fondo, en 0x8036, valor 0x11: negro).</p>
+<p><b>Los registros 2, 5 y 6 no los escribe nadie.</b> Son los que dicen dónde están la tabla de nombres, los atributos de sprite y los patrones de sprite, y sin embargo el juego escribe en 0x1800, en 0x1B00 y en 0x3800-0x3FFF a lo largo de todo el listado. O sea que da por buenas las bases que le dejó puestas la BIOS y no se molesta en repetirlas.</p>
+<p>El reparto que sale es este:</p>
+<table><tr><th></th><th></th></tr><tr><td>0x0000</td><td>los patrones de casilla (registro 4 = 0x00, en 0xB79A)</td></tr><tr><td>0x1800</td><td>la tabla de nombres</td></tr><tr><td>0x1B00</td><td>los atributos de sprite</td></tr><tr><td>0x2000</td><td>los colores (registro 3 = 0x80, en 0xB794)</td></tr><tr><td>0x3800</td><td>los patrones de sprite</td></tr></table>
+<p>El registro 1 vale 0xE2 (0x8047): 16 KB, pantalla e interrupción encendidas y sprites de 16x16.</p>
+<p>Hay un detalle que se paga en bytes: <b>la presentación va en un modo y el juego en otro</b>. En 0xB6B2 el registro 0 se pone a 0x02 —modo gráfico 2, el de los tres bancos independientes— para el rótulo de entrada, y al salir, en 0xB788, vuelve a 0x00, modo gráfico 1. Por eso la tabla de colores del juego son 32 bytes y no 6144: en el modo del juego el color va por grupo de ocho casillas, no por casilla.</p>
+<h2 id="como-estan-guardados-los-dibujos">Cómo están guardados los dibujos</h2>
+<p>Hay un descompresor de 58 bytes en 0xB142 que vuelca directamente al puerto de vídeo. El formato se lee entero en él: dos bytes de dirección de destino y luego tokens de un byte con el contador en los seis bits bajos —bit 7 saltar N posiciones, bit 6 copiar N bytes literales, ninguno de los dos repetir N veces el byte siguiente, y un cero cierra—.</p>
+<p>Con eso van comprimidos los patrones de casilla y de sprite (0x909E-0x95FE), los nueve bloques de sprite de los manejadores de escena (0x981E-0x99AF) y los seis de la presentación (0xBAB2-0xBC61). Lo que no va comprimido son los cuatro juegos de 16 casillas del decorado (0x95FE-0x97FE) y unos cuantos patrones de sprite sueltos (0x99AF-0x9A6F): 128 y 32 bytes en crudo, sin nada que ahorrar.</p>
+<p>Cada bloque comprimido acaba <b>exactamente</b> donde empieza el siguiente, y eso es lo que fija su tamaño sin tener que suponerlo.</p>
+<h2 id="la-tipografia-cabe-en-doce-casillas">La tipografía cabe en doce casillas</h2>
+<p>En este cartucho no hay ni una cadena de texto. Lo único parecido a una fuente son doce casillas: los diez dígitos (0xB8-0xC1), los dos puntos (0xC2) y el blanco (0xC3). Con eso se escriben el marcador y el reloj, y no da para una sola letra. Todo lo demás que parece texto en la pantalla es dibujo.</p>
+<h2 id="el-reparto-completo">El reparto completo</h2>
+<p>Ni un byte sin dueño: 9467 de código que el trazador alcanza siguiendo el flujo de verdad y 6917 de datos, cada uno dentro de un rango declarado con la instrucción que lo lee escrita al lado.</p>
+<table><tr><th></th><th></th></tr><tr><td>0x8000-0x8010</td><td>la cabecera</td></tr><tr><td>0x8010-0x8013</td><td>los tres bytes que se copian al gancho de interrupción</td></tr><tr><td>0x8013-0x8A69</td><td>arranque, el jugador, las colisiones, el salto, el marcador y las vidas</td></tr><tr><td>0x8A69-0x8AFF</td><td>inicializadores de RAM, la tabla de clases, la curva del salto y los guiones de andar</td></tr><tr><td>0x8AFF-0x8E1B</td><td>carga de pantalla y de sprites, y el pintado de la escena</td></tr><tr><td>0x8E1B-0x8F06</td><td>los tramos de suelo y los seis patrones del hundimiento</td></tr><tr><td>0x8F06-0x9090</td><td>los guiones de celdas del decorado</td></tr><tr><td>0x9090-0x95FE</td><td>los cinco bloques grandes de gráficos comprimidos</td></tr><tr><td>0x95FE-0x97FE</td><td>los cuatro juegos de 16 casillas del decorado</td></tr><tr><td>0x97FE-0x9A6F</td><td>los sprites: nueve bloques comprimidos y seis patrones en crudo</td></tr><tr><td>0x9A6F-0xA086</td><td>el cuadro, los objetos, el cambio de pantalla, el marcador y el reloj</td></tr><tr><td>0xA086-0xA43A</td><td>las tablas de decorado, los cuatro layouts de escena y la de 14x18</td></tr><tr><td>0xA43A-0xA61A</td><td>la liana</td></tr><tr><td>0xA61A-0xA69E</td><td>las 33 pendientes con las que se traza la liana</td></tr><tr><td>0xA69E-0xAE90</td><td>los manejadores de objeto y las ocho rutinas de escena</td></tr><tr><td>0xAE90-0xAED4</td><td>las cuatro tablas de despacho</td></tr><tr><td>0xAED4-0xB113</td><td>guiones de celdas, plantillas de objeto, guiones de animación y los colores</td></tr><tr><td>0xB113-0xB393</td><td>la capa de vídeo, la entrada y el volcado del sonido</td></tr><tr><td>0xB393-0xB6B1</td><td>los diez sonidos, con sus guiones</td></tr><tr><td>0xB6B1-0xB9E4</td><td>la presentación y la demo</td></tr><tr><td>0xB9E4-0xBC6D</td><td>las tablas y los gráficos de la presentación</td></tr><tr><td>0xBC6D-0xC000</td><td>el relleno hasta los 16 KB: 915 bytes, todos a cero</td></tr></table>
+<footer><p><em>Pitfall!</em> lo publicó Activision en 1984 para MSX. En el cartucho no hay ni una línea de texto, y lo único que firma es el <b>Copyright 1982, 1984</b> dibujado al pie de la pantalla: 1982 es la fecha del original de Atari 2600 y 1984 la de esta conversión. Todos los derechos sobre el juego siguen siendo de sus titulares. Este trabajo es de preservación, estudio y documentación.</p></footer></div>
