@@ -126,11 +126,26 @@ L_8065:
 	ei			;80f4
 L_80F5:
 	jr L_80F5		;80f5
-L_80F7:
+
+; ----------------------------------------------------------------------
+; ############################################################
+; EL BUCLE PRINCIPAL, que corre dentro de la interrupcion
+; ############################################################
+; El juego entero cabe en el gancho H.KEYI: la BIOS llama aqui
+; cincuenta o sesenta veces por segundo, y cada pasada es un
+; cuadro. El orden es siempre el mismo:
+; B249  los dos joysticks, por el PSG
+; B26E  la fila 8 del teclado, remapeada a formato joystick
+; B35B  la cadena de vectores de sonido
+; 9A6F  el cuadro: pantalla y objetos
+; y por ultimo los 0x54 bytes de 0xE26A a la VRAM 0x1B00,
+; que es la tabla de atributos de sprites de un golpe
+; ----------------------------------------------------------------------
+bucle_principal:
 	call L_B249		;80f7
 	call L_B26E		;80fa
 	call L_B35B		;80fd
-	call L_9A6F		;8100
+	call cuadro_del_juego		;8100
 	ld hl,0e26ah		;8103
 	ld de,01b00h		;8106
 	ld bc,00054h		;8109
@@ -1834,12 +1849,30 @@ L_8DDE:
 ; ======================================================================
 
 
-L_9A6F:
+
+; ----------------------------------------------------------------------
+; ############################################################
+; COMO SE LLEGA A LAS 255 PANTALLAS
+; ############################################################
+; Aqui no hay ninguna busqueda, ni lista, ni indice de mapa. En
+; cada cuadro se comprueba UNA condicion -si la X del jugador
+; llego al borde- y, si llego, se hace girar el registro de
+; 0xE222 un paso (o tres). La pantalla en la que estas ES el
+; contenido de ese registro, y por eso el mundo no ocupa
+; memoria: se calcula al entrar.
+; Detras va el recorrido de los objetos vivos: 0xE247 dice
+; cuantos hay y detras viene la lista de punteros a sus
+; estructuras. De cada uno se decrementa su contador (+0x11) y
+; solo cuando llega a cero se recarga con su periodo (+0x10) y
+; se le llama: asi cada objeto corre a su propio ritmo sin que
+; haya un temporizador por objeto.
+; ----------------------------------------------------------------------
+cuadro_del_juego:
 	call L_9DB8		;9a6f
 	call cambia_de_pantalla_a_la_derecha		;9a72
 	or a			;9a75
 	jr nz,L_9AE0		;9a76
-	ld a,(0e221h)		;9a78
+	ld a,(0e221h)		;9a78   ; si 0xE221 no es cero corre la DEMO, y la entrada no se lee: se le mete la grabada de 0xE259
 	or a			;9a7b
 	jr z,L_9A88		;9a7c
 	ld a,(0e259h)		;9a7e
@@ -1847,7 +1880,7 @@ L_9A6F:
 	xor a			;9a84
 	ld (0e061h),a		;9a85
 L_9A88:
-	ld hl,0e247h		;9a88
+	ld hl,0e247h		;9a88   ; 0xE247: cuantos objetos vivos hay, y detras sus punteros
 	ld b,(hl)			;9a8b
 	xor a			;9a8c
 	cp b			;9a8d
@@ -1861,7 +1894,7 @@ L_9A90:
 	push hl			;9a95
 	push de			;9a96
 	pop ix		;9a97
-	dec (ix+011h)		;9a99
+	dec (ix+011h)		;9a99   ; el contador propio del objeto; solo actua cuando llega a cero
 	jr nz,L_9AD9		;9a9c
 	ld a,(ix+010h)		;9a9e
 	ld (ix+011h),a		;9aa1

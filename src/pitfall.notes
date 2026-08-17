@@ -40,6 +40,38 @@ L 0x8013 INIT
 
 D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
 
+L 0x80F7 bucle_principal
+B 0x80F7 ############################################################
+B 0x80F7 EL BUCLE PRINCIPAL, que corre dentro de la interrupcion
+B 0x80F7 ############################################################
+B 0x80F7 El juego entero cabe en el gancho H.KEYI: la BIOS llama aqui
+B 0x80F7 cincuenta o sesenta veces por segundo, y cada pasada es un
+B 0x80F7 cuadro. El orden es siempre el mismo:
+B 0x80F7   B249  los dos joysticks, por el PSG
+B 0x80F7   B26E  la fila 8 del teclado, remapeada a formato joystick
+B 0x80F7   B35B  la cadena de vectores de sonido
+B 0x80F7   9A6F  el cuadro: pantalla y objetos
+B 0x80F7   y por ultimo los 0x54 bytes de 0xE26A a la VRAM 0x1B00,
+B 0x80F7   que es la tabla de atributos de sprites de un golpe
+L 0x9A6F cuadro_del_juego
+B 0x9A6F ############################################################
+B 0x9A6F COMO SE LLEGA A LAS 255 PANTALLAS
+B 0x9A6F ############################################################
+B 0x9A6F Aqui no hay ninguna busqueda, ni lista, ni indice de mapa. En
+B 0x9A6F cada cuadro se comprueba UNA condicion -si la X del jugador
+B 0x9A6F llego al borde- y, si llego, se hace girar el registro de
+B 0x9A6F 0xE222 un paso (o tres). La pantalla en la que estas ES el
+B 0x9A6F contenido de ese registro, y por eso el mundo no ocupa
+B 0x9A6F memoria: se calcula al entrar.
+B 0x9A6F Detras va el recorrido de los objetos vivos: 0xE247 dice
+B 0x9A6F cuantos hay y detras viene la lista de punteros a sus
+B 0x9A6F estructuras. De cada uno se decrementa su contador (+0x11) y
+B 0x9A6F solo cuando llega a cero se recarga con su periodo (+0x10) y
+B 0x9A6F se le llama: asi cada objeto corre a su propio ritmo sin que
+B 0x9A6F haya un temporizador por objeto.
+C 0x9A78 si 0xE221 no es cero corre la DEMO, y la entrada no se lee: se le mete la grabada de 0xE259
+C 0x9A88 0xE247: cuantos objetos vivos hay, y detras sus punteros
+C 0x9A99 el contador propio del objeto; solo actua cuando llega a cero
 L 0x9CBE cambia_de_pantalla_a_la_derecha
 B 0x9CBE ############################################################
 B 0x9CBE EL CAMBIO DE PANTALLA, y el atajo de tres escenas
