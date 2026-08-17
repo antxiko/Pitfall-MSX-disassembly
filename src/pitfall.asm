@@ -865,16 +865,16 @@ L_8751:
 	ld a,005h		;8786
 	call L_B32E		;8788
 	ret			;878b
-L_878C:
-	ld a,008h		;878c
+recoge_el_tesoro:
+	ld a,008h		;878c   ; sonido 8, el de recoger
 	call L_B32E		;878e
-	ld a,(0e188h)		;8791
+	ld a,(0e188h)		;8791   ; los miles que dejo escritos la rutina que lo pinto
 	call L_9D9F		;8794
 	ld hl,0e291h		;8797
 	ld (hl),000h		;879a
 	push ix		;879c
 	ld ix,0e23bh		;879e
-	ld (ix+000h),000h		;87a2
+	ld (ix+000h),000h		;87a2   ; apaga la zona de peligro del tesoro, que ya no esta
 	ld a,000h		;87a6
 	sub 000h		;87a8
 	ld (ix+001h),a		;87aa
@@ -888,7 +888,7 @@ L_878C:
 	ld l,a			;87bf
 	ld a,(0e187h)		;87c0
 	ld h,a			;87c3
-	ld a,(0e223h)		;87c4
+	ld a,(0e223h)		;87c4   ; el mismo indice de 0xAAFF, ahora para construir el bit que hay que marcar
 	cp 000h		;87c7
 	jr nz,L_87CF		;87c9
 	ld a,001h		;87cb
@@ -902,7 +902,7 @@ L_87D3:
 	rla			;87d3
 	djnz L_87D3		;87d4
 L_87D6:
-	or (hl)			;87d6
+	or (hl)			;87d6   ; y se marca: a partir de aqui 0xAAFF hara que este tesoro no vuelva a aparecer
 	ld (hl),a			;87d7
 	ld ix,0e2d5h		;87d8
 	ret			;87dc
@@ -3366,8 +3366,29 @@ L_A99F:
 	ld d,(hl)			;a9a7
 	ex de,hl			;a9a8
 	jp (hl)			;a9a9
-L_A9AA:
-	ld a,(0e222h)		;a9aa
+
+; ----------------------------------------------------------------------
+; ############################################################
+; LOS OCHO TIPOS DE ESCENA
+; ############################################################
+; Los bits 3-5 del registro de pantalla (0xE225) eligen una de
+; estas ocho rutinas por la tabla 0xAEB4, y cada una monta un
+; tipo de pantalla distinto. Los nombres salen de leer lo que
+; monta cada una y de mirar la captura de las 255 escenas:
+; 0 y 1  A9AA  hoyos en el suelo, CON ESCALERA al subterraneo
+; 2      AC7C  charca de brea
+; 3      AC6B  charca de agua
+; 4      AD75  laguna con TRES cocodrilos
+; 5      ADF6  la escena del TESORO, la unica que puntua
+; 6      AE04  brea con liana
+; 7      ADE8  agua con liana
+; El reparto del anillo es uniforme: 31 escenas del tipo 0 y 32
+; de cada uno de los otros siete. Y los tipos 2 y 3 son EL MISMO
+; DIBUJO con distinto color: uno escribe 1B 1B 1B (negro, brea)
+; en la tabla de colores y el otro 7B 7B 7B (cian, agua)
+; ----------------------------------------------------------------------
+escena_tipo_0_y_1_hoyos:
+	ld a,(0e222h)		;a9aa   ; el bit 7 del registro de pantalla parte este tipo en dos: un hoyo (bit a 0) o tres (bit a 1)
 	bit 7,a		;a9ad
 	jr z,L_A9D0		;a9af
 	push ix		;a9b1
@@ -3506,12 +3527,30 @@ L_AAB7:
 	ld (ix+002h),a		;aaf9
 	pop ix		;aafc
 	ret			;aafe
-L_AAFF:
-	ld hl,0e186h		;aaff
+
+; ----------------------------------------------------------------------
+; ############################################################
+; LOS 32 TESOROS: DONDE ESTAN, CUANTO VALEN Y COMO SE MARCAN
+; ############################################################
+; Los tesoros son EXACTAMENTE las 32 escenas de tipo 5, y el
+; tipo 5 es el unico que despacha por la tabla 0xAEA4, que
+; lleva cuatro rutinas repetidas de dos en dos. Como las ocho
+; variantes se reparten a cuatro escenas cada una, sale un
+; tesoro de cada clase OCHO veces: 8+8+8+8 = 32, y ni uno mas.
+; Cada rutina escribe en 0xE188 lo que vale el suyo -2, 3, 4 o
+; 5, o sea miles de puntos-, asi que el mundo entero guarda
+; 8*(2000+3000+4000+5000) = 112000 puntos. Con los 2000 con los
+; que arranca el marcador, 114000: el techo del juego.
+; Y LO COGIDO SE RECUERDA EN 32 BITS: 0xE21D-0xE220, un byte
+; por clase y un bit por tesoro. El indice dentro de la clase
+; es 0xE223
+; ----------------------------------------------------------------------
+tesoro_ya_cogido:
+	ld hl,0e186h		;aaff   ; guarda el puntero al byte de banderas de esta clase en 0xE186/0xE187, que 0x878C recupera al recogerlo
 	ld (hl),e			;ab02
 	inc hl			;ab03
 	ld (hl),d			;ab04
-	ld a,(0e223h)		;ab05
+	ld a,(0e223h)		;ab05   ; 0xE223 es cual de los ocho tesoros de la clase es este: dice que bit mirar
 	cp 000h		;ab08
 	jr nz,L_AB11		;ab0a
 	ld a,(de)			;ab0c
@@ -3522,15 +3561,15 @@ L_AB11:
 	inc b			;ab12
 	ld a,(de)			;ab13
 L_AB14:
-	rr a		;ab14
+	rr a		;ab14   ; rota el bit del tesoro hasta el acarreo
 	djnz L_AB14		;ab16
 L_AB18:
-	ret nc			;ab18
-	pop hl			;ab19
+	ret nc			;ab18   ; si el bit estaba a cero -no cogido- vuelve normal y el llamante lo pinta
+	pop hl			;ab19   ; y si YA ESTABA COGIDO se come la direccion de retorno: la rutina que pinta el tesoro no llega a ejecutarse
 	ret			;ab1a
-L_AB1B:
+tesoro_de_4000:
 	ld de,0e21dh		;ab1b
-	call L_AAFF		;ab1e
+	call tesoro_ya_cogido		;ab1e
 	ld hl,09850h		;ab21
 	call L_B142		;ab24
 	ld hl,0ae90h		;ab27
@@ -3541,15 +3580,15 @@ L_AB1B:
 	ld hl,0b010h		;ab36
 	ld bc,00004h		;ab39
 	ldir		;ab3c
-	ld a,004h		;ab3e
+	ld a,004h		;ab3e   ; 4 son 4000 puntos: 0x878C lo lee de 0xE188 al recogerlo
 	ld (0e188h),a		;ab40
 	ld iy,0e28eh		;ab43
 	ld (iy+001h),0c4h		;ab47
 	ld (iy+003h),007h		;ab4b
 	jr L_AB85		;ab4f
-L_AB51:
+tesoro_de_3000:
 	ld de,0e21eh		;ab51
-	call L_AAFF		;ab54
+	call tesoro_ya_cogido		;ab54
 	ld hl,0981eh		;ab57
 	call L_B142		;ab5a
 	ld hl,0ae92h		;ab5d
@@ -3560,7 +3599,7 @@ L_AB51:
 	ld hl,0b010h		;ab6c
 	ld bc,00004h		;ab6f
 	ldir		;ab72
-	ld a,003h		;ab74
+	ld a,003h		;ab74   ; 3 son 3000 puntos. El dibujo es otra barra, con patron distinto (0x981E, y 0x9850 el de 4000) pero el mismo color
 	ld (0e188h),a		;ab76
 	ld iy,0e28eh		;ab79
 	ld (iy+001h),0c4h		;ab7d
@@ -3585,10 +3624,10 @@ L_AB85:
 	ld (ix+002h),a		;abb1
 	pop ix		;abb4
 	ret			;abb6
-L_ABB7:
+tesoro_de_5000:
 	ld de,0e220h		;abb7
-	call L_AAFF		;abba
-	ld a,005h		;abbd
+	call tesoro_ya_cogido		;abba
+	ld a,005h		;abbd   ; 5 son 5000 puntos: el anillo con la piedra, el mas caro
 	ld (0e188h),a		;abbf
 	ld hl,0b05ah		;abc2
 	call L_9FE6		;abc5
@@ -3618,10 +3657,10 @@ L_ABB7:
 	ld (ix+002h),a		;ac0b
 	pop ix		;ac0e
 	ret			;ac10
-L_AC11:
+tesoro_de_2000:
 	ld de,0e21fh		;ac11
-	call L_AAFF		;ac14
-	ld a,002h		;ac17
+	call tesoro_ya_cogido		;ac14
+	ld a,002h		;ac17   ; 2 son 2000 puntos: el saco de dinero
 	ld (0e188h),a		;ac19
 	ld hl,0b074h		;ac1c
 	call L_9FE6		;ac1f
@@ -3651,14 +3690,14 @@ L_AC11:
 	ld (ix+002h),a		;ac65
 	pop ix		;ac68
 	ret			;ac6a
-L_AC6B:
+escena_tipo_3_agua:
 	ld hl,0b0fbh		;ac6b
 	ld de,0200bh		;ac6e
 	ld bc,00003h		;ac71
 	call L_B1C3		;ac74
 	call L_AE38		;ac77
 	jr L_AC8B		;ac7a
-L_AC7C:
+escena_tipo_2_brea:
 	ld hl,0b110h		;ac7c
 	ld de,0200bh		;ac7f
 	ld bc,00003h		;ac82
@@ -3772,10 +3811,10 @@ L_AD64:
 	sub 008h		;ad71
 	ld (hl),a			;ad73
 	ret			;ad74
-L_AD75:
+escena_tipo_4_cocodrilos:
 	ld hl,09919h		;ad75
 	call L_B142		;ad78
-	ld de,0e282h		;ad7b
+	ld de,0e282h		;ad7b   ; tres bloques de 4 bytes, uno por cocodrilo: son los tres que se ven en la captura
 	ld hl,0afdeh		;ad7e
 	ld bc,00004h		;ad81
 	ldir		;ad84
@@ -3825,19 +3864,19 @@ L_AD75:
 ; ======================================================================
 
 
-L_ADE8:
+escena_tipo_7_agua_con_liana:
 	ld hl,0b0fbh		;ade8
 	ld de,0200bh		;adeb
 	ld bc,00003h		;adee
 	call L_B1C3		;adf1
 	jr L_AE13		;adf4
-L_ADF6:
+escena_tipo_5_tesoro:
 	ld hl,0b110h		;adf6
 	ld de,0200bh		;adf9
 	ld bc,00003h		;adfc
 	call L_B1C3		;adff
 	jr L_AE13		;ae02
-L_AE04:
+escena_tipo_6_brea_con_liana:
 	call L_AE38		;ae04
 	ld hl,0b110h		;ae07
 	ld de,0200bh		;ae0a
@@ -3899,6 +3938,8 @@ L_AE46:
 	ret			;ae8f
 
 ; ----------------------------------------------------------------------
+; DATOS colores_del_tesoro: Dos parejas (4B 00 4B 00) de las que solo se usa el primer byte de cada una: 0xAB1B copia el de 0xAE90 y 0xAB51 el de 0xAE92 a la VRAM 0x2013, el color del tile del tesoro. Los dos valen 0x4B, asi que lo que distingue a las dos barras es el patron y no el color
+;   0xae90..0xae94  (4 bytes)
 ; DATOS tabla_de_submodos_1: Ocho punteros de palabra para el despachador parametrico de 0xA99F, indexados por el submodo (0xE224)=(0xE222)&7. La base la carga el llamante de 0xADE4. Solo dos rutinas distintas, alternadas de dos en dos: 0xACB5 y 0xAE38
 ;   0xae94..0xaea4  (16 bytes)
 ; DATOS tabla_de_submodos_2: Ocho punteros de palabra para 0xA99F, mismos indices. La base la carga 0xAE2E, y SOLO cuando el modo (0xE225) es 5. Cuatro rutinas distintas repetidas dos veces: 0xAC11, 0xAB51, 0xAB1B, 0xABB7

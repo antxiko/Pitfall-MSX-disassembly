@@ -404,3 +404,75 @@ D 0xB0D0 0xB0F0 filas_del_rotulo Cuatro filas de 8 numeros de tile (0x58-0x6F, l
 D 0xB0F0 0xB110 colores_iniciales Treinta y dos bytes de color que 0x8A01 copia a la VRAM 0x2000, el principio de la tabla de colores. Los tres del offset +0x0B (0xB0FB, 7B 7B 7B) los reutiliza 0xAC6B escribiendolos de vuelta en 0x200B: la restauracion del parche de abajo
 
 D 0xB110 0xB113 colores_alternativos Tres bytes (1B 1B 1B) que 0xAC7C escribe en la VRAM 0x200B, encima de los originales: el parche de color que 0xAC6B deshace
+
+# =============================================================================
+# LOS OCHO TIPOS DE ESCENA, Y LOS 32 TESOROS
+# =============================================================================
+# Con esto el mapa deja de ser un mural y pasa a ser documentacion: se sabe
+# QUE hay en cada una de las 255 pantallas sin jugar ni una partida.
+
+B 0xA9AA ############################################################
+B 0xA9AA LOS OCHO TIPOS DE ESCENA
+B 0xA9AA ############################################################
+B 0xA9AA Los bits 3-5 del registro de pantalla (0xE225) eligen una de
+B 0xA9AA estas ocho rutinas por la tabla 0xAEB4, y cada una monta un
+B 0xA9AA tipo de pantalla distinto. Los nombres salen de leer lo que
+B 0xA9AA monta cada una y de mirar la captura de las 255 escenas:
+B 0xA9AA   0 y 1  A9AA  hoyos en el suelo, CON ESCALERA al subterraneo
+B 0xA9AA   2      AC7C  charca de brea
+B 0xA9AA   3      AC6B  charca de agua
+B 0xA9AA   4      AD75  laguna con TRES cocodrilos
+B 0xA9AA   5      ADF6  la escena del TESORO, la unica que puntua
+B 0xA9AA   6      AE04  brea con liana
+B 0xA9AA   7      ADE8  agua con liana
+B 0xA9AA El reparto del anillo es uniforme: 31 escenas del tipo 0 y 32
+B 0xA9AA de cada uno de los otros siete. Y los tipos 2 y 3 son EL MISMO
+B 0xA9AA DIBUJO con distinto color: uno escribe 1B 1B 1B (negro, brea)
+B 0xA9AA en la tabla de colores y el otro 7B 7B 7B (cian, agua)
+L 0xA9AA escena_tipo_0_y_1_hoyos
+C 0xA9AA el bit 7 del registro de pantalla parte este tipo en dos: un hoyo (bit a 0) o tres (bit a 1)
+L 0xAC7C escena_tipo_2_brea
+L 0xAC6B escena_tipo_3_agua
+L 0xAD75 escena_tipo_4_cocodrilos
+C 0xAD7B tres bloques de 4 bytes, uno por cocodrilo: son los tres que se ven en la captura
+L 0xADF6 escena_tipo_5_tesoro
+L 0xAE04 escena_tipo_6_brea_con_liana
+L 0xADE8 escena_tipo_7_agua_con_liana
+
+B 0xAAFF ############################################################
+B 0xAAFF LOS 32 TESOROS: DONDE ESTAN, CUANTO VALEN Y COMO SE MARCAN
+B 0xAAFF ############################################################
+B 0xAAFF Los tesoros son EXACTAMENTE las 32 escenas de tipo 5, y el
+B 0xAAFF tipo 5 es el unico que despacha por la tabla 0xAEA4, que
+B 0xAAFF lleva cuatro rutinas repetidas de dos en dos. Como las ocho
+B 0xAAFF variantes se reparten a cuatro escenas cada una, sale un
+B 0xAAFF tesoro de cada clase OCHO veces: 8+8+8+8 = 32, y ni uno mas.
+B 0xAAFF Cada rutina escribe en 0xE188 lo que vale el suyo -2, 3, 4 o
+B 0xAAFF 5, o sea miles de puntos-, asi que el mundo entero guarda
+B 0xAAFF 8*(2000+3000+4000+5000) = 112000 puntos. Con los 2000 con los
+B 0xAAFF que arranca el marcador, 114000: el techo del juego.
+B 0xAAFF Y LO COGIDO SE RECUERDA EN 32 BITS: 0xE21D-0xE220, un byte
+B 0xAAFF por clase y un bit por tesoro. El indice dentro de la clase
+B 0xAAFF es 0xE223
+L 0xAAFF tesoro_ya_cogido
+C 0xAAFF guarda el puntero al byte de banderas de esta clase en 0xE186/0xE187, que 0x878C recupera al recogerlo
+C 0xAB05 0xE223 es cual de los ocho tesoros de la clase es este: dice que bit mirar
+C 0xAB14 rota el bit del tesoro hasta el acarreo
+C 0xAB18 si el bit estaba a cero -no cogido- vuelve normal y el llamante lo pinta
+C 0xAB19 y si YA ESTABA COGIDO se come la direccion de retorno: la rutina que pinta el tesoro no llega a ejecutarse
+L 0xAB1B tesoro_de_4000
+C 0xAB3E 4 son 4000 puntos: 0x878C lo lee de 0xE188 al recogerlo
+L 0xAB51 tesoro_de_3000
+C 0xAB74 3 son 3000 puntos. El dibujo es otra barra, con patron distinto (0x981E, y 0x9850 el de 4000) pero el mismo color
+L 0xABB7 tesoro_de_5000
+C 0xABBD 5 son 5000 puntos: el anillo con la piedra, el mas caro
+L 0xAC11 tesoro_de_2000
+C 0xAC17 2 son 2000 puntos: el saco de dinero
+L 0x878C recoge_el_tesoro
+C 0x878C sonido 8, el de recoger
+C 0x8791 los miles que dejo escritos la rutina que lo pinto
+C 0x87C4 el mismo indice de 0xAAFF, ahora para construir el bit que hay que marcar
+C 0x87D6 y se marca: a partir de aqui 0xAAFF hara que este tesoro no vuelva a aparecer
+C 0x87A2 apaga la zona de peligro del tesoro, que ya no esta
+
+D 0xAE90 0xAE94 colores_del_tesoro Dos parejas (4B 00 4B 00) de las que solo se usa el primer byte de cada una: 0xAB1B copia el de 0xAE90 y 0xAB51 el de 0xAE92 a la VRAM 0x2013, el color del tile del tesoro. Los dos valen 0x4B, asi que lo que distingue a las dos barras es el patron y no el color
