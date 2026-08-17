@@ -1,0 +1,9 @@
+# Zonas que NO son codigo, para que el trazador no se meta en ellas.
+#
+# Esto no es una precaucion teorica: basta con una semilla mal deducida para que
+# el desensamblador lea dibujos como instrucciones, la cobertura suba y todo
+# parezca ir mejor. Cada rango de aqui viene de haber leido el codigo que lo usa.
+#
+# Convenio: [inicio, fin), el extremo derecho NO entra.
+#
+# (vacio de momento)

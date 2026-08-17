@@ -1,0 +1,80 @@
+# Puntos de entrada de Pitfall! (Activision, 1984). ROM de 16 KB en 0x8000.
+#
+# El unico punto de entrada que declara el cartucho: la BIOS lee la cabecera
+# "AB" y llama a INIT despues de inicializar la maquina. Todo lo demas tiene
+# que salir de seguir el flujo desde aqui, o de medirlo en el emulador.
+0x8013   # INIT, declarado en la cabecera del cartucho
+
+0x80F7   # la rutina de interrupcion. INIT copia en 0x803C-0x8046 los tres
+         # bytes de 0x8010 -que son `jp 0x80F7`- al gancho H.KEYI (0xFD9A)
+         # con `ld hl,8010h / ld de,0FD9Ah / ld bc,3 / ldir`. La BIOS llama
+         # al gancho en cada interrupcion, asi que ningun trazador estatico
+         # llega aqui sin esta semilla.
+
+0x9F8E   # direccion de retorno que el despachador empuja a mano: en
+         # 0x9F89-0x9F8D hace `ld de,9F8Eh / push de / jp (hl)`, o sea un
+         # call indirecto con vuelta aqui.
+
+0xB392   # un RET solo. B2FA lo instala como manejador vacio en los cuatro
+         # vectores de RAM 0xE1E6/E1E8/E1EA/E1EC (`ld hl,0B392h` y cuatro
+         # `ld (..),hl`); se ejecuta cada vez que un vector no tiene nada.
+
+# --- Los destinos de la tabla del despachador de 0x9F81-0x9F8D.
+# La tabla esta en 0xAEB4 y el indice es (0xE225). Su UNICO escritor trazado,
+# 0x9EF4-0x9EFF, lo calcula como ((0xE222)>>3)&7: de 0 a 7, o sea OCHO
+# entradas de palabra (0xAEB4-0xAEC3). Las palabras que siguen en 0xAEC4 ya
+# no son punteros verosimiles (0x001C, 0x01C9...): son otra cosa, sin medir.
+# Si al crecer el trazado aparece otro escritor de 0xE225, revisar esto.
+0xA9AA   # destino de la tabla de modos (indices 0 y 1)
+0xAC7C   # destino de la tabla de modos (indice 2)
+0xAC6B   # destino de la tabla de modos (indice 3)
+0xAD75   # destino de la tabla de modos (indice 4)
+0xADF6   # destino de la tabla de modos (indice 5)
+0xAE04   # destino de la tabla de modos (indice 6)
+0xADE8   # destino de la tabla de modos (indice 7)
+
+# --- Los destinos de las otras TRES tablas de 8 palabras que consume el
+# despachador parametrico de 0xA99F (recibe la base en HL y el indice en A;
+# hace sla / add hl / fetch / jp (hl)). El indice es (0xE224), que 0x9EEC-
+# 0x9EF1 calcula como (0xE222)&7: de 0 a 7, ocho entradas por tabla. Los
+# cuatro llamantes estan en 0xAA70, 0xACB1, 0xADE4 y 0xAE34, y cargan las
+# bases 0xAEC4 (dos veces), 0xAE94 y 0xAEA4 (esta solo si el modo es 5).
+0xACB5   # tabla 0xAE94, indices 0,1,4,5
+0xAE38   # tabla 0xAE94, indices 2,3,6,7
+0xAC11   # tabla 0xAEA4, indices 0 y 4
+0xAB51   # tabla 0xAEA4, indices 1 y 5
+0xAB1B   # tabla 0xAEA4, indices 2 y 6
+0xABB7   # tabla 0xAEA4, indices 3 y 7
+0xAAB7   # tabla 0xAEC4, indice 6
+0xAA74   # tabla 0xAEC4, indice 7
+0xAD1F   # tabla 0xAEC4, indices 0 a 5: seis de las ocho entradas caen aqui
+
+# --- Manejadores de objeto. El call indirecto de 0x9AD6 salta a la direccion
+# guardada en IX+0x12/0x13 de la estructura del objeto (con retorno empujado a
+# 0x9AD7). Cada entrada de abajo es una CONSTANTE que el codigo trazado escribe
+# en ese campo, con la instruccion que lo hace al lado.
+0xA870   # lo escribe 0xAE13-0xAE1F (ld ix,0E2BFh / ld de,0A870h / ld (ix+12h),e...)
+0x9E0E   # lo escribe 0x9BD8-0x9BDE
+0xA962   # lo escribe 0x9F23-0x9F29
+0xA471   # lo escribe 0xAE56-0xAE63
+0xB7F1   # lo escribe 0xB720-0xB726
+
+# --- Manejadores que viajan DENTRO de las plantillas de objeto (los bloques
+# de 22 bytes que varios sitios copian con LDIR a las estructuras de RAM).
+# El puntero va en el offset 0x12/0x13 de cada plantilla, que es el campo que
+# el call indirecto de 0x9AD6 consume.
+0xA962   # ya arriba; tambien en la plantilla 0xB02A (objeto de 0xE2BF)
+0xA69E   # en la plantilla 0xAF62 (objeto de 0xE2ED)
+0xA728   # en la plantilla 0xAFC2 (objeto de 0xE303)
+0xA7F5   # en la plantilla 0xAFEA (tambien para 0xE303)
+0x8125   # en la plantilla 0xAF98 (objeto de 0xE2D5)
+0x872F   # manejador de objeto: lo escribe 0x8135 (constante cargada en 0x8132)
+0xB8C3   # manejador de objeto: lo escribe 0xB81C (constante cargada en 0xB819)
+0x8447   # manejador de objeto: lo escribe 0x840B (constante cargada en 0x8408)
+0x8820   # manejador de objeto: lo escribe 0x87F5 (constante cargada en 0x87F2)
+0xB7A2   # manejador de objeto: lo escribe 0xB989 (constante cargada en 0xB986)
+0x8243   # manejador de objeto: lo escribe 0xB7BE (constante cargada en 0xB7BB)
+0xB9C8   # manejador de objeto: lo escribe 0xB7DE (constante cargada en 0xB7DB)
+0x82C5   # manejador de objeto: lo escribe 0x827A (constante cargada en 0x8277)
+0x829F   # manejador de objeto: lo escribe 0x82F1 (constante cargada en 0x82EE)
+0x8314   # manejador de objeto: lo escribe 0x82BE (constante cargada en 0x82BB)

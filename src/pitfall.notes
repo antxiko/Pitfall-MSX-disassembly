@@ -1,0 +1,226 @@
+# Anotaciones de Pitfall! (Activision, 1984, MSX1).
+#
+# Cada linea esta anclada a una direccion, asi que los comentarios sobreviven a
+# un retrazado del binario. Directivas: L=etiqueta, C=comentario de linea,
+# B=cabecera de bloque, D=rango de datos.
+#
+# TODO lo que hay aqui sale de leer el codigo que lo usa, no de que "parezca".
+# Lo que sea suposicion va marcado con "(?)".
+#
+# EL MAPA DE MEMORIA, que hace falta para leer el resto: el cartucho son 16 KB
+# fijos en 0x8000-0xBFFF (la pagina 2), o sea que aqui NO hay ni una variable.
+# El estado del juego vive en la RAM del MSX; INIT borra 0xE000-0xEFFF al
+# arrancar y pone la pila en 0xE54B.
+
+# =============================================================================
+# LA CABECERA
+# =============================================================================
+
+D 0x8000 0x8010 cabecera_del_cartucho La cabecera que lee la BIOS: "AB", INIT=0x8013, y a cero los otros tres vectores (STATEMENT, DEVICE y TEXT). Con eso la BIOS llama a 0x8013 nada mas terminar de arrancar la maquina
+
+D 0x8010 0x8013 plantilla_del_gancho Los tres bytes C3 F7 80 -un `jp 0x80F7` ya montado- que INIT copia tal cual al gancho H.KEYI (0xFD9A) con el LDIR de 0x803C-0x8046. Aqui dentro no se ejecutan nunca: se ejecutan en la RAM del gancho, en cada interrupcion
+
+# =============================================================================
+# ARRANQUE
+# =============================================================================
+
+L 0x8013 INIT
+
+# =============================================================================
+# EL DESPACHADOR DE MODOS
+# =============================================================================
+
+D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por modo. El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
+
+D 0xAE94 0xAEA4 tabla_de_submodos_1 Ocho punteros de palabra para el despachador parametrico de 0xA99F, indexados por el submodo (0xE224)=(0xE222)&7. La base la carga el llamante de 0xADE4. Solo dos rutinas distintas, alternadas de dos en dos: 0xACB5 y 0xAE38
+
+D 0xAEA4 0xAEB4 tabla_de_submodos_2 Ocho punteros de palabra para 0xA99F, mismos indices. La base la carga 0xAE2E, y SOLO cuando el modo (0xE225) es 5. Cuatro rutinas distintas repetidas dos veces: 0xAC11, 0xAB51, 0xAB1B, 0xABB7
+
+D 0xAEC4 0xAED4 tabla_de_submodos_3 Ocho punteros de palabra para 0xA99F, mismos indices. La cargan los llamantes de 0xAA70, 0xACB1 y el camino de 0xAE24 cuando el modo no es 5. Seis de las ocho entradas apuntan al mismo sitio, 0xAD1F; las otras dos, 0xAAB7 y 0xAA74
+
+# =============================================================================
+# GUIONES DE CELDAS: tablas que consume el interprete de 0x9FE6
+# =============================================================================
+# Formato medido en 0x9FE6: primer byte = numero de entradas, un byte que se
+# salta, y entradas de 4 bytes [celda_del_name_table:2][tile:1][0x00]. Por cada
+# entrada escribe UN byte (el tile) en la VRAM 0x1800+celda via B1C3, o sea que
+# pinta figuras celda a celda en la pantalla. Cada tabla cierra exactamente
+# donde empieza la siguiente, que es lo que valida su tamano.
+
+D 0x8F06 0x8F48 guion_celdas_columna Guion de 16 celdas para 0x9FE6: una columna de 3 de ancho por 8 de alto en filas 14-21, columnas 15-17, tiles 0x20-0x36. Lo llaman 0x8D4D y 0x8D60
+
+D 0x8F48 0x8FAA guion_celdas_bloque_a Guion de 24 celdas: un bloque en filas 14-17, columnas 10-22, tiles 0x2A-0x56. Variante A de la misma zona que el guion siguiente. Lo llama 0x8D12
+
+D 0x8FAA 0x900C guion_celdas_bloque_b Guion de 24 celdas: mismas filas 14-17 y columnas 10-22 que el anterior, tiles 0x30-0x40. Variante B. Lo llama 0x8D0B
+
+D 0x900C 0x904E guion_celdas_franja_a Guion de 16 celdas: franja baja en filas 18-21, columnas 5-27, tiles 0x18-0x2C. Variante A. Lo llama 0x8D66
+
+D 0x904E 0x9090 guion_celdas_franja_b Guion de 16 celdas: misma franja 18-21 que el anterior, tiles 0x18-0x2C. Variante B. Lo llama 0x8D53
+
+D 0xAED4 0xAF46 guion_celdas_rotulo Guion de 28 celdas en las filas 14-15, columnas 9-22: dos lineas de tiles consecutivos (0x58-0x6F), un rotulo pintado celda a celda. Lo llaman 0xACA8 y 0xADC1
+
+D 0xB040 0xB05A guion_celdas_objeto_1 Guion de 6 celdas: objeto de 3x2 en filas 14-15, columnas 24-26, tiles 0x90-0x95. Primera de las seis variantes del mismo hueco de pantalla. Lo llama 0xAA7D
+
+D 0xB05A 0xB074 guion_celdas_objeto_2 Guion de 6 celdas: mismo hueco 3x2, tiles 0xA8-0xAD. Lo llama 0xABC5
+
+D 0xB074 0xB08E guion_celdas_objeto_3 Guion de 6 celdas: mismo hueco 3x2, tiles 0xB0-0xB5. Lo llama 0xAC1F
+
+D 0xB08E 0xB0A8 guion_celdas_objeto_4 Guion de 6 celdas: mismo hueco 3x2, las seis con el MISMO tile 0x30. Parece el borrado del objeto (?), pendiente de ver el patron del tile. Lo llaman 0x8D59 y 0x8D6C
+
+D 0xB0A8 0xB0C2 guion_celdas_objeto_5 Guion de 6 celdas: mismo hueco 3x2, tiles 0x98-0x9D. Lo llama 0xAB88
+
+D 0xB0C2 0xB0D0 guion_celdas_objeto_6 Guion de 3 celdas: solo la fila 15 del hueco, columnas 24-26, tiles 0xA0-0xA2. Lo llama 0xAABA
+
+# =============================================================================
+# GRAFICOS COMPRIMIDOS: los bloques que descomprime B142
+# =============================================================================
+# Formato medido en 0xB142: dos bytes de direccion VRAM y tokens de un byte
+# con el contador en los 6 bits bajos: bit7 = saltar N posiciones de VRAM,
+# bit6 = N bytes literales, ninguno = repetir N veces el byte siguiente,
+# N=0 = fin. Cada bloque cierra EXACTAMENTE donde empieza el siguiente, que es
+# lo que valida el tamano de los cinco.
+
+D 0x9090 0x909E fila_de_tiles_23 Catorce numeros de tile en crudo que 0x8B51-0x8B5A copia con B1C3 a la VRAM 0x1AE2, o sea la fila 23 del name table, columnas 2-15
+
+D 0x909E 0x915B grafico_rle_tiles_a Bloque RLE para B142: 360 bytes descomprimidos a la VRAM desde 0x0000, el principio de la tabla de patrones. Lo carga 0x8B15
+
+D 0x915B 0x939D grafico_rle_tiles_b Bloque RLE para B142: 760 bytes a la VRAM desde 0x0480, mas patrones de la tabla de tiles. Lo carga 0x8B1B
+
+D 0x939D 0x9473 grafico_rle_sprites_a Bloque RLE para B142: 416 bytes a la VRAM desde 0x3880, dentro de la tabla de patrones de sprites (0x3800-0x3FFF). Lo carga 0x8B5E
+
+D 0x9473 0x956A grafico_rle_sprites_b Bloque RLE para B142: 288 bytes a la VRAM desde 0x3B40, mas patrones de sprites. Lo carga 0x8B6F
+
+D 0x956A 0x95FE grafico_rle_sprites_c Bloque RLE para B142: 288 bytes a la VRAM desde 0x3D80, mas patrones de sprites. Lo carga 0x8B80
+
+D 0x97FE 0x981E patron_de_sprite_relleno Un patron de sprite de 32 bytes en crudo, que empieza por FF FF: 0xA002-0xA023 lo copia tal cual con B1C3 a TRES huecos de la tabla de sprites, 0x3C20, 0x3D40 y 0x3E60
+
+# Los sprites que carga cada manejador de modo/submodo: ocho bloques RLE de 64
+# bytes, casi todos a la VRAM 0x3FC0 -los DOS ULTIMOS patrones de la tabla de
+# sprites-, encadenados sin un byte de hueco entre 0x981E y 0x99AF.
+
+D 0x981E 0x9850 sprites_rle_1 Bloque RLE para B142: 64 bytes a la VRAM 0x3FC0 (los dos ultimos patrones de sprite). Lo carga 0xAB57
+
+D 0x9850 0x9865 sprites_rle_2 Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAB21
+
+D 0x9865 0x989E sprites_rle_3 Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAABD
+
+D 0x989E 0x98BB sprites_rle_4 Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAC22
+
+D 0x98BB 0x98E0 sprites_rle_5 Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xABC8
+
+D 0x98E0 0x9919 sprites_rle_6 Bloque RLE para B142: 64 bytes a la VRAM 0x3800, los DOS PRIMEROS patrones de sprite. Lo carga 0xACB6
+
+D 0x9919 0x9944 sprites_rle_7 Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAD75
+
+D 0x9944 0x9989 sprites_rle_8 Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAD1F
+
+D 0x9989 0x99AF sprites_rle_9 Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAA74
+
+# Y cuatro patrones de sprite de 32 bytes EN CRUDO, copiados con B1C3
+# (ld hl,tabla / ld de,vram / ld bc,20h) desde 0xAA07-0xAA31.
+
+D 0x99CF 0x99EF sprite_crudo_1 32 bytes de patron de sprite sin comprimir, a la VRAM 0x39E0. Lo copia 0xAA07
+
+D 0x9A0F 0x9A2F sprite_crudo_2 32 bytes a la VRAM 0x3C20. Lo copia 0xAA13
+
+D 0x9A2F 0x9A4F sprite_crudo_3 32 bytes a la VRAM 0x3E60. Lo copia 0xAA1F
+
+D 0x9A4F 0x9A6F sprite_crudo_4 32 bytes a la VRAM 0x3800. Lo copia 0xAA2B
+
+# =============================================================================
+# INICIALIZADORES ROM->RAM: los bloques que se copian con LDIR
+# =============================================================================
+# Cada uno con su tamano exacto, sacado del ld bc del propio LDIR. Los de 22
+# bytes son PLANTILLAS DE OBJETO: la estructura entera de un objeto, con el
+# puntero de su manejador en el offset 0x12/0x13 (el campo que consume el call
+# indirecto de 0x9AD6).
+
+D 0x8A69 0x8A6F inicializador_e1d0 Seis bytes que 0x8A23 copia con LDIR a 0xE1D0
+
+D 0x8A6F 0x8A75 inicializador_e1d6 Seis bytes que 0x8A2E copia a 0xE1D6
+
+D 0x8A88 0x8A8C inicializador_e29a Cuatro bytes que 0x8A39 copia a 0xE29A
+
+D 0x8A8C 0x8A90 inicializador_e29e Cuatro bytes que 0x8A44 copia a 0xE29E
+
+D 0x8A90 0x8A94 inicializador_e2ae Cuatro bytes que 0x80D1 (en el arranque) copia a 0xE2AE
+
+D 0x8A94 0x8A98 inicializador_e2b2 Cuatro bytes que 0x80DC copia a 0xE2B2
+
+D 0x8A98 0x8A9C inicializador_e2b6 Cuatro bytes que 0x80E7 copia a 0xE2B6
+
+D 0x8A9C 0x8AA0 inicializador_e2ba Cuatro bytes que 0x80F2 copia a 0xE2BA
+
+D 0xAF46 0xAF52 inicializador_e26a Doce bytes que 0xAE44 copia a 0xE26A
+
+D 0xAF5E 0xAF62 inicializador_e292 Cuatro bytes que 0xACD0 copia a 0xE292
+
+D 0xAF62 0xAF78 plantilla_objeto_e2ed Plantilla de objeto de 22 bytes que 0xACDB copia a 0xE2ED. Su manejador (offset 0x12) es 0xA69E
+
+D 0xAF78 0xAF7C inicializador_e2a2 Cuatro bytes que 0xACED copia a 0xE2A2
+
+D 0xAF7C 0xAF80 inicializador_e2a6 Cuatro bytes que 0xACF8 copia a 0xE2A6
+
+D 0xAF80 0xAF84 inicializador_e2aa Cuatro bytes que 0xAD03 copia a 0xE2AA
+
+D 0xAF98 0xAFB0 plantilla_objeto_e2d5 Plantilla de objeto de 24 bytes que 0xAD0E copia a 0xE2D5. Su manejador es 0x8125
+
+D 0xAFB6 0xAFBA inicializador_e282 Cuatro bytes que 0xAD2E copia a 0xE282
+
+D 0xAFC2 0xAFD8 plantilla_objeto_e303 Plantilla de objeto de 22 bytes que 0xAD39 copia a 0xE303. Su manejador es 0xA728
+
+D 0xAFDE 0xAFE2 inicializador_e282_b Cuatro bytes que 0xAD84 copia a 0xE282
+
+D 0xAFE2 0xAFE6 inicializador_e286 Cuatro bytes que 0xAD8F copia a 0xE286
+
+D 0xAFE6 0xAFEA inicializador_e28a Cuatro bytes que 0xAD9A copia a 0xE28A
+
+D 0xAFEA 0xB000 plantilla_objeto_e303_b Otra plantilla de 22 bytes para 0xE303, copiada por 0xADA5. Su manejador es 0xA7F5
+
+D 0xB010 0xB014 inicializador_e28e Cuatro bytes que copian a 0xE28E cinco sitios distintos (0xAA89, 0xAACC, 0xAB3C, 0xAB72, 0xABD7, 0xAC31)
+
+D 0xB014 0xB02A plantilla_objeto_e319 Plantilla de objeto de 22 bytes que copian a 0xE319 cinco sitios (0xAA94, 0xAAD7, 0xAB94, 0xABE2, 0xAC3C). Su campo de manejador viene a CERO: se rellena despues en marcha
+
+D 0xB02A 0xB040 plantilla_objeto_e2bf Plantilla de objeto de 22 bytes que el arranque (0x8094) copia a 0xE2BF y 0xAE54 copia a 0xE32F. Su manejador es 0xA962
+
+D 0xBA46 0xBA4A inicializador_e28e_b Cuatro bytes que 0xB749 copia a 0xE28E
+
+D 0xBA4A 0xBAA2 inicializador_e132 Ochenta y ocho bytes que 0xB808 copia a 0xE132
+
+D 0xBC61 0xBC6D inicializador_e26a_b Doce bytes que 0xB73E copia a 0xE26A
+
+# =============================================================================
+# LOS DECORADOS POR VARIANTE DE ESCENA
+# =============================================================================
+# 0x9FB3 elige por indice: la tabla de 0xA086 da el JUEGO DE TILES (128 bytes
+# que van a los patrones 0x70-0x7F de la VRAM, y B1D1 los duplica a 0x0400), y
+# la de 0xA08E da el LAYOUT de la escena, que consume L_8D70.
+
+D 0x95FE 0x967E tiles_decorado_3 128 bytes: 16 patrones de tile en crudo, la entrada [3] de la tabla 0xA086. Se copian a la VRAM 0x0380 con B1C3
+
+D 0x967E 0x96FE tiles_decorado_2 128 bytes, la entrada [2] de la tabla 0xA086
+
+D 0x96FE 0x977E tiles_decorado_0 128 bytes, la entrada [0] de la tabla 0xA086
+
+D 0x977E 0x97FE tiles_decorado_1 128 bytes, la entrada [1] de la tabla 0xA086
+
+D 0xA086 0xA08E tabla_juegos_de_tiles Cuatro palabras: punteros a los cuatro juegos de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E [3]=0x95FE. La lee 0x9FB3 con el indice en DE
+
+D 0xA08E 0xA096 tabla_de_layouts Cuatro palabras: punteros a los cuatro layouts de escena de abajo, [0]=0xA1EE [1]=0xA29A [2]=0xA13E [3]=0xA096. La lee 0x9FD1 y el layout lo consume L_8D70
+
+# Formato del layout, medido en L_8D70 y su cola 0x8DA0-0x8DDA: 0x71 bytes en
+# crudo para la VRAM 0x188F (filas 4 a 7 del name table), 0x20 bytes de una
+# fila que se pinta SEIS veces (0x1900-0x19BF), 5 bytes que son a la vez
+# desplazamiento en la tabla 0x8E1B, longitud y avance de VRAM (los tramos de
+# anchura variable de las filas 12-13), y un guion de celdas formato 0x9FE6.
+# Cada layout cierra EXACTAMENTE donde empieza el siguiente.
+
+D 0xA096 0xA13E layout_escena_3 Layout de escena (entrada [3]): 0x71 + 0x20 + 5 bytes y un guion de 4 celdas que cierra en 0xA13E clavado
+
+D 0xA13E 0xA1EE layout_escena_2 Layout de escena (entrada [2]), guion de 6 celdas, cierra en 0xA1EE
+
+D 0xA1EE 0xA29A layout_escena_0 Layout de escena (entrada [0]), guion de 5 celdas, cierra en 0xA29A
+
+D 0xA29A 0xA33E layout_escena_1 Layout de escena (entrada [1]), guion de 3 celdas, cierra en 0xA33E, que es justo donde empieza la tabla siguiente
+
+D 0xA33E 0xA43A tabla_patrones_14x18 Catorce registros de 18 bytes. El bucle de 0x9E3F copia de cada registro un patron de tile de 8 bytes (la columna dentro del registro la elige DE) a la VRAM desde 0x0640, avanzando de registro en registro. 14 x 18 = 252 bytes, y cierra el hueco exacto
