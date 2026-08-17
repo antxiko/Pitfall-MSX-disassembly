@@ -40,6 +40,20 @@ L 0x8013 INIT
 
 D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
 
+# =============================================================================
+# NO HAY TEXTO EN ESTE CARTUCHO (comprobado, 2026-08-17)
+# =============================================================================
+# Ni una cadena, ni un alfabeto, ni un mensaje escondido de los programadores.
+# La fuente que carga el juego son SOLO diez digitos (tiles 0xB8-0xC1), los dos
+# puntos (0xC2) y el blanco (0xC3): con eso se escribe el marcador y el reloj,
+# y no da para una letra. Todo lo demas que parece texto -"ACTiViSiON
+# PRESENTS", "PITFALL!", el "Copyright 1982, 1984" del pie- son DIBUJOS
+# partidos en tiles consecutivos, uno por posicion, no cadenas. Por eso una
+# busqueda de cadenas en la ROM no devuelve nada legible: lo poco que sale son
+# coincidencias de bytes de graficos y de codigo.
+# La unica firma de los autores es esa linea del pie, y dice DOS fechas: 1982,
+# la del Pitfall! de Atari 2600, y 1984, la de esta conversion.
+
 L 0x80F7 bucle_principal
 B 0x80F7 ############################################################
 B 0x80F7 EL BUCLE PRINCIPAL, que corre dentro de la interrupcion
