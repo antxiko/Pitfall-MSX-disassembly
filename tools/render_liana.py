@@ -24,6 +24,20 @@ LO QUE HACE 0xA471, instruccion por instruccion:
   - y el punto de agarre -donde cuelga el jugador- sale de sumar la pendiente
     B veces mas, siendo B el TERCER byte del registro (0xA527-0xA530).
 
+LA CUERDA NO MIDE 48 FILAS: MIDE 32 MAS ESE TERCER BYTE. El tercer sprite no
+lleva el mismo patron que los otros dos, lleva el 0x60, y ese patron se fabrica
+en 0xA551 con dos LDIR de **B bytes** -no de 16- desde el patron completo. Como
+0xA43A pone a cero los 0x40 bytes de los dos mapas de bits en cada paso, del
+tercer sprite solo quedan pintadas B filas. O sea que la cuerda ACABA JUSTO EN EL
+PUNTO DE AGARRE, y se acorta al tumbarse: 48 filas en la vertical (B=0x10) y 38
+en el extremo (B=0x06).
+
+MEDIDO CONTRA EL EMULADOR: la cuerda de work/omsx/mapa/escena_008_70.png (una
+escena de tipo 6) cae a 0,28 pixeles de media -1 px como mucho- de donde la pone
+este trazador con la fase que mejor encaja, la 0x1C. Los dos escalones que se ven
+en la captura estan tambien en el modelo: no son un fallo del dibujo, son de la
+maquina, que reinicia el acumulador en cada sprite y pierde la fraccion.
+
 EL SEGUNDO BYTE DEL REGISTRO ES EL PERIODO DEL OBJETO (0xA48F-0xA494 lo escribe
 en +0x10 de 0xE32F). Y no es constante: vale 1 cerca de la vertical y 9 en el
 extremo, o sea que el balanceo FRENA en los extremos y corre por el centro, como
@@ -72,23 +86,33 @@ def patron_de_la_cuerda(pendiente, derecha=True):
     return puntos, (hl >> 8) & 0x0F
 
 
-def cuerda_entera(pendiente, derecha=True):
-    """La cuerda de los tres sprites: el mismo patron repetido y desplazado."""
+def cuerda_entera(pendiente, agarre, derecha=True):
+    """La cuerda que se ve: dos sprites enteros y el tercero cortado.
+
+    El tercero lleva el patron 0x60, que 0xA551 fabrica copiando solo `agarre`
+    filas del patron completo, asi que la cuerda acaba en el punto de agarre.
+    """
     puntos, avance = patron_de_la_cuerda(pendiente, derecha)
     fuera = []
     for k in range(SPRITES):
         dx = k * avance if derecha else -k * avance
-        for x, y in puntos:
+        filas = FILAS_POR_SPRITE if k < SPRITES - 1 else agarre
+        for x, y in puntos[:filas]:
             fuera.append((x + dx, y + k * FILAS_POR_SPRITE))
     return fuera
 
 
 def punto_de_agarre(pendiente, agarre, derecha=True):
-    """Donde cuelga el jugador: la pendiente sumada `agarre` veces mas."""
+    """Donde cuelga el jugador: el final del tercer sprite, o sea el de la cuerda.
+
+    0xA527 lo calcula desde la X del tercer sprite -que ya lleva dos avances
+    encima- sumandole la pendiente `agarre` veces, y esa es tambien la ultima
+    fila que el tercer sprite pinta.
+    """
+    _, avance = patron_de_la_cuerda(pendiente, derecha)
     de = pendiente if derecha else -pendiente
-    hl = (SPRITES * FILAS_POR_SPRITE) * de          # el final de la cuerda
-    hl += agarre * de
-    return (hl >> 8), SPRITES * FILAS_POR_SPRITE + agarre
+    x = (SPRITES - 1) * (avance if derecha else -avance) + ((agarre * de) >> 8)
+    return x, (SPRITES - 1) * FILAS_POR_SPRITE + agarre
 
 
 def main():
@@ -98,19 +122,30 @@ def main():
     rom = open(sys.argv[1], "rb").read()
     salida = sys.argv[2]
     escala = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+    # "tira" pone las 33 fases una detras de otra -sirve para animarlas-, y
+    # "abanico" las pone TODAS ENCIMA, que es lo que cabe en una pagina: en una
+    # sola imagen se ve el recorrido entero y se ve que la cuerda se acorta al
+    # tumbarse, porque las de fuera acaban antes.
+    modo = sys.argv[4] if len(sys.argv) > 4 else "tira"
 
     regs = registros(rom)
     alto = SPRITES * FILAS_POR_SPRITE
     # ancho de un fotograma: lo que la cuerda mas inclinada se va de lado, con
     # sitio a los dos lados para que valga el mismo lienzo en las dos direcciones
-    maxdx = max(abs(x) for p, _ in [(cuerda_entera(r[0]), 0) for r in regs] for x, _ in p)
-    ancho = 2 * maxdx + 2
-    centro = maxdx
+    maxdx = max(abs(x) for r in regs for x, _ in cuerda_entera(r[0], r[2]))
+    # La tira necesita sitio a los dos lados -el mismo lienzo vale para las dos
+    # direcciones-; el abanico se dibuja hacia un lado solo y no lo necesita.
+    ancho = maxdx + 2 if modo == "abanico" else 2 * maxdx + 2
+    centro = 0 if modo == "abanico" else maxdx
 
-    lienzo = [[None] * (ancho * FASES) for _ in range(alto)]
+    fotogramas = 1 if modo == "abanico" else FASES
+    lienzo = [[None] * (ancho * fotogramas) for _ in range(alto)]
     for i, r in enumerate(regs):
-        for x, y in cuerda_entera(r[0]):
-            lienzo[y][i * ancho + centro + x] = NEGRO
+        base = 0 if modo == "abanico" else i * ancho
+        lados = (True,)
+        for derecha in lados:
+            for x, y in cuerda_entera(r[0], r[2], derecha):
+                lienzo[y][base + centro + x] = NEGRO
 
     filas = []
     for y in range(alto):
@@ -119,10 +154,12 @@ def main():
             fila += (b"\0\0\0\0" if c is None else bytes(c) + b"\xff") * escala
         for _ in range(escala):
             filas.append(bytes(fila))
-    escribe_png(salida, ancho * FASES * escala, alto * escala, filas, alfa=True)
+    escribe_png(salida, ancho * fotogramas * escala, alto * escala, filas, alfa=True)
 
-    print("%s: %d fotogramas de %dx%d (%dx%d)"
-          % (salida, FASES, ancho, alto, ancho * FASES * escala, alto * escala))
+    print("%s: %s de %d fases, %dx%d"
+          % (salida, modo, FASES, ancho * fotogramas * escala, alto * escala))
+    print("  mide 32 filas mas el tercer byte: %d en la vertical, %d en el extremo"
+          % (2 * FILAS_POR_SPRITE + regs[1][2], 2 * FILAS_POR_SPRITE + regs[0x20][2]))
     print("  pendiente de la fase 0x20 (la mas tumbada): 0x%02X = %.3f px por fila"
           % (regs[0x20][0], regs[0x20][0] / 256))
     ida = sum(r[1] for r in regs[1:])

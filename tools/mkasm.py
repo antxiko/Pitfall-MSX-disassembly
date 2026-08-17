@@ -204,9 +204,13 @@ def main():
               "; " + "-" * 70]
         eq += [f"{names[a]}:\tequ {a:#07x}" for a in faltan]
         out = out[:HDR] + eq + out[HDR:]
-    open(outpath, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    texto = "\n".join(out) + "\n"
+    open(outpath, "w", encoding="utf-8").write(texto)
     ncode = sum(b - a for k, a, b in tr["blocks"] if k == "c")
-    print(f"{outpath}: {len(out)} lineas, {ncode} bytes de codigo, "
+    # Las lineas se cuentan sobre el fichero escrito, no sobre `out`: algunas
+    # entradas de `out` son marcos de varias lineas, y contar entradas daba dos
+    # menos de las que publica la web (que las cuenta con splitlines, como el test).
+    print(f"{outpath}: {len(texto.splitlines())} lineas, {ncode} bytes de codigo, "
           f"{len(names)} etiquetas, {len(notes.line)} comentarios de linea")
 
 

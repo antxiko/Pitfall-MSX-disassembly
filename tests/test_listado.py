@@ -232,7 +232,24 @@ class TestLaWebNoMiente(unittest.TestCase):
             "rangos": sum(1 for l in ls if l.startswith("D ")),
             "datos": datos,
             "codigo": self.CARTUCHO - datos,
+            # Las que ademas llevan escrito QUE HACEN en la propia etiqueta: la
+            # cifra que la pagina de preguntas abiertas usa para decir que
+            # bautizar no es explicar. Se publico 79 cuando eran 78.
+            "con_texto": sum(1 for l in ls if l.startswith("L ")
+                             and len(l.split(None, 3)) > 3),
+            "tests": self.cuantos_tests(),
         }
+
+    @staticmethod
+    def cuantos_tests():
+        """Los tests que hay, contados por el mismo descubridor que los corre.
+
+        La web dice cuantos son en la orden de `make test`, y esa cifra se
+        quedo en «trece» con diecisiete en el arbol.
+        """
+        cargador = unittest.defaultTestLoader
+        suite = cargador.discover(os.path.dirname(os.path.abspath(__file__)))
+        return suite.countTestCases()
 
     # Como se escribe cada cifra en las paginas, en los dos idiomas. El numero
     # va suelto en la prosa o dentro de una fila de tabla, y puede llevar el
@@ -243,7 +260,9 @@ class TestLaWebNoMiente(unittest.TestCase):
                      r"|([\d.,]+)\s+(?:etiquetas|rutinas y tablas bautizadas"
                      r"|labels|routines and tables named))",
         "comentarios": r"(?:^\|\s*(?:comentarios anclados|anchored comments)\s*\|\s*([\d.,]+)"
-                       r"|([\d.,]+)\s+comentarios\b|([\d.,]+)\s+comments\b)",
+                       r"|([\d.,]+)\s+comentarios\b|([\d.,]+)\s+(?:line\s+)?comments\b)",
+        "con_texto": r"([\d.,]+)\s+(?:llevan su explicaci[oó]n|carry their explanation)",
+        "tests": r"([\d.,]+)\s+tests\b",
         "rangos": r"(?:^\|\s*(?:rangos de datos con explicación"
                   r"|data ranges with an explanation)\s*\|\s*([\d.,]+)"
                   r"|([\d.,]+)\s+(?:rangos de datos|ranges of data))",

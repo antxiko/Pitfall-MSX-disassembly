@@ -20,7 +20,7 @@ comprueba` te lo dice en una línea.
 make          # traza, genera el listado y lo comprueba todo
 make verify   # solo la prueba de fuego: ¿vuelve a salir el cartucho?
 make sanity   # lo que el reensamblado NO puede cazar
-make test     # los trece tests del listado, que no necesitan el cartucho
+make test     # los 17 tests del listado, que no necesitan el cartucho
 ```
 
 `make` a secas hace el ciclo entero y falla si algo no cuadra: si el listado
@@ -57,9 +57,9 @@ comprobación, y termina con el reparto completo:
 ## Sin el cartucho
 
 Se puede leer igualmente el listado de `src/pitfall.asm` y las notas, que es
-donde está el trabajo: 5716 líneas con 337 rutinas y tablas bautizadas, 302
+donde está el trabajo: 5722 líneas con 337 rutinas y tablas bautizadas, 305
 comentarios anclados a su dirección y 130 rangos de datos con su explicación al
-lado. Los trece tests corren igual, porque ninguno necesita el binario.
+lado. Los 17 tests corren igual, porque ninguno necesita el binario.
 
 ## Cómo está organizado
 

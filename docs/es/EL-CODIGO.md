@@ -255,9 +255,43 @@ sube a la memoria de vídeo como patrón de sprite (0xA594). La inclinación sal
 de la tabla de 0xA61A —33 registros de cuatro bytes— indexada por la fase del
 balanceo, 0xE1CB, que va y viene entre 1 y 0x20 (0xA5EF).
 
-Mientras vas colgado, tu X la manda la liana (0xA5F9), y soltarse es no tener el
-bit de «abajo» pulsado (0x81A7).
+Los cuatro bytes de cada fase son cuatro cosas distintas, y ninguna es un
+adorno:
 
+| byte | qué es | de la vertical al extremo |
+|---|---|---|
+| 1 | la pendiente, en 1/256 de píxel por fila | 0x00 → 0xC9 |
+| 2 | el **periodo** del objeto (0xA48F) | 1 → 9 cuadros |
+| 3 | dónde acaba la cuerda y se agarra uno (0xA529) | 0x10 → 0x06 |
+| 4 | con cuántos pasos de la curva del salto se cae al soltarse (0xA546) | 0x00 → 0x10 |
+
+El segundo es el que tiene gracia: como el periodo crece hacia las puntas, **el
+balanceo corre por el centro y frena en los extremos**, igual que un péndulo de
+verdad. No hay ninguna cuenta de física; hay una columna de una tabla. Media ida
+son los 32 periodos sumados: 75 cuadros.
+
+Y la cuerda **no mide las 48 filas de sus tres sprites**. El tercero lleva otro
+patrón, el 0x60, que 0xA551 fabrica copiando del primero solo tantas filas como
+diga el tercer byte, así que la cuerda **acaba justo en el punto donde uno se
+agarra** y se acorta al tumbarse: 48 filas en vertical y 38 en el extremo.
+
+Reproduciendo ese trazador con los mismos datos (`tools/render_liana.py`) salen
+las 33 fases, que es la liana entera:
+
+![Las 33 fases de la liana superpuestas](../imagenes/liana.png)
+
+A la izquierda la cuerda vertical y a la derecha la tumbada del todo, con las 33
+fases encima: el borde de abajo es el punto de agarre de cada una, y por eso las
+de fuera acaban más arriba.
+
+Puestas al lado de una captura del emulador, la cuerda cae a **0,28 píxeles de
+media** de donde el modelo la pone (la fase que encaja es la 0x1C). Hasta los
+escalones se repiten: la máquina reinicia el acumulador en cada sprite y pierde
+la fracción, y por eso la recta da un saltito cada 16 filas.
+
+Mientras vas colgado, la liana te escribe la X y la Y (0xA5F9), y tienes dibujo
+propio: el patrón 0x40, o el 0x64 si miras a la izquierda (0x819A). Soltarse es
+no tener el bit de «abajo» pulsado (0x81A7).
 ## El salto es una tabla, no una velocidad
 
 En 0x87E9 empieza el salto, y el paso se guarda en +0x17 de la estructura del
@@ -265,6 +299,13 @@ jugador. En el aire (0x8820), ese número cuenta de 0x1F a 0 y se usa como índi
 en la curva de 0x8AB6, que **se lee del final al principio**: un 0xFF sube un
 píxel, un 0x01 baja uno y un 0x00 deja la altura donde está (0x8835). No hay
 velocidad vertical en ninguna parte; hay una tabla, en 0x8AB6.
+
+De 0x1F a 0x11 la curva sube diez píxeles y de 0x10 a 1 los baja, cada vez más
+seguidos: el salto entero son 31 cuadros, 15 subiendo y 16 cayendo. **Soltarse
+de la liana usa esa misma curva, pero no empieza en 0x1F**: empieza en el cuarto
+byte de la fase del balanceo (0x821A), que nunca pasa de 0x10 —justo la mitad
+que baja—, así que soltándose solo se cae. En la vertical vale 0 y se aterriza
+en el acto (0x882E); en la punta vale 0x10 y es el descenso entero.
 
 Girarse en el aire solo se puede en los tres primeros pasos (0x8896), y al
 hacerlo se recupera el avance perdido al cambiar de sentido (0x88C3).

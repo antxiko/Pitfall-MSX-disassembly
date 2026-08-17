@@ -127,6 +127,9 @@ imagenes: $(ROM) $(OMSX)/mapa
 	@# tools/omsx_arranque.tcl junto con la captura del rotulo. Si no esta, la
 	@# portada se genera igual: sin Harry andando encima del titulo.
 	@# La de 1x es la que anima la portada; la de 4x es para verla en la pagina.
+	@# La liana no necesita capturas: se traza desde el cartucho, igual que la
+	@# traza el juego. 33 fotogramas, uno por fase del balanceo.
+	python3 tools/render_liana.py $(ROM) docs/imagenes/liana.png 6 abanico | head -2
 	@if [ -f $(OMSX)/demo.vram.bin ]; then \
 	    python3 tools/render_jugador.py $(OMSX)/demo.vram.bin docs/imagenes/jugador.png | head -1; \
 	    python3 tools/render_jugador.py $(OMSX)/demo.vram.bin docs/imagenes/jugador-tira.png 4 | head -1; \

@@ -2,8 +2,8 @@
 
 Cada byte del cartucho tiene dueño, el listado vuelve a dar el original byte a
 byte y sus 337 etiquetas tienen nombre. Lo que **no** quiere decir eso es que
-todas lleven escrito qué hacen: 79 llevan su explicación en la propia etiqueta y
-el resto se apoya en los 302 comentarios de línea y en las 50 cabeceras de
+todas lleven escrito qué hacen: 78 llevan su explicación en la propia etiqueta y
+el resto se apoya en los 305 comentarios de línea y en las 50 cabeceras de
 bloque, así que hay rutinas bautizadas de las que solo está dicho el nombre. Esta
 página cuenta qué significan esas cifras exactamente, y qué queda por saber.
 

@@ -91,7 +91,7 @@ audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
 <pre><code>make          # traces, generates the listing and checks everything
 make verify   # just the acid test: does the cartridge come back out?
 make sanity   # what reassembling CANNOT catch
-make test     # the thirteen tests on the listing, which don&#x27;t need the cartridge</code></pre>
+make test     # the 17 tests on the listing, which don&#x27;t need the cartridge</code></pre>
 <p>Plain <code>make</code> does the whole cycle and fails if anything doesn&#x27;t add up: if the listing stops reproducing the cartridge byte for byte, if the tracer has walked into an area declared as data, if an entry point falls inside that area, or if a single one of the 16384 bytes is left without an owner.</p>
 <h2 id="the-test-that-decides">The test that decides</h2>
 <p>The only thing that makes a disassembly trustworthy is that it gives the original back. Here that is <code>make verify</code>, and what it does is assemble the published listing and compare its sha256 with the cartridge&#x27;s:</p>
@@ -107,7 +107,7 @@ OK: reproducible byte a byte</code></pre>
   ==========================================
   explicado                  16384  100.00 %</code></pre>
 <h2 id="without-the-cartridge">Without the cartridge</h2>
-<p>You can still read the listing in <code>src/pitfall.asm</code> and the notes, which is where the work is: 5716 lines with 337 routines and tables named, 302 comments anchored to their address and 130 ranges of data with their explanation beside them. The thirteen tests run just the same, because not one of them needs the binary.</p>
+<p>You can still read the listing in <code>src/pitfall.asm</code> and the notes, which is where the work is: 5722 lines with 337 routines and tables named, 305 comments anchored to their address and 130 ranges of data with their explanation beside them. The 17 tests run just the same, because not one of them needs the binary.</p>
 <h2 id="how-it-is-organised">How it is organised</h2>
 <p>The listing is <b>never edited by hand</b>. It is generated, and three files govern it:</p>
 <table><tr><th></th><th></th></tr><tr><td><code>src/pitfall.entries</code></td><td>the entry points: where the tracing starts</td></tr><tr><td><code>src/pitfall.nocode</code></td><td>the areas that are NOT code, and how we know</td></tr><tr><td><code>src/pitfall.notes</code></td><td>the names, the comments and the data ranges</td></tr></table>

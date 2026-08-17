@@ -198,7 +198,7 @@ agarra_la_liana:		; Clase 5
 	res 0,(ix+006h)		;8178
 	set 7,(ix+016h)		;817c
 	ld iy,0e2a2h		;8180
-	ld a,(0e1cdh)		;8184   ; 0xE1CC y 0xE1CD, donde esta la liana ahora mismo
+	ld a,(0e1cdh)		;8184   ; 0xE1CC y 0xE1CD, donde esta la liana ahora mismo: la X del jugador se pone diez pixeles a la izquierda del punto de agarre y la Y en la fila de ese punto mas 0x5C
 	sub 00ah		;8187
 	ld (iy+001h),a		;8189
 	ld a,(0e1cch)		;818c
@@ -206,7 +206,7 @@ agarra_la_liana:		; Clase 5
 	ld (iy+000h),a		;8191
 	bit 7,(ix+006h)		;8194
 	jr z,agarra_la_liana_derecha		;8198
-	ld (iy+002h),064h		;819a
+	ld (iy+002h),064h		;819a   ; colgado tiene DIBUJO PROPIO, no se queda con el fotograma que llevaba: patron 0x64 mirando a la izquierda y 0x40 a la derecha (con sus dos capas de color, 0xAC/0xF4 y 0x88/0xD0), y el 0x64 es el espejo del 0x40 que fabrica el arranque
 	ret			;819e
 agarra_la_liana_derecha:
 	ld (iy+002h),040h		;819f
@@ -226,7 +226,7 @@ columpia_en_la_liana:
 columpia_hacia_la_derecha:
 	ld de,000c8h		;81bd   ; velocidad hacia la derecha, en 1/256 de pixel por cuadro
 	res 7,(ix+006h)		;81c0
-	ld (iy+002h),038h		;81c4
+	ld (iy+002h),038h		;81c4   ; y al empezar a columpiarse vuelve al patron del aire: 0x38 a la derecha, 0x5C a la izquierda
 	jr columpia_arranca		;81c8
 columpia_hacia_la_izquierda:
 	ld de,0ff38h		;81ca
@@ -698,7 +698,7 @@ mira_colisiones_en_el_aire_nada:
 	xor a			;85d7
 	ret			;85d8
 alcanza_la_liana:
-	ld hl,0e2a2h		;85d9   ; no compara con la Y de la liana: exige (0xE1CC)-7 < Y del jugador y a la vez Y <= (0xE1CC)-0x14, que solo se cumplen juntas si la resta se desborda. En la practica solo engancha con 0xE1CC entre 7 y 0x13, y 0xE1CC es el paso del balanceo de la tabla 0xA61A, no una coordenada
+	ld hl,0e2a2h		;85d9   ; la caja de clase 5 que monta 0xA5B4 ya ha decidido por la X; esta es la unica comprobacion vertical, y es rara: exige a la vez (0xE1CC)-7 < Y del jugador y (0xE1CC)-0x14 >= Y, que solo pueden cumplirse juntas porque la segunda resta se desborda. 0xE1CC lleva el TERCER byte de la fase del balanceo -de 0x06 a 0x10, la fila donde esta el punto de agarre-, y con esos valores la condicion sale cierta para cualquier Y del jugador... menos cuando vale 0x06, que son justo las dos fases del extremo: EN LA PUNTA DEL BALANCEO LA LIANA NO SE COGE
 	ld a,(0e1cch)		;85dc
 	sub 007h		;85df
 	cp (hl)			;85e1
@@ -981,10 +981,16 @@ empieza_el_salto_derecha:
 ; ----------------------------------------------------------------------
 ; IX+0x17 es el indice en la curva de 0x8AB6, que se lee del
 ; final al principio: 0xFF sube un pixel, 0x01 baja y 0x00 se
-; queda. No hay velocidad vertical, hay tabla. El salto y la
-; salida del hoyo lo arrancan en 0x1F, pero soltarse de la
-; liana lo arranca en (0xE1E2), que vale 1 o 2: esa caida usa
-; uno o dos pasos de curva, no treinta y uno.
+; queda. No hay velocidad vertical, hay tabla. Del paso 0x1F al
+; 0x11 la curva SUBE diez pixeles, y del 0x10 al 1 baja esos
+; mismos diez cada vez mas seguidos: el salto entero son 31
+; cuadros, 15 subiendo y 16 cayendo.
+; El salto y la salida del hoyo arrancan en 0x1F, pero soltarse
+; de la liana arranca en (0xE1E2), que es el CUARTO BYTE de la
+; fase del balanceo (tabla 0xA61A) y nunca pasa de 0x10: al
+; soltarse solo se cae, no se sube. En la vertical vale 0 y
+; entonces 0x882E aterriza en el acto; en la punta vale 0x10,
+; que es el descenso entero.
 ; ----------------------------------------------------------------------
 en_el_aire:
 	call en_el_aire_gira		;8820
@@ -1751,17 +1757,17 @@ pinta_el_subsuelo:
 ;   0x9944..0x9989  (69 bytes)
 ; DATOS sprites_rle_9: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAA74
 ;   0x9989..0x99af  (38 bytes)
-; DATOS sprite_crudo_5: 32 bytes a la VRAM 0x39A0: los copia 0x8307-0x8310, y el volcado del emulador los encuentra alli tal cual (titulo y demo)
+; DATOS parado_capa_verde: 32 bytes a la VRAM 0x39A0, que es el patron 0x34: las piernas (color 0x0C) del jugador PARADO, que es tambien el primer cuadro del salto (lo clavan a mano 0x8970 y 0x881B, y no sale en ningun guion de animacion). Lo recarga 0x8307 al acabar de reaparecer, y hace falta porque la animacion de morir escribe ahi mismo el muneco troceado (0x8C4F)
 ;   0x99af..0x99cf  (32 bytes)
-; DATOS sprite_crudo_1: 32 bytes de patron de sprite sin comprimir, a la VRAM 0x39E0. Lo copia 0xAA07
+; DATOS trepa_capa_verde: 32 bytes a la VRAM 0x39E0, que es el patron 0x3C: la mitad de abajo (las piernas, color 0x0C) del jugador TREPANDO. Lo recarga la escena de hoyos en 0xAA07, porque en las escenas con liana ese mismo hueco lo ocupa la cuerda que traza 0xA594. Y justo despues, 0xAA43 lo espeja al patron 0x60, que es el otro fotograma del guion de trepar (0x8AF9)
 ;   0x99cf..0x99ef  (32 bytes)
-; DATOS sprite_crudo_6: 32 bytes a la VRAM 0x3BE0: los copia 0x82FB-0x8304, confirmado igual en el volcado
+; DATOS parado_capa_roja: 32 bytes a la VRAM 0x3BE0, que es el patron 0x7C = (0x34-0x20)+0x68: la mitad de arriba del mismo fotograma, en color 0x06. Lo recarga 0x82FB por lo mismo que el anterior (0x8C43 lo pisa)
 ;   0x99ef..0x9a0f  (32 bytes)
-; DATOS sprite_crudo_2: 32 bytes a la VRAM 0x3C20. Lo copia 0xAA13
+; DATOS trepa_capa_roja: 32 bytes a la VRAM 0x3C20, que es el patron 0x84 = (0x3C-0x20)+0x68: la mitad de arriba del mismo fotograma, el cuerpo en color 0x06. Lo recarga 0xAA13
 ;   0x9a0f..0x9a2f  (32 bytes)
-; DATOS sprite_crudo_3: 32 bytes a la VRAM 0x3E60. Lo copia 0xAA1F
+; DATOS trepa_capa_blanca: 32 bytes a la VRAM 0x3E60, que es el patron 0xCC = (0x3C-0x20)+0xB0: la tercera capa del mismo fotograma, los cuatro puntos de color 0x0F que caen sobre la cabeza. Lo recarga 0xAA1F
 ;   0x9a2f..0x9a4f  (32 bytes)
-; DATOS sprite_crudo_4: 32 bytes a la VRAM 0x3800. Lo copia 0xAA2B
+; DATOS tapa_del_suelo: 32 bytes a la VRAM 0x3800, que es el patron 0x00: NO es el jugador, es una barra maciza de 16x5. Se pone en el sprite 0xE292 con color 0x0B a la altura Y=0x7A -la linea del suelo- al bajar por la escalera (0x8432-0x8442) y al caer por el hoyo (0x876E-0x877D). Como 0xE292 es una entrada mas baja que la del jugador (0xE2A2), se pinta DELANTE: es lo que tapa al muneco mientras cruza el suelo. Lo copia 0xAA2B
 ;   0x9a4f..0x9a6f  (32 bytes)
 ; ----------------------------------------------------------------------
 	defb 0f0h,0f1h,0f2h,0f3h,0f4h,0f5h,0f6h,0f7h,0f8h,0f9h,0fah,0fbh,0fch,0fdh,0feh,0f0h	; 8e1b  ................
@@ -3123,7 +3129,7 @@ mueve_la_liana_guarda_agarre:
 	ld (hl),c			;a54d
 	ld b,000h		;a54e
 	push bc			;a550
-	ld hl,0e18ah		;a551
+	ld hl,0e18ah		;a551   ; LA CUERDA NO MIDE 48 FILAS: estos dos LDIR fabrican el patron del TERCER sprite -el 0x60- copiando solo B filas de cada mitad del patron completo, siendo B el tercer byte de la fase, y 0xA43A ha puesto los dos mapas de bits a cero antes. O sea que el tercer sprite se corta justo en el punto de agarre: la cuerda mide 32+B filas, 48 con la liana vertical y 38 en el extremo, y se acorta al tumbarse
 	ld de,0e1aah		;a554
 	ldir		;a557
 	pop bc			;a559
@@ -3211,7 +3217,7 @@ lleva_al_jugador_colgado_y:
 	ret			;a619
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_de_registros_de_4: Treinta y tres registros de 4 bytes: 0xA47D los indexa con (0xE1CB)*4. El primer byte crece a saltos de 7 (0x00, 0x07, 0x0E, 0x15...) y los otros tres van casi fijos (01 10 00). Acaba justo donde empieza su consumidor, el manejador 0xA69E
+; DATOS tabla_del_balanceo: Treinta y tres registros de cuatro bytes, uno por fase del balanceo de la liana: 0xA47D indexa con (0xE1CB)*4, y la fase va y viene entre 1 -la cuerda vertical- y 0x20 -la cuerda tumbada del todo-. LOS CUATRO BYTES SON CUATRO COSAS DISTINTAS. (1) La PENDIENTE de la cuerda en 1/256 de pixel por fila, de 0x00 a 0xC9: es el DE con el que 0xA4C4 va acumulando la recta. (2) El PERIODO del objeto, que 0xA48F escribe en 0xE33F: vale 1 cuadro cerca de la vertical y 9 en el extremo, o sea que el balanceo CORRE POR EL CENTRO Y FRENA EN LAS PUNTAS, como un pendulo de verdad; sumando los 32 periodos, media ida son 75 cuadros. (3) Cuantas veces MAS se suma la pendiente para llegar al punto de agarre (0xA529), que ademas se guarda en 0xE1CC y es la fila donde cuelga el jugador: 0x10 en la vertical y 0x06 en el extremo. (4) Con cuantos pasos de la curva del salto se cae al SOLTARSE: 0xA546 lo lleva a 0xE1E2 y 0x821A lo mete en IX+0x17, y va de 0x00 en la vertical a 0x10 en el extremo. Acaba justo donde empieza su consumidor, el manejador 0xA69E
 ;   0xa61a..0xa69e  (132 bytes)
 ; ----------------------------------------------------------------------
 	defb 000h,001h,010h,000h,007h,001h,010h,000h,00eh,001h,010h,000h,015h,001h,010h,000h	; a61a  ................

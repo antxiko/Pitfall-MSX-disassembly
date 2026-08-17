@@ -20,7 +20,7 @@ comprueba` tells you in one line.
 make          # traces, generates the listing and checks everything
 make verify   # just the acid test: does the cartridge come back out?
 make sanity   # what reassembling CANNOT catch
-make test     # the thirteen tests on the listing, which don't need the cartridge
+make test     # the 17 tests on the listing, which don't need the cartridge
 ```
 
 Plain `make` does the whole cycle and fails if anything doesn't add up: if the
@@ -57,9 +57,9 @@ and it ends with the full share-out:
 ## Without the cartridge
 
 You can still read the listing in `src/pitfall.asm` and the notes, which is
-where the work is: 5716 lines with 337 routines and tables named, 302 comments
+where the work is: 5722 lines with 337 routines and tables named, 305 comments
 anchored to their address and 130 ranges of data with their explanation beside
-them. The thirteen tests run just the same, because not one of them needs the
+them. The 17 tests run just the same, because not one of them needs the
 binary.
 
 ## How it is organised

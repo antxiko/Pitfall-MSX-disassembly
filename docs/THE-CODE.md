@@ -247,14 +247,48 @@ frames dropping it by 0x7F at a time —or by 0x80, because the `sbc hl,bc` at
 ## The vine is traced, not drawn
 
 There is no drawing of a vine in the cartridge. On every step, 0xA471 traces a
-16-point straight line onto a 0x40-byte bitmap in RAM (0xE18A) and sends it up to
-video memory as a sprite pattern (0xA594). The slope comes out of the table at
-0xA61A —33 four-byte records— indexed by the phase of the swing, 0xE1CB, which
-runs up and down between 1 and 0x20 (0xA5EF).
+16-point line onto a 0x40-byte bitmap in RAM (0xE18A) and uploads it to video
+memory as a sprite pattern (0xA594). The tilt comes from the table at 0xA61A —33
+records of four bytes— indexed by the swing phase, 0xE1CB, which goes back and
+forth between 1 and 0x20 (0xA5EF).
 
-While you are hanging there, your X is the vine's business (0xA5F9), and letting
-go is not having the «down» bit pressed (0x81A7).
+The four bytes of each phase are four different things, and not one of them is
+decoration:
 
+| byte | what it is | from vertical to the far end |
+|---|---|---|
+| 1 | the slope, in 1/256 of a pixel per row | 0x00 → 0xC9 |
+| 2 | the object's **period** (0xA48F) | 1 → 9 frames |
+| 3 | where the rope ends and you grab it (0xA529) | 0x10 → 0x06 |
+| 4 | how many steps of the jump curve you fall with when you let go (0xA546) | 0x00 → 0x10 |
+
+The second one is the good one: because the period grows towards the ends, **the
+swing runs through the middle and slows down at the extremes**, just like a real
+pendulum. There is no physics anywhere; there is a column of a table. Half a
+swing is those 32 periods added up: 75 frames.
+
+And the rope **is not the 48 rows of its three sprites**. The third one carries a
+different pattern, 0x60, which 0xA551 builds by copying from the first one only
+as many rows as the third byte says, so the rope **ends exactly where you grab
+it** and gets shorter as it tilts: 48 rows upright and 38 at the far end.
+
+Reproducing that tracer with the same data (`tools/render_liana.py`) gives the 33
+phases, which is the whole vine:
+
+![The 33 phases of the vine on top of each other](imagenes/liana.png)
+
+Upright rope on the left, fully tilted on the right, with all 33 phases on top of
+each other: the bottom edge is each one's grab point, which is why the outer ones
+end higher up.
+
+Put next to an emulator capture, the rope lands **0.28 pixels away on average**
+from where the model puts it (the matching phase is 0x1C). Even the steps repeat:
+the machine restarts the accumulator on each sprite and loses the fraction, which
+is why the line jogs every 16 rows.
+
+While you hang, the vine writes your X and Y (0xA5F9), and you get your own
+drawing: pattern 0x40, or 0x64 if you face left (0x819A). Letting go is not
+holding the «down» bit (0x81A7).
 ## The jump is a table, not a speed
 
 The jump starts at 0x87E9, and the step is kept in +0x17 of the player's
@@ -263,6 +297,14 @@ used as an index into the curve at 0x8AB6, which **is read from the end
 backwards**: a 0xFF goes up one pixel, a 0x01 goes down one and a 0x00 leaves the
 height where it is (0x8835). There is no vertical speed anywhere; there is a
 table, at 0x8AB6.
+
+From 0x1F to 0x11 the curve goes up ten pixels and from 0x10 down to 1 it brings
+them back down, closer and closer together: the whole jump is 31 frames, 15 going
+up and 16 coming down. **Letting go of the vine uses that same curve, but does
+not start at 0x1F**: it starts at the fourth byte of the swing phase (0x821A),
+which never goes past 0x10 —exactly the half that descends— so letting go only
+ever falls. Upright it is 0 and you land at once (0x882E); at the far end it is
+0x10, which is the whole descent.
 
 Turning round in the air is only possible in the first three steps (0x8896), and
 doing it recovers the ground lost in changing direction (0x88C3).

@@ -291,10 +291,19 @@ TIPOS = [
      "scenes that make you cross over the top"),
 ]
 
-# El recorte del rotulo: sobre la captura ya reducida a la mitad, se busca el
-# rectangulo de lo que no es fondo. El fondo de openMSX no es (0,0,0) exacto
-# -el negro del MSX le sale con un tinte-, de ahi el umbral.
+# El recorte del rotulo: sobre la captura ya reducida a la mitad se busca EL
+# TITULO Y NADA MAS. La pantalla de presentacion trae cuatro cosas -la franja de
+# colores con "ACTIVISION", el "PRESENTS", un munequito de 17x15 corriendo y el
+# "PITFALL!" de abajo-, y aqui solo se quiere el ultimo: el munequito de la
+# pantalla no es el mismo dibujo que el sprite de la partida, y verlos juntos es
+# ver dos Harrys de distinto tamano.
+#
+# El corte NO se da a ojo con unas coordenadas: el titulo es lo unico AMARILLO
+# de la pantalla aparte de una raya de la franja de colores, asi que se buscan
+# los pixeles amarillos y se toma el grupo de filas mas alto -el titulo son
+# quince filas seguidas; la raya de la franja, dos-.
 UMBRAL, MARGEN, ESCALA = 40, 4, 2
+AMARILLO = (140, 140, 130)          # minimo de rojo y verde, maximo de azul
 
 # ---------------------------------------------------------------------------
 # Harry andando encima del titulo
@@ -399,20 +408,35 @@ def _recorta(w, h, filas, x0, y0, x1, y1, escala):
 
 
 def logo_png(captura, ruta):
-    """El rotulo de la cabecera: la pantalla de presentacion, recortada.
+    """El rotulo de la cabecera: el titulo de la pantalla de presentacion.
 
     No es una imagen dibujada aparte ni un logotipo bajado de ningun sitio: es
-    lo que el cartucho pinta al arrancar -la franja de colores, el rotulo de la
-    editora, el monigote y el titulo-, con el fondo negro recortado alrededor.
+    lo que el cartucho pinta al arrancar, recortado a las letras del titulo por
+    su color (ver AMARILLO). Lo demas de esa pantalla -la franja de colores, el
+    "PRESENTS" y el munequito- se queda fuera.
     """
     w, h, filas = _reduce(captura)
-    def claro(fila, x):
-        return max(fila[x * 3:x * 3 + 3]) > UMBRAL
-    ys = [y for y, fila in enumerate(filas) if any(claro(fila, x) for x in range(w))]
-    xs = [x for x in range(w) if any(claro(fila, x) for fila in filas)]
-    if not ys or not xs:
-        raise SystemExit("la captura %s esta en negro entero" % captura)
-    y0, y1 = max(0, ys[0] - MARGEN), min(h - 1, ys[-1] + MARGEN)
+    rmin, gmin, bmax = AMARILLO
+
+    def amarillo(fila, x):
+        r, g, b = fila[x * 3:x * 3 + 3]
+        return r > rmin and g > gmin and b < bmax
+
+    # Las filas con amarillo, agrupadas en tiras seguidas; se queda la mas alta.
+    ys = [y for y, fila in enumerate(filas) if any(amarillo(fila, x) for x in range(w))]
+    if not ys:
+        raise SystemExit("no hay titulo amarillo en %s" % captura)
+    tiras, tira = [], [ys[0]]
+    for y in ys[1:]:
+        if y == tira[-1] + 1:
+            tira.append(y)
+        else:
+            tiras.append(tira)
+            tira = [y]
+    tiras.append(tira)
+    titulo = max(tiras, key=len)
+    xs = [x for x in range(w) if any(amarillo(filas[y], x) for y in titulo)]
+    y0, y1 = max(0, titulo[0] - MARGEN), min(h - 1, titulo[-1] + MARGEN)
     x0, x1 = max(0, xs[0] - MARGEN), min(w - 1, xs[-1] + MARGEN)
     escribe_png(ruta, *_recorta(w, h, filas, x0, y0, x1, y1, ESCALA))
 
@@ -501,8 +525,8 @@ def main(argv):
 <title>{t['titulo']}</title>
 <style>{ESTILO}{anim}</style>
 <header class="top">
-  {cabecera}
   {paseo}
+  {cabecera}
   <p class="claim">{t['claim']}</p>
   <p class="ficha">{' · '.join(t['ficha'])}</p>
 </header>

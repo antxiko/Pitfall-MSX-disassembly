@@ -2,8 +2,8 @@
 
 Every byte of the cartridge has an owner, the listing gives the original back byte
 for byte and its 337 labels have names. What that does **not** mean is that all of
-them have what they do written down: 79 carry their explanation on the label
-itself and the rest lean on the 302 line comments and the 50 block headers, so
+them have what they do written down: 78 carry their explanation on the label
+itself and the rest lean on the 305 line comments and the 50 block headers, so
 there are named routines of which only the name is stated. This page says what
 those figures mean exactly, and what is left to find out.
 
