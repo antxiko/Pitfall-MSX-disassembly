@@ -90,9 +90,11 @@ dice si estás en la superficie— y el registro se hace girar **un paso o tres*
 Por debajo, tres escenas de golpe.
 
 Eso convierte al subterráneo en un atajo de verdad, y se puede medir: la ruta
-más corta que se lleva los 32 tesoros son **190 pantallas** cruzadas, contra 238
-sin bajar nunca. Un 20 % menos. Y no son 190 a la derecha: 186 lo son, y en
-cuatro el cálculo retrocede para encadenar dos tesoros.
+más corta que se lleva los 32 tesoros son **189 pantallas** cruzadas, contra 238
+sin bajar nunca. Un 21 % menos. Y la ruta no va toda hacia el mismo lado: va a la
+derecha hasta el primer tesoro, da media vuelta, y barre los otros 31 por la
+izquierda —13 cruces a la derecha y 176 a la izquierda—, que es como se ahorra
+cruzar el hueco más caro del anillo. Ir siempre a la derecha costaría 190.
 
 Para bajar hace falta una escalera, y las escaleras se contaron sobre las 255
 capturas del recorrido. El resultado es limpio de una manera poco habitual: es

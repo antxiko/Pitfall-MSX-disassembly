@@ -103,9 +103,9 @@ when it is clear, crossing a screen turns the register **three steps instead of
 one** (0x9CD2). Three scenes at once.
 
 On top of those two rules you can work out the shortest route that collects all
-32 treasures: **190 screens** crossed, against 238 if you never go down: the
-shortcut saves 20 %. They are not 190 to the right; 186 are, and in four of them
-the calculation backtracks to chain two treasures together.
+32 treasures: **189 screens** crossed, against 238 if you never go down: the
+shortcut saves 21 %. And they don't all go one way: right to the first
+treasure, then round and the other 31 swept leftwards.
 
 It is a calculation, not a game played: the cost is measured in screens crossed,
 the ladder is counted as free, and the clock is not in the count.

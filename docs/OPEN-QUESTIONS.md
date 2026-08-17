@@ -43,7 +43,7 @@ from the 32 bits of treasures taken (0xE21D-0xE220) no counter of how many you a
 carrying turns up. If there is an
 ending for having collected them all, it doesn't come from there.
 
-## The 190-screen route is a calculation, not a game
+## The 189-screen route is a calculation, not a game
 
 The number is soundly made —it comes from walking the ring of 255 scenes with the
 cartridge's own screen-change rules, counting the tunnel shortcut— but it measures
@@ -55,7 +55,7 @@ up a ladder, which are counted as free. It is not a recorded game.
 Does it fit the clock, though? That sum can be done with the cartridge's own
 numbers. The player walks at 200/256 of a pixel per frame (0x88ED) and a screen
 runs from the entry X (0x19) to the border (0xE7): 206 pixels, **264 frames, 4.4
-seconds** at 60 Hz. The 190 crossings add up to 50,099 frames —**13.9 minutes of
+seconds** at 60 Hz. The 189 crossings add up to 49,896 frames —**13.9 minutes of
 game time**— and the 20:00 clock is 72,000: the route spends 70 % of the clock
 just walking and leaves about six minutes for everything else. It is still the
 model's arithmetic, not a game; but the model fits inside the clock.

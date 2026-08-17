@@ -90,9 +90,11 @@ on the surface— is looked at and the register is turned **one step or three**.
 below, three scenes at once.
 
 That makes the tunnel a real shortcut, and it can be measured: the shortest route
-that collects all 32 treasures is **190 screens** crossed, against 238 never going
-down. 20 % fewer. And they are not 190 to the right: 186 are, and in four of them
-the calculation backtracks to chain two treasures together.
+that collects all 32 treasures is **189 screens** crossed, against 238 never going
+down. 21 % fewer. And the route doesn't all go one way: it goes right to the
+first treasure, turns round, and sweeps the other 31 leftwards —13 crossings to
+the right and 176 to the left—, which is how it never crosses the ring's most
+expensive gap. Always going right would cost 190.
 
 Going down needs a ladder, and the ladders were counted over the 255 captures of
 the walk. The result is clean in an unusual way: it is **bimodal, without a single

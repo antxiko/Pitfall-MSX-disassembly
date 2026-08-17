@@ -44,7 +44,7 @@ bits de tesoros cogidos (0xE21D-0xE220) no aparece ningún contador de cuántos
 llevas. Si hay final por
 haberlos recogido todos, no sale de ahí.
 
-## La ruta de 190 pantallas es un cálculo, no una partida
+## La ruta de 189 pantallas es un cálculo, no una partida
 
 El número está bien hecho —sale de recorrer el anillo de 255 escenas con las
 reglas de cambio de pantalla del propio cartucho, contando el atajo del
@@ -56,7 +56,7 @@ subir una escalera, que se cuentan como gratis. No es una partida grabada.
 ¿Y cabe en el reloj? Esa cuenta sí se puede hacer con los números del propio
 cartucho. El muñeco anda a 200/256 de píxel por cuadro (0x88ED) y una pantalla
 va de la X de entrada (0x19) al borde (0xE7): 206 píxeles, **264 cuadros, 4,4
-segundos** a 60 Hz. Los 190 cruces suman 50.099 cuadros —**13,9 minutos de
+segundos** a 60 Hz. Los 189 cruces suman 49.896 cuadros —**13,9 minutos de
 juego**— y el reloj de 20:00 son 72.000: la ruta gasta el 70 % del reloj solo
 en andar y deja unos seis minutos para todo lo demás. Sigue siendo aritmética
 del modelo, no una partida; pero el modelo cabe en el reloj.

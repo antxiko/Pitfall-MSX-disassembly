@@ -46,7 +46,7 @@ TXT = {
     "es": dict(
         titulo="Pitfall! (1984) — desensamblado comentado",
         aviso="<b>La ruta óptima es un cálculo, no una partida grabada.</b> "
-              "Las 190 pantallas del guion salen de aplicar Dijkstra sobre el "
+              "Las 189 pantallas del guion salen de aplicar Dijkstra sobre el "
               "mundo que genera el cartucho, y se cuentan en PANTALLAS "
               "CRUZADAS, no en tiempo: correr, saltar, esquivar y el reloj de "
               "20:00 no entran en esa cuenta, y bajar una escalera se cuenta "
@@ -90,7 +90,7 @@ TXT = {
     "en": dict(
         titulo="Pitfall! (1984) — a commented disassembly",
         aviso="<b>The optimal route is a calculation, not a recorded game.</b> "
-              "The 190 screens of the walkthrough come from running Dijkstra "
+              "The 189 screens of the walkthrough come from running Dijkstra "
               "over the world the cartridge generates, and they are counted in "
               "SCREENS CROSSED, not in time: running, jumping, dodging and the "
               "20:00 clock are not in that count, and taking a ladder is "
@@ -172,8 +172,8 @@ HALLAZGOS = {
          "bit 0 de 0xE2EB, que es el que dice si se va por arriba o por el "
          "túnel. La rutina de la izquierda es simétrica.</p>"
          "<p>Por eso el atajo vale oro, y por eso la ruta que se lleva los 32 "
-         "tesoros baja siempre que puede: 190 pantallas usando el túnel contra "
-         "238 sin bajar nunca, un 20 % menos. Bajar sólo se puede por una "
+         "tesoros baja siempre que puede: 189 pantallas usando el túnel contra "
+         "238 sin bajar nunca, un 21 % menos. Bajar sólo se puede por una "
          "escalera, y las escaleras están medidas sobre las 255 capturas: son "
          "las 63 escenas de tipo 0 y 1, y ni una más.</p>"),
         ("La liana no está dibujada en ninguna parte",
@@ -230,8 +230,8 @@ HALLAZGOS = {
          "on the surface or down in the tunnel. The left-hand routine is "
          "symmetrical.</p>"
          "<p>That's why the shortcut is worth so much, and why the route that "
-         "collects all 32 treasures goes underground whenever it can: 190 "
-         "screens using the tunnel against 238 never going down, 20 % fewer. "
+         "collects all 32 treasures goes underground whenever it can: 189 "
+         "screens using the tunnel against 238 never going down, 21 % fewer. "
          "You can only go down by a ladder, and the ladders are measured over "
          "the 255 captures: they're the 63 scenes of types 0 and 1, and not "
          "one more.</p>"),

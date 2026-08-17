@@ -100,9 +100,9 @@ cruzar una pantalla hace girar el registro **tres pasos en vez de uno** (0x9CD2)
 Tres escenas de golpe.
 
 Sobre esas dos reglas se puede calcular la ruta más corta que se lleva los 32
-tesoros: **190 pantallas** cruzadas, contra 238 si no se baja nunca: el atajo
-ahorra un 20 %. No son 190 a la derecha; 186 lo son, y en cuatro el cálculo
-retrocede para encadenar dos tesoros.
+tesoros: **189 pantallas** cruzadas, contra 238 si no se baja nunca: el atajo
+ahorra un 21 %. Y no van todas hacia el mismo lado: derecha hasta el primer
+tesoro, media vuelta, y los otros 31 barridos por la izquierda.
 
 Es un cálculo, no una partida: el coste está medido en pantallas cruzadas, la
 escalera se cuenta como gratis, y el reloj no entra en la cuenta.

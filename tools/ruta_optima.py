@@ -90,36 +90,55 @@ def main():
     print("Tesoros: %d, valor total %d puntos" % (len(tesoros), sum(v for _, v in tesoros)))
     print("Escaleras: %d escenas\n" % sum(escalera))
 
-    # La ruta se calcula en los dos sentidos y gana la mas corta. En cada uno,
-    # los tesoros se recogen en el orden en que el anillo los va poniendo por
-    # delante, y entre dos tesoros se toma el camino minimo -que es donde el
-    # subterraneo hace su trabajo-.
-    mejor = None
-    for sentido, nombre in ((1, "derecha"), (-1, "izquierda")):
-        orden = sorted(tesoros, key=lambda t: (t[0] * sentido) % N)
-        total, tramos, actual = 0, [], (0, ARRIBA)
-        for pos, valor in orden:
-            dist, previo = dijkstra(actual, escalera)
-            destino = (pos, ARRIBA)
-            total += dist[destino]
-            tramos.append((camino(previo, actual, destino), pos, valor))
-            actual = destino
-        print("  hacia la %-10s %4d pantallas cruzadas" % (nombre, total))
-        if mejor is None or total < mejor[0]:
-            mejor = (total, nombre, tramos)
+    # En un anillo, la ruta que visita todos los tesoros los recorre en su
+    # orden; lo unico que queda por decidir es QUE HUECO no se cruza nunca.
+    # Eso es exactamente enumerar las particiones "a la derecha hasta el tesoro
+    # i, media vuelta, y el resto barrido por la izquierda" (con las dos puntas
+    # como casos: corte=32 es todo a la derecha y corte=0 todo a la izquierda).
+    # Entre tesoro y tesoro, el camino minimo lo da Dijkstra, que es donde el
+    # subterraneo hace su trabajo. Probarlas todas costo UNA pantalla: la ruta
+    # todo-a-la-derecha daba 190, y la de "derecha hasta el primero y vuelta"
+    # da 189, que es el minimo del modelo.
+    posiciones = [t[0] for t in sorted(tesoros)]
+    valor_de = dict(tesoros)
 
-    total, nombre, tramos = mejor
-    # La misma ruta sin bajar nunca al subterraneo, para tener con que comparar.
-    sin_tunel = [False] * N
-    sentido = 1 if nombre == "derecha" else -1
-    orden = sorted(tesoros, key=lambda t: (t[0] * sentido) % N)
-    solo_arriba, actual = 0, (0, ARRIBA)
-    for pos, _valor in orden:
-        d, _ = dijkstra(actual, sin_tunel)
-        solo_arriba += d[(pos, ARRIBA)]
-        actual = (pos, ARRIBA)
+    def mejor_particion(escalera):
+        cache = {}
 
-    print("\n  GANA: hacia la %s, %d pantallas" % (nombre, total))
+        def desde(a):
+            if a not in cache:
+                cache[a] = dijkstra((a, ARRIBA), escalera)
+            return cache[a]
+
+        mejor = None
+        for corte in range(len(posiciones) + 1):
+            orden = posiciones[:corte] + list(reversed(posiciones[corte:]))
+            total, actual = 0, 0
+            for p in orden:
+                total += desde(actual)[0][(p, ARRIBA)]
+                actual = p
+            if mejor is None or total < mejor[0]:
+                mejor = (total, corte, orden, desde)
+        return mejor
+
+    total, corte, orden, desde = mejor_particion(escalera)
+    tramos, actual = [], (0, ARRIBA)
+    for pos in orden:
+        dist, previo = desde(actual[0])
+        destino = (pos, ARRIBA)
+        tramos.append((camino(previo, actual, destino), pos, valor_de[pos]))
+        actual = destino
+    nombre = ("derecha" if corte == len(posiciones) else
+              "izquierda" if corte == 0 else
+              "derecha hasta el paso %d y vuelta" % orden[corte - 1])
+
+    # La mejor ruta posible SIN bajar nunca al subterraneo, para comparar.
+    solo_arriba = mejor_particion([False] * N)[0]
+
+    todo_derecha = sum(desde(a)[0][(b, ARRIBA)] for a, b in
+                       zip([0] + posiciones[:-1], posiciones))
+    print("\n  GANA: %s, %d pantallas (todo a la derecha serian %d)"
+          % (nombre, total, todo_derecha))
     print("  Sin usar el subterraneo serian %d: el atajo ahorra %d (%d %%)"
           % (solo_arriba, solo_arriba - total,
              round(100 * (solo_arriba - total) / solo_arriba)))
