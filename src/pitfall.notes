@@ -127,6 +127,10 @@ D 0x9A2F 0x9A4F sprite_crudo_3 32 bytes a la VRAM 0x3E60. Lo copia 0xAA1F
 
 D 0x9A4F 0x9A6F sprite_crudo_4 32 bytes a la VRAM 0x3800. Lo copia 0xAA2B
 
+D 0x99AF 0x99CF sprite_crudo_5 32 bytes a la VRAM 0x39A0: los copia 0x8307-0x8310, y el volcado del emulador los encuentra alli tal cual (titulo y demo)
+
+D 0x99EF 0x9A0F sprite_crudo_6 32 bytes a la VRAM 0x3BE0: los copia 0x82FB-0x8304, confirmado igual en el volcado
+
 # =============================================================================
 # INICIALIZADORES ROM->RAM: los bloques que se copian con LDIR
 # =============================================================================
@@ -224,3 +228,78 @@ D 0xA1EE 0xA29A layout_escena_0 Layout de escena (entrada [0]), guion de 5 celda
 D 0xA29A 0xA33E layout_escena_1 Layout de escena (entrada [1]), guion de 3 celdas, cierra en 0xA33E, que es justo donde empieza la tabla siguiente
 
 D 0xA33E 0xA43A tabla_patrones_14x18 Catorce registros de 18 bytes. El bucle de 0x9E3F copia de cada registro un patron de tile de 8 bytes (la columna dentro del registro la elige DE) a la VRAM desde 0x0640, avanzando de registro en registro. 14 x 18 = 252 bytes, y cierra el hueco exacto
+
+# Las tablas de los tramos de suelo. El truco, leido en 0x8DA0-0x8DB6: el byte
+# de tramo N del layout es a la vez desplazamiento, longitud y avance, o sea
+# que cada tramo copia [tabla+N, tabla+2N). Los N que usan los cuatro layouts
+# son 3,4,5,6,7,8 y 0x0A, asi que el uso llega justo a tabla+0x14.
+
+D 0x8E1B 0x8E32 tabla_tramos_fila12 Veintitres bytes: la rampa de tiles F0..FE,F0..F7 de la que salen los tramos de la fila 12 (primera pasada, base cargada en 0x8DA7, VRAM 0x1980)
+
+D 0x8E32 0x8E46 tabla_tramos_fila13 Veinte bytes, todos 0xFF: los tramos de la fila 13 (segunda pasada, base cargada en 0x8DCA, VRAM 0x19A0). Su final, 0x8E46, coincide EXACTO con el mayor uso posible, 0x8E32+2x0x0A
+
+D 0xB393 0xB3B4 tabla_instaladora_de_vectores Once registros de 3 bytes [ranura][puntero]: la rutina de 0xB32E copia el puntero al vector 0xE1E6+ranura*2 y pone 0xE1EE a 1. El limite lo fija el propio codigo (cp 0Bh / ret nc), y en 0xB3B4 empieza ya la primera rutina instalable
+
+D 0x8AA0 0x8AB6 tabla_del_despachador_874a Once punteros de palabra. El despachador de 0x873B los consume con el indice en A (sla / add hl / jp (hl)); con A=0 vuelve sin saltar. En 0x8AB6 las palabras dejan de ser punteros a ROM y empiezan los pares 0x0100/0x0101 de la tabla siguiente
+
+# Los graficos de los manejadores B7xx/B8xx, en la cola del cartucho: seis
+# bloques RLE de B142 encadenados sin hueco de 0xBAB2 a 0xBC61.
+
+D 0xBAB2 0xBACA graficos_rle_b7_sprites Bloque RLE: 32 bytes a la VRAM 0x3FC0 (la pareja de sprites del modo). Lo carga 0xB729
+
+D 0xBACA 0xBB01 graficos_rle_b7_sprites2 Bloque RLE: 96 bytes a la VRAM 0x3800, los tres primeros patrones de sprite. Lo carga 0xB72F
+
+D 0xBB01 0xBB4A graficos_rle_tiles_v1a Bloque RLE: 112 bytes (14 tiles) a la VRAM 0x0850, banco 1 de la tabla de patrones. Rama del bit 1 de IX+0x0B apagado; lo carga 0xB8D1
+
+D 0xBB4A 0xBB95 graficos_rle_tiles_v1b Bloque RLE: 112 bytes a la VRAM 0x1050, los MISMOS tiles en el banco 2. Lo carga 0xB8D7
+
+D 0xBB95 0xBBFB graficos_rle_tiles_v2a Bloque RLE: 112 bytes a la VRAM 0x0850, la variante con el bit 1 de IX+0x0B encendido. Lo carga 0xB8DF
+
+D 0xBBFB 0xBC61 graficos_rle_tiles_v2b Bloque RLE: 112 bytes a la VRAM 0x1050, y cierra EXACTO contra el inicializador de 0xBC61. Lo carga 0xB8E5
+
+# =============================================================================
+# SONIDO: los guiones que consumen las rutinas de los vectores
+# =============================================================================
+# Formato visto en los propios guiones: registros de 4 bytes que acaban en un
+# byte 0x00; los dos primeros parecen duracion/repeticion y los dos ultimos el
+# periodo del PSG (en 0xB47E bajan de 0x0D7F a 0x0443: una escala descendente).
+# Cuatro cierran EXACTOS contra el codigo que los sigue; los dos cortos llevan
+# detras las secciones que consume el lector encadenado de 0xB44F-0xB455.
+
+D 0xB3BD 0xB3CE guion_sonido_b3bd Guion de sonido del instalador 0xB3B4 (ld hl,0B3BDh / ld (0E1F5h),hl): un registro, el 0x00, y las secciones encadenadas de detras
+
+D 0xB3D7 0xB3F0 guion_sonido_b3d7 Guion del instalador 0xB3CE, con sus secciones encadenadas y su 0x00 final en 0xB3EF
+
+D 0xB47E 0xB49F guion_sonido_b47e Ocho registros y el 0x00: los periodos bajan de 0x0D7F a 0x0443, una escala descendente. Instalador 0xB475; cierra EXACTO donde empieza el codigo de 0xB49F
+
+D 0xB56D 0xB5BE guion_sonido_b56d Veinte registros. Instalador 0xB564; cierra EXACTO en 0xB5BE
+
+D 0xB5C7 0xB5E4 guion_sonido_b5c7 Siete registros. Instalador 0xB5BE; cierra EXACTO en 0xB5E4
+
+D 0xB632 0xB683 guion_sonido_b632 Veinte registros. Instalador 0xB5E4 (ld hl,0B632h en 0xB5E4... lo carga 0xB62E via L_B622); cierra EXACTO en 0xB683
+
+# =============================================================================
+# TABLAS SUELTAS DE LA COLA, cada una con su consumidor leido
+# =============================================================================
+
+D 0xB9E4 0xBA06 tabla_b9d3 Bytes que 0xB9D3 lee con el indice en DE (ld hl,0B9E4h / add hl,de) y guarda en IX+0x11. Acotada por la estructura siguiente, que empieza en 0xBA06
+
+D 0xBA06 0xBA2D filas_de_tiles_seguidos Numeros de tile consecutivos (0A..17, dos veces y pico). B8FF copia desde 0xBA06 y B917 desde 0xBA0D, los dos con la longitud leida de la RAM (0xE2CE) y B1C3 a la VRAM
+
+D 0xBA2D 0xBA46 fila_texto_6 Veinticinco numeros de tile en crudo que 0xB6E2 copia con B1C3 a la VRAM 0x18C0, la fila 6 del name table, columnas 0-24
+
+D 0xBAA2 0xBAB2 listas_nibble_espejo Dos listas de 8 bytes, y la segunda es la primera CON LOS NIBBLES INTERCAMBIADOS (61->16, 91->19, B1->1B...). Consumidor sin encontrar: ni una instruccion trazada ni un puntero literal en toda la ROM apuntan aqui. Acotada por el inicializador que acaba en 0xBAA2 y el bloque RLE que empieza en 0xBAB2
+
+D 0xBC6D 0xC000 relleno Los 915 bytes finales del cartucho, TODOS a 0x00 (comprobado byte a byte): relleno hasta completar los 16 KB
+
+D 0xA61A 0xA69E tabla_de_registros_de_4 Treinta y tres registros de 4 bytes: 0xA47D los indexa con (0xE1CB)*4. El primer byte crece a saltos de 7 (0x00, 0x07, 0x0E, 0x15...) y los otros tres van casi fijos (01 10 00). Acaba justo donde empieza su consumidor, el manejador 0xA69E
+
+D 0x8A75 0x8A88 fila_tiles_c3 Un 0x00 y dieciocho tiles C3/C5/C6: la fila que 0x89AB (ld hl,08A76h) usa sobre las estructuras de 0xE29A/0xE29E
+
+D 0x8AB6 0x8AFF tabla_de_incrementos Setenta y tres bytes de valores 0x00/0x01/0xFF: el manejador 0x8820 los indexa con el contador IX+0x17 (bucle inc hl/djnz en 0x8831) y SUMA el valor a IY+0x00, o sea una curva de desplazamiento paso a paso
+
+D 0xB0D0 0xB0F0 filas_del_rotulo Cuatro filas de 8 numeros de tile (0x58-0x6F, los mismos del guion del rotulo): 0xA889 y 0xA89C las copian a la VRAM con LONGITUD CRECIENTE leida de 0xE133 (y 8 menos esa longitud en 0xA896), o sea el rotulo dibujandose por columnas
+
+D 0xB0F0 0xB110 colores_iniciales Treinta y dos bytes de color que 0x8A01 copia a la VRAM 0x2000, el principio de la tabla de colores. Los tres del offset +0x0B (0xB0FB, 7B 7B 7B) los reutiliza 0xAC6B escribiendolos de vuelta en 0x200B: la restauracion del parche de abajo
+
+D 0xB110 0xB113 colores_alternativos Tres bytes (1B 1B 1B) que 0xAC7C escribe en la VRAM 0x200B, encima de los originales: el parche de color que 0xAC6B deshace

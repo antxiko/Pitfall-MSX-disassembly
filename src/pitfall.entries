@@ -78,3 +78,53 @@
 0x82C5   # manejador de objeto: lo escribe 0x827A (constante cargada en 0x8277)
 0x829F   # manejador de objeto: lo escribe 0x82F1 (constante cargada en 0x82EE)
 0x8314   # manejador de objeto: lo escribe 0x82BE (constante cargada en 0x82BB)
+
+# --- Las rutinas de los vectores de RAM 0xE1E6/E1E8/E1EA/E1EC.
+# La rutina de 0xB32E las instala leyendo la tabla de 0xB393: registros de 3
+# bytes [ranura][puntero], el vector destino es 0xE1E6+ranura*2, y el indice
+# viene acotado por el propio codigo (`cp 0Bh / ret nc`): once registros. La
+# cadena de 0xB360-0xB37A llama a lo instalado con `call -> jp (hl)`.
+0xB3CE   # registro 2, ranura 1
+0xB52E   # registro 3, ranura 2
+0xB475   # registro 4, ranura 0
+0xB3B4   # registro 5, ranura 1; empieza JUSTO donde acaba la tabla
+0xB5E4   # registro 6, ranura 0
+0xB5BE   # registro 7, ranura 0
+0xB564   # registro 8, ranura 0
+0xB49F   # registro 9, ranura 0
+0xB4E6   # registro 10, ranura 1
+
+# --- Los destinos de la tabla de 0x8AA0, que consume el despachador de
+# 0x873B-0x874A (indice en A tras `call 8529`; con A=0 vuelve sin saltar, y
+# la tabla acaba en 0x8AB6, donde las palabras dejan de ser punteros y
+# empiezan los pares 0x0100/0x0101 de otra tabla).
+0x874B   # entradas 0 y 7; empieza justo detras del jp (hl)
+0x8640   # entrada 1
+0x8751   # entrada 2
+0x8361   # entradas 3 y 4
+0x8162   # entrada 5
+0x8221   # entradas 6 y 9
+0x878C   # entrada 8
+0x85EF   # entrada 10
+0x81A4   # manejador de objeto: lo escribe 0x816A (constante cargada en 0x8167)
+0x8240   # manejador de objeto: lo escribe 0x8239 (constante cargada en 0x8236)
+0x8393   # manejador de objeto: lo escribe 0x8387 (constante cargada en 0x8384)
+0x8660   # manejador de objeto: lo escribe 0x8647 (constante cargada en 0x8644)
+0x86E3   # manejador de objeto: lo escribe 0x8754 (constante cargada en 0x8751)
+0x81F9   # manejador de objeto: lo escribe 0x81E1 (constante cargada en 0x81DE)
+
+# --- CUATRO RUTINAS SIN LLAMANTE ESTATICO. Decodifican como rutinas coherentes
+# y completas (cada una acaba en ret y no pisa ningun rango D), pero ninguna
+# instruccion trazada las llama y no hay ni un puntero literal a ellas en toda
+# la ROM. O se llaman por calculo, o son codigo muerto. PENDIENTE de medir en
+# el emulador (muestreo del PC); si resultan muertas, se documentan como tales.
+0xB11E   # gemelo del descompresor RLE de B142 pero escribiendo a MEMORIA
+         # (ld (de),a) en vez del puerto 0x98
+0xB199   # escribe UN byte en la VRAM: push af / call B185 / pop af / out (98h)
+0xB1A1   # lee UN byte de la VRAM: call B190 / in a,(98h) / ret
+0xB2A4   # lector de teclado completo: selecciona fila por el puerto 0xAA,
+         # lee 0xA9, invierte y guarda en 0xE25D+, con espera-de-tecla al final
+0xB9AB   # sube el patron de un tile a la VRAM (indice*8 con add hl,hl x3,
+         # 8 bytes via B1C3)
+0xB2F4   # espera-tecla de la misma familia: call 0xB2E8 (consume el aviso de
+         # tecla de 0xE266) / jr z atras / ret. Arrastra a 0xB2E8 al trazado.
