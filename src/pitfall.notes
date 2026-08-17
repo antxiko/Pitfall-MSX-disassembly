@@ -166,7 +166,7 @@ D 0xB05A 0xB074 guion_celdas_objeto_2 Guion de 6 celdas: mismo hueco 3x2, tiles 
 
 D 0xB074 0xB08E guion_celdas_objeto_3 Guion de 6 celdas: mismo hueco 3x2, tiles 0xB0-0xB5. Lo llama 0xAC1F
 
-D 0xB08E 0xB0A8 guion_celdas_objeto_4 Guion de 6 celdas: mismo hueco 3x2, las seis con el MISMO tile 0x30. Parece el borrado del objeto (?), pendiente de ver el patron del tile. Lo llaman 0x8D59 y 0x8D6C
+D 0xB08E 0xB0A8 guion_celdas_borrado Guion de 6 celdas: el mismo hueco de 3x2, pero las seis con el MISMO tile 0x30, que es el blanco. O sea que no pinta nada: BORRA el objeto. Lo llaman 0x87B9 (al recoger el tesoro), 0x8D59 y 0x8D6C
 
 D 0xB0A8 0xB0C2 guion_celdas_objeto_5 Guion de 6 celdas: mismo hueco 3x2, tiles 0x98-0x9D. Lo llama 0xAB88
 
@@ -282,7 +282,7 @@ D 0xAFE6 0xAFEA inicializador_e28a Cuatro bytes que 0xAD9A copia a 0xE28A
 
 D 0xAFEA 0xB000 plantilla_objeto_e303_b Otra plantilla de 22 bytes para 0xE303, copiada por 0xADA5. Su manejador es 0xA7F5
 
-D 0xB010 0xB014 inicializador_e28e Cuatro bytes que copian a 0xE28E cinco sitios distintos (0xAA89, 0xAACC, 0xAB3C, 0xAB72, 0xABD7, 0xAC31)
+D 0xB010 0xB014 inicializador_e28e Los cuatro bytes de atributo del sprite 9 (Y=0x6F, X=0xC3, patron=0xF8, color=0x06) que copian a 0xE28E SEIS sitios distintos (0xAA89, 0xAACC, 0xAB3C, 0xAB72, 0xABD7, 0xAC31)
 
 D 0xB014 0xB02A plantilla_objeto_e319 Plantilla de objeto de 22 bytes que copian a 0xE319 cinco sitios (0xAA94, 0xAAD7, 0xAB94, 0xABE2, 0xAC3C). Su campo de manejador viene a CERO: se rellena despues en marcha
 
@@ -346,13 +346,13 @@ D 0x8AA0 0x8AB6 tabla_del_despachador_874a Once punteros de palabra. El despacha
 # Los graficos de los manejadores B7xx/B8xx, en la cola del cartucho: seis
 # bloques RLE de B142 encadenados sin hueco de 0xBAB2 a 0xBC61.
 
-D 0xBAB2 0xBACA graficos_rle_b7_sprites Bloque RLE: 32 bytes a la VRAM 0x3FC0 (la pareja de sprites del modo). Lo carga 0xB729
+D 0xBAB2 0xBACA graficos_rle_b7_sprites Bloque RLE: 32 bytes a la VRAM 0x3FC0, o sea UN patron de sprite de 16x16 -0xB6B8 pone el registro 1 del VDP a 0xE2, con el bit 1 a uno-, el ultimo de la tabla que arranca en 0x3800. Lo carga 0xB729
 
 D 0xBACA 0xBB01 graficos_rle_b7_sprites2 Bloque RLE: 96 bytes a la VRAM 0x3800, los tres primeros patrones de sprite. Lo carga 0xB72F
 
 D 0xBB01 0xBB4A graficos_rle_tiles_v1a Bloque RLE: 112 bytes (14 tiles) a la VRAM 0x0850, banco 1 de la tabla de patrones. Rama del bit 1 de IX+0x0B apagado; lo carga 0xB8D1
 
-D 0xBB4A 0xBB95 graficos_rle_tiles_v1b Bloque RLE: 112 bytes a la VRAM 0x1050, los MISMOS tiles en el banco 2. Lo carga 0xB8D7
+D 0xBB4A 0xBB95 graficos_rle_tiles_v1b Bloque RLE: 112 bytes a la VRAM 0x1050. Son los mismos NUMEROS de tile que el banco 1 (0x0A-0x17) pero con DIBUJO DISTINTO: descomprimidos los dos, 72 de los 112 bytes cambian. Lo carga 0xB8D7
 
 D 0xBB95 0xBBFB graficos_rle_tiles_v2a Bloque RLE: 112 bytes a la VRAM 0x0850, la variante con el bit 1 de IX+0x0B encendido. Lo carga 0xB8DF
 
@@ -367,27 +367,27 @@ D 0xBBFB 0xBC61 graficos_rle_tiles_v2b Bloque RLE: 112 bytes a la VRAM 0x1050, y
 # Cuatro cierran EXACTOS contra el codigo que los sigue; los dos cortos llevan
 # detras las secciones que consume el lector encadenado de 0xB44F-0xB455.
 
-D 0xB3BD 0xB3CE guion_sonido_b3bd Guion de sonido del instalador 0xB3B4 (ld hl,0B3BDh / ld (0E1F5h),hl): un registro, el 0x00, y las secciones encadenadas de detras
+D 0xB3BD 0xB3CE guion_sonido_b3bd Guion de barrido del instalador 0xB3B4 (ld hl,0B3BDh / ld (0E1F5h),hl): DOS registros de 8 bytes (0xB3BD y 0xB3C5) y el 0x00 final en 0xB3CD
 
 D 0xB3D7 0xB3F0 guion_sonido_b3d7 Guion del instalador 0xB3CE, con sus secciones encadenadas y su 0x00 final en 0xB3EF
 
-D 0xB47E 0xB49F guion_sonido_b47e Ocho registros y el 0x00: los periodos bajan de 0x0D7F a 0x0443, una escala descendente. Instalador 0xB475; cierra EXACTO donde empieza el codigo de 0xB49F
+D 0xB47E 0xB49F guion_sonido_b47e Ocho registros de 4 bytes y el 0x00. Los periodos NO forman escala (037F, 0120, 0222, 012D, 019F, 0137, 01BF, 0143); lo que cae de golpe en golpe es el VOLUMEN, de 0x0D a 0x04: un sonido que se apaga. Instalador 0xB475 (jp 0xB5EA); cierra EXACTO donde empieza el codigo de 0xB49F
 
 D 0xB56D 0xB5BE guion_sonido_b56d Veinte registros. Instalador 0xB564; cierra EXACTO en 0xB5BE
 
 D 0xB5C7 0xB5E4 guion_sonido_b5c7 Siete registros. Instalador 0xB5BE; cierra EXACTO en 0xB5E4
 
-D 0xB632 0xB683 guion_sonido_b632 Veinte registros. Instalador 0xB5E4 (ld hl,0B632h en 0xB5E4... lo carga 0xB62E via 0xB622); cierra EXACTO en 0xB683
+D 0xB632 0xB683 guion_sonido_b632 Veinte registros de 4 bytes. Lo instala 0xB5E4 (ld hl,0B632h / ld (0E1EFh),hl) y despues, cada cuadro, 0xB605 recupera el puntero de 0xE1EF, 0xB608 lee el registro que toca y 0xB62E vuelve a guardar el puntero ya avanzado. Cierra EXACTO en 0xB683
 
 # =============================================================================
 # TABLAS SUELTAS DE LA COLA, cada una con su consumidor leido
 # =============================================================================
 
-D 0xB9E4 0xBA06 tabla_b9d3 Bytes que 0xB9D3 lee con el indice en DE (ld hl,0B9E4h / add hl,de) y guarda en IX+0x11. Acotada por la estructura siguiente, que empieza en 0xBA06
+D 0xB9E4 0xBA06 guion_grabado_de_la_demo Diecisiete parejas [cuadros][entrada] que 0xB9C8 recorre con el indice de IX+0x0B doblado: el primer byte va a IX+0x11 (0xB9D8) y el segundo a 0xE259 (0xB9DD), que es de donde la demo se saca los mandos. Acotada por la estructura siguiente, que empieza en 0xBA06
 
-D 0xBA06 0xBA2D filas_de_tiles_seguidos Numeros de tile consecutivos (0A..17, dos veces y pico). B8FF copia desde 0xBA06 y B917 desde 0xBA0D, los dos con la longitud leida de la RAM (0xE2CE) y B1C3 a la VRAM
+D 0xBA06 0xBA2D filas_de_tiles_seguidos Los tiles 0x0A a 0x17 dos veces seguidas (0xBA06 y 0xBA14) y detras diez 0x2C y un 0x2D, que ya no son continuacion de la serie sino relleno con otro tile. 0xB8FF copia desde 0xBA06 y 0xB917 desde 0xBA0D, los dos con la longitud sacada de 0xE2CE
 
-D 0xBA2D 0xBA46 fila_texto_6 Veinticinco numeros de tile en crudo que 0xB6E2 copia con B1C3 a la VRAM 0x18C0, la fila 6 del name table, columnas 0-24
+D 0xBA2D 0xBA46 fila_dibujo_6 Veinticinco tiles CONSECUTIVOS (0x22 a 0x3A) que 0xB6E2 copia a la VRAM 0x18C0, la fila 6 del name table, columnas 0-24. No es texto: es un dibujo troceado tile a tile, como todo lo que parece letra en este cartucho
 
 D 0xBAA2 0xBAB2 listas_nibble_espejo Dos listas de 8 bytes, y la segunda es la primera CON LOS NIBBLES INTERCAMBIADOS (61->16, 91->19, B1->1B...). Consumidor sin encontrar: ni una instruccion trazada ni un puntero literal en toda la ROM apuntan aqui. Acotada por el inicializador que acaba en 0xBAA2 y el bloque RLE que empieza en 0xBAB2
 
@@ -399,11 +399,11 @@ D 0x8A75 0x8A88 fila_tiles_c3 Un 0x00 y dieciocho tiles C3/C5/C6: la fila que 0x
 
 D 0x8AB6 0x8AFF tabla_de_incrementos Setenta y tres bytes de valores 0x00/0x01/0xFF: el manejador 0x8820 los indexa con el contador IX+0x17 (bucle inc hl/djnz en 0x8831) y SUMA el valor a IY+0x00, o sea una curva de desplazamiento paso a paso
 
-D 0xB0D0 0xB0F0 filas_del_rotulo Cuatro filas de 8 numeros de tile (0x58-0x6F, los mismos del guion del rotulo): 0xA889 y 0xA89C las copian a la VRAM con LONGITUD CRECIENTE leida de 0xE133 (y 8 menos esa longitud en 0xA896), o sea el rotulo dibujandose por columnas
+D 0xB0D0 0xB0F0 filas_del_rotulo Cuatro filas de 8 tiles (0x58-0x6F, mas el blanco 0x30 en las cuatro esquinas). Las copian CUATRO sitios, uno por fila: 0xA889, 0xA89C, 0xA8BB y 0xA8D1, todos con la longitud leida de 0xE133 y con 8 menos esa longitud como desplazamiento (0xA896, 0xA8CB): el rotulo dibujandose por columnas
 
-D 0xB0F0 0xB110 colores_iniciales Treinta y dos bytes de color que 0x8A01 copia a la VRAM 0x2000, el principio de la tabla de colores. Los tres del offset +0x0B (0xB0FB, 7B 7B 7B) los reutiliza 0xAC6B escribiendolos de vuelta en 0x200B: la restauracion del parche de abajo
+D 0xB0F0 0xB110 colores_iniciales Treinta y dos bytes de color que 0x8A01 copia a la VRAM 0x2000, el principio de la tabla de colores. Los tres del offset +0x0B (0xB0FB, 7B 7B 7B) los reescriben en 0x200B tres sitios (0xAC6B, 0xADB2 y 0xADE8), deshaciendo el parche de 0xB110
 
-D 0xB110 0xB113 colores_alternativos Tres bytes (1B 1B 1B) que 0xAC7C escribe en la VRAM 0x200B, encima de los originales: el parche de color que 0xAC6B deshace
+D 0xB110 0xB113 colores_alternativos Tres bytes (1B 1B 1B) que escriben en la VRAM 0x200B tres sitios distintos (0xAC7C, 0xADF6 y 0xAE07), encima de los originales: el parche de color que deshacen 0xAC6B, 0xADB2 y 0xADE8
 
 # =============================================================================
 # LOS OCHO TIPOS DE ESCENA, Y LOS 32 TESOROS
@@ -1222,9 +1222,10 @@ L 0xB27F lee_teclado_como_joystick_derecha
 L 0xB287 lee_teclado_como_joystick_izquierda
 L 0xB28F lee_teclado_como_joystick_monta
 
-B 0xB2A4 Explorador de teclado con antirrebote y codigo de tecla.
-B 0xB2A4 NADIE lo llama, ni el ni las dos de debajo: biblioteca
-B 0xB2A4 que quedo dentro sin usarse.
+B 0xB2A4 Ni a 0xB2A4 ni a 0xB2F4 los apunta NADIE: barrido de las 16384
+B 0xB2A4 palabras del cartucho. Y a 0xB2E8 solo la llama 0xB2F4, que ya
+B 0xB2A4 es codigo muerto. Las tres son INALCANZABLES: biblioteca de
+B 0xB2A4 teclado que se quedo dentro sin que nada la use.
 L 0xB2A4 explora_el_teclado   Nueve filas; la tecla nueva a 0xE266. Sin uso
 C 0xB2A6 0xE25D-0xE265: como estaba cada fila la vuelta anterior
 C 0xB2C7 codigo = fila*8 + columna
@@ -1233,25 +1234,19 @@ L 0xB2A9 explora_el_teclado_fila
 L 0xB2B8 explora_el_teclado_tecla
 L 0xB2D7 explora_el_teclado_suelta
 L 0xB2DF explora_el_teclado_sigue
-L 0xB2E8 coge_la_tecla   Z si no hay ninguna. Sin uso
+L 0xB2E8 coge_la_tecla   Z si no hay ninguna. Solo la llama 0xB2F4, que ya es codigo muerto
 L 0xB2F4 espera_una_tecla   Sin uso
 
 # =============================================================================
 # EL SONIDO
 # =============================================================================
 
-B 0xB2FA ############################################################
-B 0xB2FA EL SONIDO NO TOCA EL PSG: TOCA 0xE20E-0xE21B
-B 0xB2FA ############################################################
-B 0xB2FA Catorce bytes de RAM que son copia de los registros 0 a 13, y
-B 0xB2FA que 0xB37B vuelca enteros al final de cada cuadro. Fuera de
-B 0xB2FA 0xB382 nadie escribe en el puerto 0xA1. El reparto sale del
-B 0xB2FA propio bucle de volcado, que cuenta de 13 a 0 con outd:
-B 0xB2FA   0xE20E/0F periodo A     0xE216 volumen A
-B 0xB2FA   0xE210/11 periodo B     0xE217 volumen B
-B 0xB2FA   0xE212/13 periodo C     0xE218 volumen C
-B 0xB2FA   0xE214 periodo del ruido    0xE215 mezclador
-B 0xB2FA   0xE219/1A periodo de envolvente  0xE21B forma
+B 0xB2FA Catorce bytes de RAM que son copia de los registros 0 a 13 del
+B 0xB2FA PSG, y que 0xB37B vuelca enteros al final de cada cuadro con los
+B 0xB2FA outd de 0xB386 y 0xB390 (0xB380 y 0xB384 solo ponen el puerto
+B 0xB2FA en C). Las unicas otras escrituras al puerto 0xA1 del cartucho
+B 0xB2FA son las de lee_joysticks, 0xB24F y 0xB261, y esas solo tocan
+B 0xB2FA el registro 15.
 L 0xB2FA reinicia_el_sonido   Vectores al RET vacio y PSG callado
 C 0xB2FA 0xB392 es un RET solo: el vector que no hace nada
 C 0xB2FF 0xE1EE a 0 mientras se tocan los vectores; 0xB35B no los recorre
