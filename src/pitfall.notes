@@ -520,7 +520,7 @@ C 0x9B6D bits 0-3 de 0xE05F: si hay entrada, se recarga la cuenta
 L 0x9B7D reloj_de_inactividad_cuenta
 C 0x9B8D registro 1 del VDP = 0x82: pantalla apagada
 L 0x9B93 espera_tecla_apagado
-C 0x9B99 cada 64 cuadros mira el teclado
+C 0x9B99 0xE05F es la ENTRADA, no un contador: los seis bits bajos son las cuatro direcciones y los dos botones
 C 0x9BA9 fila 7, mascara 0x94 = RETURN, STOP o ESC
 L 0x9BAF vuelve_a_encender
 C 0x9BAF registro 1 = 0xE2: pantalla e interrupcion otra vez
@@ -597,7 +597,7 @@ C 0x9E01 el reloj se deja clavado en 00:00
 L 0x9E0E anima_el_final
 C 0x9E12 0xE346 cuenta, 0xE347 recarga, 0xE348 es el fotograma
 L 0x9E36 anima_el_final_vram
-C 0x9E36 14 tiras de 8 bytes desde 0xA33E, con paso de 0x12 en la VRAM
+C 0x9E36 14 tiras de 8 bytes desde 0xA33E; el paso de 0x12 es dentro de la tabla, y en la VRAM se avanza de 8 en 8
 L 0x9E3F anima_el_final_bucle
 C 0x9E67 diez fotogramas y vuelta a empezar
 L 0x9E74 sprites_del_final Cuatro sprites que van saliendo segun avanza 0xE348
@@ -609,7 +609,7 @@ L 0x9EE6 monta_la_escena
 C 0x9EE6 se guarda el tipo anterior en 0xE226
 C 0x9EEF bits 0-2 del registro de pantalla = la variante
 C 0x9EFB bits 3-5 = el tipo de escena, 0..7
-C 0x9F2F tres objetos de salida: el jugador y sus dos capas
+C 0x9F2F tres objetos vivos al montar la escena
 C 0x9F62 la tabla de sprites entera a la VRAM
 L 0x9F10 monta_la_escena_repinta
 L 0x9F13 monta_la_escena_sigue
@@ -669,7 +669,7 @@ C 0xA5B8 la caja de la liana, clase 5
 L 0xA5EF mueve_la_liana_vuelve
 C 0xA5EF a 0x20 se acabo la ida y empieza la vuelta
 L 0xA5F9 lleva_al_jugador_colgado
-C 0xA5F9 mientras vas colgado, tu X la manda la liana
+C 0xA5F9 colgado, la liana te escribe la X (de 0xE1CD) y la Y (de 0xE1CC mas 0x5D)
 
 L 0xA69E sigue_al_jugador Manejador de 0xE2ED: se acerca a la X del jugador
 C 0xA6A5 0xE292 es donde esta el bicho
@@ -698,8 +698,10 @@ B 0xA870 EL HOYO QUE SE ABRE Y SE CIERRA
 B 0xA870 0xE133 es lo ancho que esta (1 a 8) y 0xE132 hacia donde
 B 0xA870 va. Se pinta con cuatro tiras de tiles de 0xB0D0 cuya
 B 0xA870 longitud es esa anchura, y la caja de clase 3 se estira
-B 0xA870 con ella. El periodo del objeto alterna entre 0x96 y
-B 0xA870 0x44: abierto mas rato que cerrado.
+B 0xA870 con ella. Mientras se mueve el periodo es 3, o sea un paso
+B 0xA870 cada tres cuadros; al llegar a los topes se para, y ahi el
+B 0xA870 reparto NO es simetrico: 0x96 cuadros con el hoyo estrecho
+B 0xA870 (0xA913) contra 0x44 con el hoyo abierto del todo (0xA952).
 C 0xA874 mientras se mueve, un paso por cuadro
 C 0xA8FC la caja del hoyo, clase 3
 C 0xA911 al llegar a cero cambia de sentido
@@ -724,7 +726,7 @@ L 0xAE38 monta_la_liana La llaman los tipos 2, 3 y 6
 L 0xAE46 monta_la_liana_objeto
 C 0xAE4E la plantilla del objeto de la liana
 C 0xAE56 y su manejador
-C 0xAE63 los tres sprites de la cuerda, uno debajo de otro
+C 0xAE63 los tres sprites de la cuerda: patrones 0x3C, 0x3C y 0x60, color 0
 
 # Anotaciones del tramo 0x8000-0x99FF de Pitfall! (Activision, 1984, MSX1).
 # Solo directivas L/C/B. Todas las L existen como L_XXXX en src/pitfall.asm
@@ -1528,3 +1530,19 @@ D 0x8EA0 0x8EC0 sprite_hundiendose_4 Segunda capa de esa pose, que carga 0x8CAE 
 D 0x8EC0 0x8EE0 sprite_hundiendose_izquierda_1 El espejo de 0x8E40, bit a bit. La copia 0x8C27 a 0xE138, y ademas 0x8330 sube sus dos mitades de 16 bytes a la VRAM 0x3D00 y 0x3AC0 cuando el jugador acaba de caer
 D 0x8EE0 0x8F00 sprite_hundiendose_izquierda_2 El espejo de 0x8E60. La copia 0x8C1C a 0xE15E, y 0x8348 sube sus mitades a la VRAM 0x3D10 y 0x3AD0
 D 0x8F00 0x8F06 reloj_inicial_duplicado Los mismos cinco tiles del reloj de salida que hay en 0x8A69 -BA B8 C2 B8 B8, que se lee "20:00"- pero con 0x00 detras en vez del divisor 0x3C. Nadie lo copia: la unica palabra del cartucho que vale 0x8F00 esta en 0xA3A3, dentro de una tabla de patrones, o sea que es coincidencia de bytes y no un puntero. Una segunda copia que se quedo sin usar
+
+# ---- La cuenta del reloj, hecha entera sobre el binario ----
+B 0x9DB8 LOS 20:00, CONTADOS PASO A PASO
+B 0x9DB8 La cadena no tiene ni una condicion por el camino: INIT engancha
+B 0x9DB8 0x80F7 en H.KEYI (0xFD9A), o sea una llamada por interrupcion del
+B 0x9DB8 VDP; 0x8100 llama a cuadro_del_juego siempre, sin mirar nada; y
+B 0x9DB8 cuadro_del_juego llama aqui lo PRIMERO. Asi que esto corre una vez
+B 0x9DB8 por interrupcion, y 0xE1D5 -que vale 60- gasta una por pasada.
+B 0x9DB8 UN TICK CADA 60 INTERRUPCIONES. En una maquina de 60 Hz eso es un
+B 0x9DB8 segundo clavado y los 20:00 duran veinte minutos de reloj de pared;
+B 0x9DB8 en una de 50 Hz el tick son 1,2 s y la partida dura veinticuatro.
+B 0x9DB8 Queda una cuenta pendiente que NO cuadra: en el emulador se midieron
+B 0x9DB8 unos 9 s por tick, nueve veces mas de lo que dice esto. O la medida
+B 0x9DB8 estaba mal tomada o hay algo en la cadena que no hemos visto; hasta
+B 0x9DB8 remedirlo, la buena es la cuenta del binario, que es la que se puede
+B 0x9DB8 comprobar leyendo.

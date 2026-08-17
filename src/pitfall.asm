@@ -2147,7 +2147,7 @@ reloj_de_inactividad_cuenta:
 espera_tecla_apagado:
 	call lee_joysticks		;9b93
 	call lee_teclado_como_joystick		;9b96
-	ld a,(0e05fh)		;9b99   ; cada 64 cuadros mira el teclado
+	ld a,(0e05fh)		;9b99   ; 0xE05F es la ENTRADA, no un contador: los seis bits bajos son las cuatro direcciones y los dos botones
 	and 03fh		;9b9c
 	jr nz,vuelve_a_encender		;9b9e
 	ld a,007h		;9ba0
@@ -2474,6 +2474,23 @@ suma_miles_bucle:
 suma_miles_sigue:
 	djnz suma_miles_bucle		;9db4
 	jr pinta_marcador		;9db6
+
+; ----------------------------------------------------------------------
+; LOS 20:00, CONTADOS PASO A PASO
+; La cadena no tiene ni una condicion por el camino: INIT engancha
+; 0x80F7 en H.KEYI (0xFD9A), o sea una llamada por interrupcion del
+; VDP; 0x8100 llama a cuadro_del_juego siempre, sin mirar nada; y
+; cuadro_del_juego llama aqui lo PRIMERO. Asi que esto corre una vez
+; por interrupcion, y 0xE1D5 -que vale 60- gasta una por pasada.
+; UN TICK CADA 60 INTERRUPCIONES. En una maquina de 60 Hz eso es un
+; segundo clavado y los 20:00 duran veinte minutos de reloj de pared;
+; en una de 50 Hz el tick son 1,2 s y la partida dura veinticuatro.
+; Queda una cuenta pendiente que NO cuadra: en el emulador se midieron
+; unos 9 s por tick, nueve veces mas de lo que dice esto. O la medida
+; estaba mal tomada o hay algo en la cadena que no hemos visto; hasta
+; remedirlo, la buena es la cuenta del binario, que es la que se puede
+; comprobar leyendo.
+; ----------------------------------------------------------------------
 reloj_de_partida:		; Cuenta atras desde 20:00, un tick cada 60 cuadros
 	ld a,(0e21ch)		;9db8   ; en pausa (0xE21C) no corre
 	or a			;9dbb
@@ -2541,7 +2558,7 @@ anima_el_final:
 	jr nz,anima_el_final_vram		;9e30
 	ld (iy+000h),060h		;9e32
 anima_el_final_vram:
-	ld hl,0a33eh		;9e36   ; 14 tiras de 8 bytes desde 0xA33E, con paso de 0x12 en la VRAM
+	ld hl,0a33eh		;9e36   ; 14 tiras de 8 bytes desde 0xA33E; el paso de 0x12 es dentro de la tabla, y en la VRAM se avanza de 8 en 8
 	add hl,de			;9e39
 	ld de,00640h		;9e3a
 	ld b,00eh		;9e3d
@@ -2654,7 +2671,7 @@ monta_la_escena_sigue:
 	ld (ix+012h),e		;9f26
 	ld (ix+013h),d		;9f29
 	ld hl,0e247h		;9f2c
-	ld (hl),003h		;9f2f   ; tres objetos de salida: el jugador y sus dos capas
+	ld (hl),003h		;9f2f   ; tres objetos vivos al montar la escena
 	ld hl,0e2a6h		;9f31
 	ld de,0e2a7h		;9f34
 	ld bc,00007h		;9f37
@@ -3158,7 +3175,7 @@ mueve_la_liana_vuelve:
 	res 0,(ix+016h)		;a5f4
 	ret			;a5f8
 lleva_al_jugador_colgado:
-	ld iy,0e2a2h		;a5f9   ; mientras vas colgado, tu X la manda la liana
+	ld iy,0e2a2h		;a5f9   ; colgado, la liana te escribe la X (de 0xE1CD) y la Y (de 0xE1CC mas 0x5D)
 	ld hl,0e2dbh		;a5fd
 	ld a,(0e1cdh)		;a600
 	bit 7,(hl)		;a603
@@ -3389,8 +3406,10 @@ cocodrilos_cajas:
 ; 0xE133 es lo ancho que esta (1 a 8) y 0xE132 hacia donde
 ; va. Se pinta con cuatro tiras de tiles de 0xB0D0 cuya
 ; longitud es esa anchura, y la caja de clase 3 se estira
-; con ella. El periodo del objeto alterna entre 0x96 y
-; 0x44: abierto mas rato que cerrado.
+; con ella. Mientras se mueve el periodo es 3, o sea un paso
+; cada tres cuadros; al llegar a los topes se para, y ahi el
+; reparto NO es simetrico: 0x96 cuadros con el hoyo estrecho
+; (0xA913) contra 0x44 con el hoyo abierto del todo (0xA952).
 ; ----------------------------------------------------------------------
 abre_el_hoyo:		; Manejador de 0xE2BF: pinta el hoyo mientras se ensancha
 	ld ix,0e2bfh		;a870
@@ -4104,7 +4123,7 @@ monta_la_liana_objeto:
 	ld ix,0e32fh		;ae59
 	ld (ix+013h),h		;ae5d
 	ld (ix+012h),l		;ae60
-	ld iy,0e276h		;ae63   ; los tres sprites de la cuerda, uno debajo de otro
+	ld iy,0e276h		;ae63   ; los tres sprites de la cuerda: patrones 0x3C, 0x3C y 0x60, color 0
 	ld (iy+002h),03ch		;ae67
 	ld (iy+003h),000h		;ae6b
 	ld iy,0e27ah		;ae6f
