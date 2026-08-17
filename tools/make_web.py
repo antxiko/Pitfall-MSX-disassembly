@@ -501,8 +501,8 @@ def main(argv):
 <title>{t['titulo']}</title>
 <style>{ESTILO}{anim}</style>
 <header class="top">
-  {paseo}
   {cabecera}
+  {paseo}
   <p class="claim">{t['claim']}</p>
   <p class="ficha">{' · '.join(t['ficha'])}</p>
 </header>
