@@ -40,10 +40,50 @@ L 0x8013 INIT
 
 D 0xAEB4 0xAEC4 tabla_de_modos Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
 
+L 0x9CBE cambia_de_pantalla_a_la_derecha
+B 0x9CBE ############################################################
+B 0x9CBE EL CAMBIO DE PANTALLA, y el atajo de tres escenas
+B 0x9CBE ############################################################
+B 0x9CBE La X del jugador esta en 0xE2A3 (el campo +1 de la
+B 0x9CBE estructura de 0xE2A2). Cuando vale 0xE7 -el borde
+B 0x9CBE derecho- esto lo reposiciona en 0x19, o sea al otro
+B 0x9CBE lado, y acto seguido avanza el registro de pantalla.
+B 0x9CBE Y AQUI ESTA LO BUENO: avanza UNO o TRES pasos segun el
+B 0x9CBE bit 0 de 0xE2EB. Tres pasos son tres escenas de golpe,
+B 0x9CBE que es el atajo del subterraneo del Pitfall! original:
+B 0x9CBE por abajo se recorre el mundo al triple de velocidad.
+B 0x9CBE Al final salta a 0x9EE6, que monta la escena nueva; esa
+B 0x9CBE es la UNICA via por la que se dibuja una escena, asi que
+B 0x9CBE cambiar 0xE222 por las bravas no repinta nada
+C 0x9CC2 0xE7 es la X del borde derecho
+C 0x9CC9 y 0x19 la del izquierdo, por donde reaparece
+C 0x9CD2 el bit que decide si se avanza una escena o tres
+L 0x9CF9 cambia_de_pantalla_a_la_izquierda
+C 0x9CFA el mismo mecanismo al reves, con la rutina inversa del registro
 L 0x9F91 escoge_decorado_de_la_escena
 C 0x9F91 Los BITS 6-7 del LFSR de pantalla, doblados, son el indice de las dos tablas del decorado: 0xA086 (el juego de 16 tiles) y 0xA08E (el layout). O sea que de los ocho bits del mundo, dos eligen el paisaje, tres el tipo de escena y tres la variante
+B 0xB68F ############################################################
+B 0xB68F EL MUNDO NO ESTA GUARDADO: SE CALCULA
+B 0xB68F ############################################################
+B 0xB68F Las 255 escenas no ocupan ni un byte de mapa. Salen de un
+B 0xB68F registro de desplazamiento realimentado de 8 bits, 0xE222,
+B 0xB68F que es el mismo truco del Pitfall! de Atari 2600.
+B 0xB68F NO ES ALEATORIO: el orden esta fijado y se puede escribir
+B 0xB68F entero. La realimentacion, sacada de los rla/xor de aqui
+B 0xB68F abajo y comprobada sobre los 256 valores posibles, es
+B 0xB68F     bit nuevo = b7 xor b5 xor b4 xor b3      (mascara 0xB8)
+B 0xB68F y el registro se desplaza a la izquierda metiendo ese bit.
+B 0xB68F Con esa realimentacion el anillo es MAXIMO: recorre los 255
+B 0xB68F valores no nulos y vuelve al principio. El 0x00 se queda
+B 0xB68F fuera -de un LFSR nadie sale del cero- y por eso el juego
+B 0xB68F lo usa para la pantalla del titulo.
+B 0xB68F Sembrando con 0xC4, que es lo que hace el arranque en
+B 0xB68F 0x8075, sale el orden en que se recorre el mundo yendo
+B 0xB68F siempre a la derecha. tools/mapa_escenas.py lo reproduce, y
+B 0xB68F las 255 capturas del emulador salieron en ESE MISMO orden,
+B 0xB68F las 255 de 255.
 L 0xB68F avanza_pantalla_lfsr
-C 0xB68F El paso ADELANTE del registro de pantalla: desplaza 0xE222 un bit a la izquierda metiendo la realimentacion calculada con los rla/xor de arriba. Es el contador polinomico del Pitfall! de Atari 2600, y su anillo tiene periodo 255
+C 0xB68F El paso ADELANTE: desplaza 0xE222 a la izquierda metiendo el bit de realimentacion
 L 0xB69F retrocede_pantalla_lfsr
 C 0xB69F El paso ATRAS: la funcion inversa exacta de 0xB68F, desplazando a la derecha. Salir de una pantalla por la izquierda deshace lo que la derecha hizo
 

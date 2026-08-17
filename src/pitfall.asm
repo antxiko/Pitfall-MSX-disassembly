@@ -1836,7 +1836,7 @@ L_8DDE:
 
 L_9A6F:
 	call L_9DB8		;9a6f
-	call L_9CBE		;9a72
+	call cambia_de_pantalla_a_la_derecha		;9a72
 	or a			;9a75
 	jr nz,L_9AE0		;9a76
 	ld a,(0e221h)		;9a78
@@ -2144,15 +2144,32 @@ L_9CAC:
 ; ======================================================================
 
 
-L_9CBE:
+
+; ----------------------------------------------------------------------
+; ############################################################
+; EL CAMBIO DE PANTALLA, y el atajo de tres escenas
+; ############################################################
+; La X del jugador esta en 0xE2A3 (el campo +1 de la
+; estructura de 0xE2A2). Cuando vale 0xE7 -el borde
+; derecho- esto lo reposiciona en 0x19, o sea al otro
+; lado, y acto seguido avanza el registro de pantalla.
+; Y AQUI ESTA LO BUENO: avanza UNO o TRES pasos segun el
+; bit 0 de 0xE2EB. Tres pasos son tres escenas de golpe,
+; que es el atajo del subterraneo del Pitfall! original:
+; por abajo se recorre el mundo al triple de velocidad.
+; Al final salta a 0x9EE6, que monta la escena nueva; esa
+; es la UNICA via por la que se dibuja una escena, asi que
+; cambiar 0xE222 por las bravas no repinta nada
+; ----------------------------------------------------------------------
+cambia_de_pantalla_a_la_derecha:
 	ld iy,0e2a2h		;9cbe
-	ld a,0e7h		;9cc2
+	ld a,0e7h		;9cc2   ; 0xE7 es la X del borde derecho
 	cp (iy+001h)		;9cc4
 	jr nz,L_9CE2		;9cc7
-	ld (iy+001h),019h		;9cc9
+	ld (iy+001h),019h		;9cc9   ; y 0x19 la del izquierdo, por donde reaparece
 	ld b,001h		;9ccd
 	ld hl,0e2ebh		;9ccf
-	bit 0,(hl)		;9cd2
+	bit 0,(hl)		;9cd2   ; el bit que decide si se avanza una escena o tres
 	jr nz,L_9CD8		;9cd4
 	ld b,003h		;9cd6
 L_9CD8:
@@ -2170,13 +2187,13 @@ L_9CE2:
 	ld b,001h		;9cee
 	ld hl,0e2ebh		;9cf0
 	bit 0,(hl)		;9cf3
-	jr nz,L_9CF9		;9cf5
+	jr nz,cambia_de_pantalla_a_la_izquierda		;9cf5
 	ld b,003h		;9cf7
-L_9CF9:
+cambia_de_pantalla_a_la_izquierda:
 	push bc			;9cf9
-	call retrocede_pantalla_lfsr		;9cfa
+	call retrocede_pantalla_lfsr		;9cfa   ; el mismo mecanismo al reves, con la rutina inversa del registro
 	pop bc			;9cfd
-	djnz L_9CF9		;9cfe
+	djnz cambia_de_pantalla_a_la_izquierda		;9cfe
 	jp L_9EE6		;9d00
 L_9D03:
 	ld hl,0e2a2h		;9d03
@@ -4716,8 +4733,31 @@ L_B683:
 	ld c,(hl)			;b68c
 	inc hl			;b68d
 	ret			;b68e
+
+; ----------------------------------------------------------------------
+; ############################################################
+; EL MUNDO NO ESTA GUARDADO: SE CALCULA
+; ############################################################
+; Las 255 escenas no ocupan ni un byte de mapa. Salen de un
+; registro de desplazamiento realimentado de 8 bits, 0xE222,
+; que es el mismo truco del Pitfall! de Atari 2600.
+; NO ES ALEATORIO: el orden esta fijado y se puede escribir
+; entero. La realimentacion, sacada de los rla/xor de aqui
+; abajo y comprobada sobre los 256 valores posibles, es
+; bit nuevo = b7 xor b5 xor b4 xor b3      (mascara 0xB8)
+; y el registro se desplaza a la izquierda metiendo ese bit.
+; Con esa realimentacion el anillo es MAXIMO: recorre los 255
+; valores no nulos y vuelve al principio. El 0x00 se queda
+; fuera -de un LFSR nadie sale del cero- y por eso el juego
+; lo usa para la pantalla del titulo.
+; Sembrando con 0xC4, que es lo que hace el arranque en
+; 0x8075, sale el orden en que se recorre el mundo yendo
+; siempre a la derecha. tools/mapa_escenas.py lo reproduce, y
+; las 255 capturas del emulador salieron en ESE MISMO orden,
+; las 255 de 255.
+; ----------------------------------------------------------------------
 avanza_pantalla_lfsr:
-	ld hl,0e222h		;b68f   ; El paso ADELANTE del registro de pantalla: desplaza 0xE222 un bit a la izquierda metiendo la realimentacion calculada con los rla/xor de arriba. Es el contador polinomico del Pitfall! de Atari 2600, y su anillo tiene periodo 255
+	ld hl,0e222h		;b68f   ; El paso ADELANTE: desplaza 0xE222 a la izquierda metiendo el bit de realimentacion
 	ld a,(hl)			;b692
 	rla			;b693
 	xor (hl)			;b694

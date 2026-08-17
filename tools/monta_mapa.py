@@ -126,7 +126,11 @@ def main():
     origen, salida = sys.argv[1], sys.argv[2]
     columnas = int(sys.argv[3]) if len(sys.argv) > 3 else 8
 
-    rutas = sorted(glob.glob(os.path.join(origen, "escena_*.png")))
+    # Las capturas van numeradas por el orden del anillo: escena_NNN_VV.png.
+    # Se descarta el estado 0x00, que es la pantalla del titulo y no pertenece
+    # al anillo, y cualquier captura suelta sin numero de orden.
+    rutas = sorted(r for r in glob.glob(os.path.join(origen, "escena_[0-9][0-9][0-9]_*.png"))
+                   if not r.endswith("_00.png"))
     if not rutas:
         sys.exit("No hay capturas en %s" % origen)
     print("Capturas encontradas: %d" % len(rutas))

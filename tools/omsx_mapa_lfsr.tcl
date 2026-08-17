@@ -1,18 +1,18 @@
-# EL MAPA: las 255 escenas, dibujadas por el propio juego.
+# EL MAPA: las 255 escenas del mundo, dibujadas por el propio juego.
 #
-# La idea, despues de comprobar que JUGAR no sirve (25 minutos corriendo a la
-# derecha dieron cinco escenas repetidas): el mundo de Pitfall! no esta
-# almacenado, lo genera un LFSR en 0xE222. Asi que en vez de recorrerlo se le
-# DICTA al juego que escena montar.
+# COMO CAMBIA DE PANTALLA PITFALL!, que es lo unico que hace falta saber
+# (medido en 0x9CBE): la X del jugador vive en 0xE2A3 (IY+1 con IY=0xE2A2), y
+# cuando vale 0xE7 -el borde derecho- el juego lo reposiciona en 0x19, avanza
+# el LFSR de 0xE222 y salta a 0x9EE6, que monta la escena nueva.
 #
-# Como: 0x9EE6 es el principio de "monta la escena" -de ahi salen el submodo
-# (0xE224), el tipo (0xE225 y el despachador de 0xAEB4) y el decorado (0x9F91
-# con los bits 6-7)-. Se para la maquina ahi con un breakpoint, se guarda el
-# estado, y a partir de ese punto, para cada valor del anillo: restaurar,
-# escribir 0xE222, soltar medio segundo para que dibuje, y capturar.
+# Asi que aqui no se juega ni se falsea nada: se le escribe al jugador que ya
+# esta en el borde, y el juego cambia de pantalla con SUS rutinas. Escena
+# nueva, foto, y otra vez. Escribir 0xE222 a pelo NO sirve -comprobado-, porque
+# la escena solo se monta al cruzar el borde.
 #
-# Asi cada PNG lo dibuja el juego con sus propias rutinas: no hay ni un pixel
-# reinterpretado por nosotros.
+# El bit 0 de 0xE2EB decide si el LFSR avanza UNO o TRES pasos (tres es el
+# atajo del subterraneo); aqui se enciende para ir de una en una y recorrer el
+# anillo entero en su orden.
 
 set DIR "C:/Users/Antxiko/Documents/DES_ASM/PITFALL_DISAM/work/omsx"
 file mkdir $DIR
@@ -22,72 +22,61 @@ set renderer SDLGL-PP
 set LOG [open "$DIR/mapa_lfsr.log" w]
 proc lg {msg} { global LOG; puts $LOG "[format %7.1f [machine_info time]]  $msg"; flush $LOG }
 
-# --- El anillo del LFSR, replicando 0xB68F con la semantica exacta del Z80.
-proc avanza {v} {
-    set a $v ; set c 0
-    foreach x {1 1 0 1} {
-        set nc [expr {$a >> 7}]
-        set a [expr {(($a << 1) | $c) & 0xFF}]
-        set c $nc
-        if {$x} { set a [expr {$a ^ $v}] }
+# El titulo tiene el registro de pantalla a 0x00, que no pertenece al anillo.
+# Asi que no se empieza hasta ver una partida de verdad: 0xE21C a 1 y 0xE222
+# fuera de cero. Se insiste con RETURN hasta que arranque -una sola pulsacion
+# no siempre la coge, segun en que punto este el atractor-.
+set INTENTOS 0
+proc arranca {} {
+    global INTENTOS
+    if {[debug read memory 0xE21C] == 1 && [debug read memory 0xE222] != 0} {
+        lg [format "partida arrancada (E222=%02X), empieza el recorrido" \
+            [debug read memory 0xE222]]
+        after time 1 paso
+        return
     }
-    set nc [expr {$a >> 7}]
-    set a [expr {(($a << 1) | $c) & 0xFF}]
-    set c $nc
-    set a $v
-    set a [expr {(($a << 1) | $c) & 0xFF}]
-    return $a
+    incr INTENTOS
+    if {$INTENTOS > 20} { lg "NO arranca la partida" ; exit }
+    keymatrixdown 7 0x80
+    after time 0.5 { keymatrixup 7 0x80 }
+    after time 3 arranca
 }
-set ANILLO {}
-set v 0xC4
-while {1} {
-    lappend ANILLO $v
-    set v [avanza $v]
-    if {$v == 0xC4} break
-}
-lg "anillo de [llength $ANILLO] escenas"
+after time 12 arranca
 
-# --- Arranque: RETURN para empezar partida.
-after time 12 { keymatrixdown 7 0x80 ; lg "RETURN" }
-after time 13 { keymatrixup 7 0x80 }
+set N 0
+set VISTAS [dict create]
 
-# --- El breakpoint que congela el juego justo antes de montar una escena.
-set BASE_HECHO 0
-set bp [debug set_bp 0x9EE6 {} {
-    global BASE_HECHO bp
-    if {$BASE_HECHO} return
-    set BASE_HECHO 1
-    debug remove_bp $bp
-    savestate -f base_escena
-    lg "estado base guardado en 0x9EE6"
-    after time 0.1 siguiente
-}]
-
-set IDX 0
-proc siguiente {} {
-    global IDX ANILLO DIR
-    if {$IDX >= [llength $ANILLO]} {
-        lg "FIN: [llength $ANILLO] escenas capturadas"
+proc paso {} {
+    global N DIR VISTAS
+    if {$N >= 258} {
+        lg [format "FIN: %d escenas distintas capturadas" [dict size $VISTAS]]
+        set f [open "$DIR/mapa_orden.txt" w]
+        foreach e [dict keys $VISTAS] { puts $f $e }
+        close $f
         exit
     }
-    set v [lindex $ANILLO $IDX]
-    loadstate base_escena
-    debug write memory 0xE222 $v
-    # Medio segundo emulado para que la escena se dibuje entera.
-    after time 0.5 [list retrata $v]
-}
-proc retrata {v} {
-    global DIR
-    set ::throttle on
-    after realtime 0.35 [list disparo $v]
-}
-proc disparo {v} {
-    global DIR IDX
-    screenshot [format "%s/mapa/escena_%03d_%02X.png" $DIR $IDX $v]
-    set ::throttle off
-    if {$IDX % 16 == 0} { lg [format "van %d escenas (ultima 0x%02X)" $IDX $v] }
-    incr IDX
-    siguiente
+    # Un paso del LFSR por cambio de pantalla, no tres.
+    set e2eb [debug read memory 0xE2EB]
+    debug write memory 0xE2EB [expr {$e2eb | 1}]
+    # Y el jugador, ya en el borde derecho: el juego hara lo demas.
+    debug write memory 0xE2A3 0xE7
+    after time 0.45 retrata
 }
 
-after time 40 { if {!$BASE_HECHO} { lg "NO se llego al breakpoint de 0x9EE6" ; exit } }
+proc retrata {} {
+    global N DIR VISTAS
+    set v [debug read memory 0xE222]
+    set clave [format "%02X" $v]
+    if {![dict exists $VISTAS $clave]} {
+        dict set VISTAS $clave $N
+        screenshot [format "%s/mapa/escena_%03d_%02X.png" $DIR $N $v]
+    }
+    if {$N % 25 == 0} {
+        lg [format "paso %3d: E222=%02X  decorado=%d tipo=%d variante=%d  (%d distintas)" \
+            $N $v [expr {($v >> 6) & 3}] [expr {($v >> 3) & 7}] [expr {$v & 7}] \
+            [dict size $VISTAS]]
+    }
+    incr N
+    after time 0.15 paso
+}
+
