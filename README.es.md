@@ -2,8 +2,8 @@
 
 Un cartucho de 16 KB de 1984, desmontado byte a byte. Los 16.384 bytes están
 acotados y con dueño, y dentro no hay ni un mapa guardado: las 255 pantallas de
-la selva salen de un registro de ocho bits, los 32 tesoros son exactamente las
-32 escenas de un tipo, y la liana no está dibujada en ninguna parte.
+la selva salen de un registro de ocho bits, y los 32 tesoros son exactamente
+las 32 escenas de un tipo.
 
 📖 **[Documentación completa](https://antxiko.github.io/Pitfall-MSX-disassembly/es/)**
 · [In English](https://antxiko.github.io/Pitfall-MSX-disassembly/)
@@ -67,9 +67,10 @@ de entrada puede caer dentro de uno.
   tesoros son 189 pantallas, contra 238 sin bajar nunca.
 - **Un tick del reloj son 60 interrupciones**, medido en partida real: a 60 Hz
   los 20:00 duran veinte minutos de pared, y a 50 Hz, veinticuatro.
-- **La liana no está dibujada en ninguna parte.** Cada cuadro se traza una
-  recta de dieciséis puntos sobre un mapa de bits en RAM y se manda a la
-  memoria de vídeo como patrón de sprite.
+- **La liana se pinta cuadro a cuadro, y no hay ningún dibujo suyo guardado.**
+  El código traza una recta de dieciséis puntos sobre un mapa de bits en RAM y
+  la manda a la memoria de vídeo como patrón de sprite. La inclinación sale de
+  una tabla, así que la cuerda que se ve son cuentas, no un gráfico.
 - **En el cartucho no hay ni una palabra escrita.** La fuente son diez dígitos,
   los dos puntos y el blanco; todo lo que parece texto es dibujo. Lo único que
   el cartucho firma es el **Copyright 1982, 1984** del pie de la presentación.

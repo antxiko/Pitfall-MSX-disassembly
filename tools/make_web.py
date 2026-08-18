@@ -54,9 +54,8 @@ TXT = {
               "<code>make</code>.",
         claim="Un cartucho de 16 KB de 1984, desmontado byte a byte. "
               "Dentro no hay ni un mapa guardado: las 255 pantallas de la "
-              "selva las va inventando un registro de ocho bits, los 32 "
-              "tesoros son exactamente las 32 escenas de un tipo, y la liana "
-              "no está dibujada en ninguna parte.",
+              "selva las va inventando un registro de ocho bits, y los 32 "
+              "tesoros son exactamente las 32 escenas de un tipo.",
         ficha=["Activision · <b>1984</b>", "Cartucho de <b>16 KB</b>",
                "MSX1 · <b>página 2</b>", "Volcado <b>4d899d62…</b>"],
         nav=[("#numbers", "Las cifras"), ("#findings", "Hallazgos"),
@@ -97,9 +96,8 @@ TXT = {
               "with <code>make</code>.",
         claim="A 16 KB cartridge from 1984, taken apart byte by byte. "
               "There's no map stored inside it: the jungle's 255 screens are "
-              "made up as it goes by an eight-bit register, the 32 treasures "
-              "are exactly the 32 scenes of one type, and the vine isn't drawn "
-              "anywhere at all.",
+              "made up as it goes by an eight-bit register, and the 32 "
+              "treasures are exactly the 32 scenes of one type.",
         ficha=["Activision · <b>1984</b>", "A <b>16 KB</b> cartridge",
                "MSX1 · <b>page 2</b>", "Dump <b>4d899d62…</b>"],
         nav=[("#numbers", "The numbers"), ("#findings", "What turned up"),
@@ -171,8 +169,9 @@ HALLAZGOS = {
          "pantallas con el túnel contra 238 sin bajar, un 21 % menos. Solo se "
          "baja por una escalera, y las escaleras están medidas sobre las 255 "
          "capturas: las 63 escenas de tipos 0 y 1.</p>"),
-        ("La liana no está dibujada en ninguna parte",
-         "<p>No hay un solo dibujo de liana en el cartucho. En cada paso, "
+        ("La liana se pinta con cuentas, no está guardada como dibujo",
+         "<p>La liana se pinta en cada cuadro, y la pinta el código: lo que no "
+         "lleva el cartucho es un dibujo de ella. En cada paso, "
          "0xA471 traza una recta de dieciséis puntos sobre un mapa de bits en "
          "0xE18A y la manda a la memoria de vídeo como patrón de sprite. La "
          "inclinación sale de la tabla de 0xA61A, indexada por la fase del "
@@ -227,8 +226,9 @@ HALLAZGOS = {
          "can: 189 screens with the tunnel against 238 never going down, 21 % "
          "fewer. The only way down is a ladder, and the ladders are measured "
          "over the 255 captures: the 63 scenes of kinds 0 and 1.</p>"),
-        ("The vine isn't drawn anywhere",
-         "<p>There isn't a single picture of a vine in the cartridge. On every "
+        ("The vine is computed, not stored as a picture",
+         "<p>The vine is painted every frame, and it's the code that paints "
+         "it: what the cartridge doesn't carry is a drawing of it. On every "
          "step, 0xA471 traces a sixteen-point straight line onto a bitmap at "
          "0xE18A and sends it to video memory as a sprite pattern. The slope "
          "comes from the table at 0xA61A, indexed by the phase of the swing, "

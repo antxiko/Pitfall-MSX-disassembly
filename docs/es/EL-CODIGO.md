@@ -218,11 +218,12 @@ en el código: 19 cuadros subiendo el periodo de 0x14 en 0x14, tres cuadros
 bajándolo de 0x7F en 0x7F —o 0x80: el `sbc` de 0xB528 se lleva el acarreo y
 nadie lo limpia—, y un cuadro de ruido.
 
-## La liana se traza, no se dibuja
+## La liana se calcula, no está guardada
 
-No hay ningún dibujo de liana en el cartucho. En cada paso, 0xA471 traza una
-recta de 16 puntos sobre un mapa de bits de 0x40 bytes en RAM (0xE18A) y lo
-sube a la memoria de vídeo como patrón de sprite (0xA594). La inclinación sale
+La liana se pinta en cada paso, y la pinta el código: lo que no hay en el
+cartucho es un dibujo suyo guardado. 0xA471 traza una recta de 16 puntos sobre
+un mapa de bits de 0x40 bytes en RAM (0xE18A) y lo sube a la memoria de vídeo
+como patrón de sprite (0xA594). La inclinación sale
 de la tabla de 0xA61A —33 registros de cuatro bytes— indexada por la fase del
 balanceo, 0xE1CB, que va y viene entre 1 y 0x20 (0xA5EF).
 

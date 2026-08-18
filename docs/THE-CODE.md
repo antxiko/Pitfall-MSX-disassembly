@@ -215,9 +215,10 @@ reads four-byte scripts and holds each note still. The three without a script
 period by 0x14, three frames lowering it by 0x7F —or 0x80: the `sbc` at 0xB528
 takes the carry and nothing clears it— and one frame of noise.
 
-## The vine is traced, not drawn
+## The vine is computed, not stored
 
-There is no drawing of a vine in the cartridge. On each step, 0xA471 traces a
+The vine is painted every frame, and it is the code that paints it: what the
+cartridge does not carry is a drawing of it. On each step, 0xA471 traces a
 16-point straight line onto a 0x40-byte bitmap in RAM (0xE18A) and uploads it
 to video memory as a sprite pattern (0xA594). The slope comes from the table at
 0xA61A —33 four-byte records— indexed by the phase of the swing, 0xE1CB, which

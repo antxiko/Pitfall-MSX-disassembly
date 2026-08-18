@@ -101,13 +101,15 @@ Todo lo demás que parece texto es **dibujo** partido en casillas consecutivas.
 Por eso buscar cadenas en la ROM no devuelve nada legible. La única firma es la
 línea del pie de la presentación, también dibujo: dos fechas, 1982 y 1984.
 
-## La liana no está dibujada: se traza
+## La liana se pinta con cuentas, no está guardada como dibujo
 
-No hay ningún gráfico de liana en el cartucho. En cada paso, 0xA471 dibuja una
-recta de 16 puntos sobre un mapa de bits en RAM (0xE18A) y lo sube a la memoria
-de vídeo como patrón de sprite (0xA594). La inclinación sale de la tabla de
-0xA61A, indexada por la fase del balanceo (0xE1CB), que va y viene entre 1 y
-0x20. La liana es un sprite que el juego se dibuja a sí mismo cuadro a cuadro.
+La liana que se ve en pantalla se pinta en cada cuadro, y la pinta el código:
+lo que no lleva el cartucho es un gráfico de ella. En cada paso, 0xA471 traza
+una recta de 16 puntos sobre un mapa de bits en RAM (0xE18A) y lo sube a la
+memoria de vídeo como patrón de sprite (0xA594). La inclinación sale de la
+tabla de 0xA61A, indexada por la fase del balanceo (0xE1CB), que va y viene
+entre 1 y 0x20. Así que la cuerda es un sprite que el juego se fabrica solo,
+de dieciséis puntos en dieciséis puntos.
 
 ## Los sprites de mirar a la izquierda no están en la ROM
 

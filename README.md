@@ -2,8 +2,8 @@
 
 A 16 KB cartridge from 1984, taken apart byte by byte. All 16,384 bytes are
 bounded and owned, and there is no map stored inside: the jungle's 255 screens
-come out of an eight-bit register, the 32 treasures are exactly the 32 scenes
-of one kind, and the vine is not drawn anywhere.
+come out of an eight-bit register, and the 32 treasures are exactly the 32
+scenes of one kind.
 
 📖 **[Full documentation](https://antxiko.github.io/Pitfall-MSX-disassembly/)**
 · [En castellano](https://antxiko.github.io/Pitfall-MSX-disassembly/es/)
@@ -66,8 +66,10 @@ one.
   the 32 treasures is 189 screens, against 238 never going down.
 - **One clock tick is 60 interrupts**, measured in a real game: at 60 Hz the
   20:00 last twenty wall-clock minutes, and at 50 Hz, twenty-four.
-- **The vine is not drawn anywhere.** Every frame a sixteen-point straight line
-  is traced onto a bitmap in RAM and sent to video memory as a sprite pattern.
+- **The vine is drawn frame by frame, and there is no picture of it stored.**
+  Every frame the code plots a sixteen-point straight line onto a bitmap in RAM
+  and sends it to video memory as a sprite pattern. Its slope comes out of a
+  table, so the rope you see is arithmetic, not a graphic.
 - **There is not one written word in the cartridge.** The font is ten digits,
   the colon and a blank; everything that looks like text is drawing. The only
   thing the cartridge signs is the **Copyright 1982, 1984** at the foot of the

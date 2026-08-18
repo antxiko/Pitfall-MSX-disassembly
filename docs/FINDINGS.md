@@ -96,13 +96,14 @@ That is why searching the ROM for strings returns nothing readable. The only
 signature is the line at the foot of the intro, drawing too: two dates, 1982
 and 1984.
 
-## The vine is not drawn: it is traced
+## The vine is drawn by arithmetic, not stored as a picture
 
-There is no vine graphic in the cartridge. On each step, 0xA471 draws a
+The vine you see on screen is drawn every frame, and it is drawn by code: what
+the cartridge does not carry is a graphic of it. On each step, 0xA471 plots a
 16-point straight line onto a bitmap in RAM (0xE18A) and uploads it to video
 memory as a sprite pattern (0xA594). The slope comes from the table at 0xA61A,
-indexed by the phase of the swing (0xE1CB), which runs between 1 and 0x20. The
-vine is a sprite the game draws for itself frame by frame.
+indexed by the phase of the swing (0xE1CB), which runs between 1 and 0x20. So
+the rope is a sprite the game builds for itself, sixteen points at a time.
 
 ## The left-facing sprites are not in the ROM
 

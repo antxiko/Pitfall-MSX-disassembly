@@ -3,9 +3,10 @@
 
     python3 tools/render_liana.py pitfall.rom docs/imagenes/liana.png [escala]
 
-En el cartucho NO hay ningun dibujo de liana: en cada paso se traza una recta de
-16 puntos sobre un mapa de bits de 0x40 bytes en la RAM (0xE18A) y se manda a la
-VRAM como patron de sprite. Aqui se hace lo mismo leyendo los mismos datos, que
+La liana se pinta en cada paso, y la pinta el codigo: en el cartucho no hay
+ningun dibujo suyo guardado. Se traza una recta de 16 puntos sobre un mapa de
+bits de 0x40 bytes en la RAM (0xE18A) y se manda a la VRAM como patron de
+sprite. Aqui se hace lo mismo leyendo los mismos datos, que
 es la segunda via que confirma la lectura: si el trazador esta bien entendido,
 sale una cuerda, y sale con la misma inclinacion que la de las capturas.
 
