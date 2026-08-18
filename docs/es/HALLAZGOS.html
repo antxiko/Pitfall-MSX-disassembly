@@ -128,10 +128,6 @@ audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
     ld hl,fin_del_cuadro      ; 9ae0
     ld (hl),0c7h              ; 9ae3</code></pre>
 <p>0xC7 es <code>rst 0</code>, y la dirección es la de esa misma línea: el cuadro termina intentando escribirse encima un salto al arranque de la máquina. En un cartucho no hace nada, porque 0x9AE0 es ROM. <b>Para qué está no se puede demostrar desde el binario</b>; la lectura que encaja es un guardián contra correr el juego desde RAM —ahí la escritura sí llega, y el juego se suicida en el primer cuadro—, pero es una lectura, no una medida.</p>
-<h2 id="el-sonido-no-toca-el-chip-toca-catorce-bytes-de-ram">El sonido no toca el chip: toca catorce bytes de RAM</h2>
-<p>Un solo sitio escribe los registros de sonido: el bucle de <code>outd</code> de 0xB380, que vuelca la copia de 0xE20E-0xE21B una vez por cuadro. Al puerto 0xA1 se escribe en otros dos sitios (0xB24F, 0xB261), pero es el registro 15: el lector de mandos eligiendo puerto de joystick.</p>
-<p>Encima van cuatro vectores en 0xE1E6-0xE1ED, y la tabla de 0xB393 dice qué rutina se instala en cuál para cada uno de los once sonidos.</p>
-<p>Un detalle que no se ve jugando: <b>los sonidos 0 y 1 son mudos por partida doble</b>. Su entrada apunta a 0xB392 —un <code>ret</code> suelto— y además van a la ranura 3, la única que la cadena de 0xB35B no recorre.</p>
 <h2 id="el-rotulo-de-entrada-no-se-pinta-se-revela">El rótulo de entrada no se pinta: se revela</h2>
 <p>La presentación (0xB7F1) no vuelca un dibujo: cada cuadro desplaza <b>un píxel</b> los diez patrones cargados en 0xE132 y los sube a la tabla de patrones; cada ocho cuadros recarga el dibujo y avanza una columna, hasta la 0x18. Por la izquierda entran unos —el fondo, el <code>scf</code> de 0xB86E— y desde la columna 12 aparece un sprite que echa a andar. No hay ni un fotograma guardado.</p>
 <p>De la presentación no se sale con una tecla: se sale cuando el guion grabado de la demo gasta siete entradas (0xB751).</p>

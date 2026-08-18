@@ -156,21 +156,6 @@ does nothing, because 0x9AE0 is ROM. **What it is for cannot be proven from the
 binary**; the reading that fits is a guard against running the game from RAM
 —there the write does land, and the game kills itself on the first frame—, but
 that is a reading, not a measurement.
-
-## The sound never touches the chip: it touches fourteen bytes of RAM
-
-One single place writes the sound registers: the `outd` loop at 0xB380, which
-uploads the copy at 0xE20E-0xE21B once per frame. Port 0xA1 is written in two
-other places (0xB24F, 0xB261), but that is register 15: the joystick port
-selector.
-
-On top sit four vectors at 0xE1E6-0xE1ED, and the table at 0xB393 says which
-routine installs into which for each of the eleven sounds.
-
-A detail you cannot hear playing: **sounds 0 and 1 are mute twice over**. Their
-entry points to 0xB392 —a lone `ret`— and they install into slot 3, the only
-one the chain at 0xB35B never walks.
-
 ## The entry banner is not drawn: it is revealed
 
 The intro (0xB7F1) does not upload a picture: every frame it shifts the ten

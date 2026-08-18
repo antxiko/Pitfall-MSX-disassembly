@@ -128,10 +128,6 @@ audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
     ld hl,fin_del_cuadro      ; 9ae0
     ld (hl),0c7h              ; 9ae3</code></pre>
 <p>0xC7 is <code>rst 0</code>, and the address written is that same line&#x27;s: the frame ends by trying to write over itself a jump to the machine&#x27;s reset. On a cartridge it does nothing, because 0x9AE0 is ROM. <b>What it is for cannot be proven from the binary</b>; the reading that fits is a guard against running the game from RAM —there the write does land, and the game kills itself on the first frame—, but that is a reading, not a measurement.</p>
-<h2 id="the-sound-never-touches-the-chip-it-touches-fourteen-bytes-of-ram">The sound never touches the chip: it touches fourteen bytes of RAM</h2>
-<p>One single place writes the sound registers: the <code>outd</code> loop at 0xB380, which uploads the copy at 0xE20E-0xE21B once per frame. Port 0xA1 is written in two other places (0xB24F, 0xB261), but that is register 15: the joystick port selector.</p>
-<p>On top sit four vectors at 0xE1E6-0xE1ED, and the table at 0xB393 says which routine installs into which for each of the eleven sounds.</p>
-<p>A detail you cannot hear playing: <b>sounds 0 and 1 are mute twice over</b>. Their entry points to 0xB392 —a lone <code>ret</code>— and they install into slot 3, the only one the chain at 0xB35B never walks.</p>
 <h2 id="the-entry-banner-is-not-drawn-it-is-revealed">The entry banner is not drawn: it is revealed</h2>
 <p>The intro (0xB7F1) does not upload a picture: every frame it shifts the ten patterns loaded at 0xE132 by <b>one pixel</b> and uploads them to the pattern table; every eight frames it reloads the drawing and moves one column on, up to 0x18. Ones come in from the left —the background, the <code>scf</code> at 0xB86E— and from column 12 a sprite appears and starts walking. Not one stored frame.</p>
 <p>You do not leave the intro with a key: you leave when the demo&#x27;s recorded script has spent seven entries (0xB751).</p>

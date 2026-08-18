@@ -164,21 +164,6 @@ no hace nada, porque 0x9AE0 es ROM. **Para qué está no se puede demostrar desd
 el binario**; la lectura que encaja es un guardián contra correr el juego desde
 RAM —ahí la escritura sí llega, y el juego se suicida en el primer cuadro—,
 pero es una lectura, no una medida.
-
-## El sonido no toca el chip: toca catorce bytes de RAM
-
-Un solo sitio escribe los registros de sonido: el bucle de `outd` de 0xB380,
-que vuelca la copia de 0xE20E-0xE21B una vez por cuadro. Al puerto 0xA1 se
-escribe en otros dos sitios (0xB24F, 0xB261), pero es el registro 15: el lector
-de mandos eligiendo puerto de joystick.
-
-Encima van cuatro vectores en 0xE1E6-0xE1ED, y la tabla de 0xB393 dice qué
-rutina se instala en cuál para cada uno de los once sonidos.
-
-Un detalle que no se ve jugando: **los sonidos 0 y 1 son mudos por partida
-doble**. Su entrada apunta a 0xB392 —un `ret` suelto— y además van a la ranura
-3, la única que la cadena de 0xB35B no recorre.
-
 ## El rótulo de entrada no se pinta: se revela
 
 La presentación (0xB7F1) no vuelca un dibujo: cada cuadro desplaza **un píxel**
