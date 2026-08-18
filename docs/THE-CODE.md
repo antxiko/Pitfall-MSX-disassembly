@@ -215,6 +215,10 @@ reads four-byte scripts and holds each note still. The three without a script
 period by 0x14, three frames lowering it by 0x7F —or 0x80: the `sbc` at 0xB528
 takes the carry and nothing clears it— and one frame of noise.
 
+A detail you cannot hear playing: **sounds 0 and 1 are mute twice over**. Their
+entry points to 0xB392 —a lone `ret`— and they install into slot 3, the only
+one the chain at 0xB35B never walks.
+
 ## The vine is computed, not stored
 
 The vine is painted every frame, and it is the code that paints it: what the

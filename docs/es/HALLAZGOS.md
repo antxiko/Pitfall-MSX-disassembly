@@ -165,7 +165,6 @@ el binario**; la lectura que encaja es un guardián contra correr el juego desde
 RAM —ahí la escritura sí llega, y el juego se suicida en el primer cuadro—,
 pero es una lectura, no una medida.
 
-
 ## El rótulo de entrada no se pinta: se revela
 
 La presentación (0xB7F1) no vuelca un dibujo: cada cuadro desplaza **un píxel**

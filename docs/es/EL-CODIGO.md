@@ -218,6 +218,10 @@ en el código: 19 cuadros subiendo el periodo de 0x14 en 0x14, tres cuadros
 bajándolo de 0x7F en 0x7F —o 0x80: el `sbc` de 0xB528 se lleva el acarreo y
 nadie lo limpia—, y un cuadro de ruido.
 
+Un detalle que no se ve jugando: **los sonidos 0 y 1 son mudos por partida
+doble**. Su entrada apunta a 0xB392 —un `ret` suelto— y además van a la ranura
+3, la única que la cadena de 0xB35B no recorre.
+
 ## La liana se calcula, no está guardada
 
 La liana se pinta en cada paso, y la pinta el código: lo que no hay en el
