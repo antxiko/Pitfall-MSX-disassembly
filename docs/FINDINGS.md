@@ -156,6 +156,8 @@ does nothing, because 0x9AE0 is ROM. **What it is for cannot be proven from the
 binary**; the reading that fits is a guard against running the game from RAM
 —there the write does land, and the game kills itself on the first frame—, but
 that is a reading, not a measurement.
+
+
 ## The entry banner is not drawn: it is revealed
 
 The intro (0xB7F1) does not upload a picture: every frame it shifts the ten
