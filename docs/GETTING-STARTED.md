@@ -51,7 +51,7 @@ the split:
 
 ## Without the cartridge
 
-The work is in `src/pitfall.asm` and the notes: 5,711 lines with 337 routines
+The work is in `src/pitfall.asm` and the notes: 6,534 lines with 337 routines
 and tables named, 305 line comments anchored to their address and 130 ranges of
 data with their explanation next to them. The 17 tests run without the binary.
 
@@ -75,6 +75,16 @@ arrives by paths no static tracer can follow: the interrupt hook (0x80F7), the
 handlers that travel inside templates copied to RAM, the four dispatch tables
 and the sound vectors, declared one by one with the instruction that writes
 them noted alongside.
+
+### How the data blocks are laid out
+
+Every data range declared in the `.notes` comes out as a block of its own: its
+own heading saying what it is for, its own label, and the dump aligned to its
+first byte, so where one table ends and the next begins is visible at a glance.
+An optional line gives the block the row width of its real structure -one
+eight-byte pattern per row, four bytes per animation record, `defw` for a table
+of pointers- and where a pointer lands on a block that has a name, that name is
+written next to it.
 
 ## The tools
 

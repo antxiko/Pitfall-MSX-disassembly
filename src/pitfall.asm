@@ -10,13 +10,23 @@
 
 
 ; ----------------------------------------------------------------------
-; DATOS cabecera_del_cartucho: La cabecera que lee la BIOS: "AB", INIT=0x8013, y a cero los otros tres vectores (STATEMENT, DEVICE y TEXT). Con eso la BIOS llama a 0x8013 nada mas terminar de arrancar la maquina
+; DATOS cabecera_del_cartucho: La cabecera que lee la BIOS: "AB", INIT=0x8013,
+;   y a cero los otros tres vectores (STATEMENT, DEVICE y TEXT). Con eso la
+;   BIOS llama a 0x8013 nada mas terminar de arrancar la maquina
 ;   0x8000..0x8010  (16 bytes)
-; DATOS plantilla_del_gancho: Los tres bytes C3 F7 80 -un `jp 0x80F7` ya montado- que INIT copia tal cual al gancho H.KEYI (0xFD9A) con el LDIR de 0x803C-0x8046. Aqui dentro no se ejecutan nunca: se ejecutan en la RAM del gancho, en cada interrupcion
-;   0x8010..0x8013  (3 bytes)
+DATA_cabecera_del_cartucho:
+	defb 041h,042h	; 8000
+	defw 08013h,00000h,00000h,00000h	; 8002  -> INIT 0x0000 0x0000 0x0000
+	defb 000h,000h,000h,000h,000h,000h	; 800a
+
 ; ----------------------------------------------------------------------
-	defb 041h,042h,013h,080h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; 8000  AB..............
-	defb 0c3h,0f7h,080h	; 8010  ...
+; DATOS plantilla_del_gancho: Los tres bytes C3 F7 80 -un `jp 0x80F7` ya
+;   montado- que INIT copia tal cual al gancho H.KEYI (0xFD9A) con el LDIR de
+;   0x803C-0x8046. Aqui dentro no se ejecutan nunca: se ejecutan en la RAM del
+;   gancho, en cada interrupcion
+;   0x8010..0x8013  (3 bytes)
+DATA_plantilla_del_gancho:
+	defb 0c3h,0f7h,080h	; 8010
 
 ; ======================================================================
 ; CODIGO 0x8013..0x8a69  (2646 bytes)
@@ -1238,45 +1248,133 @@ prepara_la_partida:
 ; ----------------------------------------------------------------------
 ; DATOS inicializador_e1d0: Seis bytes que 0x8A23 copia con LDIR a 0xE1D0
 ;   0x8a69..0x8a6f  (6 bytes)
+DATA_inicializador_e1d0:
+	defb 0bah,0b8h,0c2h,0b8h,0b8h,03ch	; 8a69
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e1d6: Seis bytes que 0x8A2E copia a 0xE1D6
 ;   0x8a6f..0x8a75  (6 bytes)
-; DATOS tiles_de_las_vidas: Un 0x00 de relleno y TRES filas de seis tiles C3/C5/C6, una por cuenta de vidas: 0x8A76 ninguna, 0x8A7C una, 0x8A82 dos. 0x89AB elige la que toca y 0x89DA y 0x89E9 suben sus dos mitades de tres bytes a la VRAM 0x1843 y 0x1863
+DATA_inicializador_e1d6:
+	defb 000h,000h,002h,000h,000h,000h	; 8a6f
+
+; ----------------------------------------------------------------------
+; DATOS tiles_de_las_vidas: Un 0x00 de relleno y TRES filas de seis tiles
+;   C3/C5/C6, una por cuenta de vidas: 0x8A76 ninguna, 0x8A7C una, 0x8A82 dos.
+;   0x89AB elige la que toca y 0x89DA y 0x89E9 suben sus dos mitades de tres
+;   bytes a la VRAM 0x1843 y 0x1863
 ;   0x8a75..0x8a88  (19 bytes)
+DATA_tiles_de_las_vidas:
+	defb 000h	; 8a75
+	defb 0c3h,0c3h,0c3h,0c3h,0c3h,0c3h	; 8a76
+	defb 0c5h,0c3h,0c3h,0c6h,0c3h,0c3h	; 8a7c
+	defb 0c5h,0c3h,0c5h,0c6h,0c3h,0c6h	; 8a82
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e29a: Cuatro bytes que 0x8A39 copia a 0xE29A
 ;   0x8a88..0x8a8c  (4 bytes)
+DATA_inicializador_e29a:
+	defb 00fh,011h,070h,001h	; 8a88
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e29e: Cuatro bytes que 0x8A44 copia a 0xE29E
 ;   0x8a8c..0x8a90  (4 bytes)
-; DATOS inicializador_e2ae: Cuatro bytes que 0x80D1 (en el arranque) copia a 0xE2AE
+DATA_inicializador_e29e:
+	defb 00fh,021h,070h,001h	; 8a8c
+
+; ----------------------------------------------------------------------
+; DATOS inicializador_e2ae: Cuatro bytes que 0x80D1 (en el arranque) copia a
+;   0xE2AE
 ;   0x8a90..0x8a94  (4 bytes)
+DATA_inicializador_e2ae:
+	defb 0b3h,00eh,010h,000h	; 8a90
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e2b2: Cuatro bytes que 0x80DC copia a 0xE2B2
 ;   0x8a94..0x8a98  (4 bytes)
+DATA_inicializador_e2b2:
+	defb 0b3h,00eh,014h,000h	; 8a94
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e2b6: Cuatro bytes que 0x80E7 copia a 0xE2B6
 ;   0x8a98..0x8a9c  (4 bytes)
+DATA_inicializador_e2b6:
+	defb 0b3h,00eh,018h,000h	; 8a98
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e2ba: Cuatro bytes que 0x80F2 copia a 0xE2BA
 ;   0x8a9c..0x8aa0  (4 bytes)
-; DATOS tabla_del_despachador_874a: Once punteros de palabra. El despachador de 0x873B los consume con el indice en A (sla / add hl / jp (hl)); con A=0 vuelve sin saltar. En 0x8AB6 las palabras dejan de ser punteros a ROM y empiezan los pares 0x0100/0x0101 de la tabla siguiente
-;   0x8aa0..0x8ab6  (22 bytes)
-; DATOS curva_del_salto: Treinta y cuatro bytes 0x00/0x01/0xFF que 0x8820 indexa con IX+0x17 (de 0x1F a 1, o sea leidos de atras adelante) sumando el valor a IY+0x00. El indice no pasa de 0x1F, asi que la curva se acaba en 0x8AD5
-;   0x8ab6..0x8ad8  (34 bytes)
-; DATOS datos_sin_identificar_8ad8: Nueve bytes (03 4C 5C 76 83 9C AD 00 00) a los que no apunta ninguna palabra del cartucho
-;   0x8ad8..0x8ae1  (9 bytes)
-; DATOS guion_anda_derecha: 03 20 / 03 24 / 03 28 / 03 2C / 03 30 / 00 00: cinco fotogramas de tres cuadros. Lo carga 0x892D
-;   0x8ae1..0x8aed  (12 bytes)
-; DATOS guion_anda_izquierda: Los mismos tiempos con los patrones espejados, 0x44 a 0x54. Lo carga 0x8903
-;   0x8aed..0x8af9  (12 bytes)
-; DATOS guion_trepa: 01 3C / 01 60 / 00 00: dos fotogramas de un cuadro. Lo carga 0x8411
-;   0x8af9..0x8aff  (6 bytes)
+DATA_inicializador_e2ba:
+	defb 0b3h,00eh,01ch,000h	; 8a9c
+
 ; ----------------------------------------------------------------------
-	defb 0bah,0b8h,0c2h,0b8h,0b8h,03ch,000h,000h,002h,000h,000h,000h,000h,0c3h,0c3h,0c3h	; 8a69  .....<..........
-	defb 0c3h,0c3h,0c3h,0c5h,0c3h,0c3h,0c6h,0c3h,0c3h,0c5h,0c3h,0c5h,0c6h,0c3h,0c6h,00fh	; 8a79  ................
-	defb 011h,070h,001h,00fh,021h,070h,001h,0b3h,00eh,010h,000h,0b3h,00eh,014h,000h,0b3h	; 8a89  .p..!p..........
-	defb 00eh,018h,000h,0b3h,00eh,01ch,000h,04bh,087h,040h,086h,051h,087h,061h,083h,061h	; 8a99  .......K.@.Q.a.a
-	defb 083h,062h,081h,021h,082h,04bh,087h,08ch,087h,021h,082h,0efh,085h,000h,001h,001h	; 8aa9  .b.!.K...!......
-	defb 001h,001h,001h,001h,001h,000h,001h,000h,000h,001h,000h,000h,000h,001h,0ffh,000h	; 8ab9  ................
-	defb 000h,000h,0ffh,000h,0ffh,000h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,000h,000h,003h	; 8ac9  ................
-	defb 04ch,05ch,076h,083h,09ch,0adh,000h,000h,003h,020h,003h,024h,003h,028h,003h,02ch	; 8ad9  L\v...... .$.(.,
-	defb 003h,030h,000h,000h,003h,044h,003h,048h,003h,04ch,003h,050h,003h,054h,000h,000h	; 8ae9  .0...D.H.L.P.T..
-	defb 001h,03ch,001h,060h,000h,000h	; 8af9  .<.`..
+; DATOS tabla_del_despachador_874a: Once punteros de palabra. El despachador
+;   de 0x873B los consume con el indice en A (sla / add hl / jp (hl)); con A=0
+;   vuelve sin saltar. En 0x8AB6 las palabras dejan de ser punteros a ROM y
+;   empiezan los pares 0x0100/0x0101 de la tabla siguiente
+;   0x8aa0..0x8ab6  (22 bytes)
+DATA_tabla_del_despachador_874a:
+	defw 0874bh	; 8aa0  -> deja_un_solo_objeto
+	defw 08640h	; 8aa2  -> arrollado_por_el_tronco
+	defw 08751h	; 8aa4  -> cae_en_el_hoyo
+	defw 08361h	; 8aa6  -> se_hunde
+	defw 08361h	; 8aa8  -> se_hunde
+	defw 08162h	; 8aaa  -> agarra_la_liana
+	defw 08221h	; 8aac  -> muere
+	defw 0874bh	; 8aae  -> deja_un_solo_objeto
+	defw 0878ch	; 8ab0  -> recoge_el_tesoro
+	defw 08221h	; 8ab2  -> muere
+	defw 085efh	; 8ab4  -> rebota_y_retrocede
+
+; ----------------------------------------------------------------------
+; DATOS curva_del_salto: Treinta y cuatro bytes 0x00/0x01/0xFF que 0x8820
+;   indexa con IX+0x17 (de 0x1F a 1, o sea leidos de atras adelante) sumando
+;   el valor a IY+0x00. El indice no pasa de 0x1F, asi que la curva se acaba
+;   en 0x8AD5
+;   0x8ab6..0x8ad8  (34 bytes)
+DATA_curva_del_salto:
+	defb 000h,001h,001h,001h,001h,001h,001h,001h,000h,001h,000h,000h,001h,000h,000h,000h	; 8ab6  ................
+	defb 001h,0ffh,000h,000h,000h,0ffh,000h,0ffh,000h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 8ac6  ................
+	defb 000h,000h	; 8ad6
+
+; ----------------------------------------------------------------------
+; DATOS datos_sin_identificar_8ad8: Nueve bytes (03 4C 5C 76 83 9C AD 00 00) a
+;   los que no apunta ninguna palabra del cartucho
+;   0x8ad8..0x8ae1  (9 bytes)
+DATA_datos_sin_identificar_8ad8:
+	defb 003h,04ch,05ch,076h,083h,09ch,0adh,000h,000h	; 8ad8  .L\v.....
+
+; ----------------------------------------------------------------------
+; DATOS guion_anda_derecha: 03 20 / 03 24 / 03 28 / 03 2C / 03 30 / 00 00:
+;   cinco fotogramas de tres cuadros. Lo carga 0x892D
+;   0x8ae1..0x8aed  (12 bytes)
+DATA_guion_anda_derecha:
+	defb 003h,020h	; 8ae1
+	defb 003h,024h	; 8ae3
+	defb 003h,028h	; 8ae5
+	defb 003h,02ch	; 8ae7
+	defb 003h,030h	; 8ae9
+	defb 000h,000h	; 8aeb
+
+; ----------------------------------------------------------------------
+; DATOS guion_anda_izquierda: Los mismos tiempos con los patrones espejados,
+;   0x44 a 0x54. Lo carga 0x8903
+;   0x8aed..0x8af9  (12 bytes)
+DATA_guion_anda_izquierda:
+	defb 003h,044h	; 8aed
+	defb 003h,048h	; 8aef
+	defb 003h,04ch	; 8af1
+	defb 003h,050h	; 8af3
+	defb 003h,054h	; 8af5
+	defb 000h,000h	; 8af7
+
+; ----------------------------------------------------------------------
+; DATOS guion_trepa: 01 3C / 01 60 / 00 00: dos fotogramas de un cuadro. Lo
+;   carga 0x8411
+;   0x8af9..0x8aff  (6 bytes)
+DATA_guion_trepa:
+	defb 001h,03ch	; 8af9
+	defb 001h,060h	; 8afb
+	defb 000h,000h	; 8afd
 
 ; ======================================================================
 ; CODIGO 0x8aff..0x8e1b  (796 bytes)
@@ -1689,139 +1787,193 @@ pinta_el_subsuelo:
 	ret			;8e1a
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_tramos_fila12: Veintitres bytes: la rampa de tiles F0..FE,F0..F7 de la que salen los tramos de la fila 12 (primera pasada, base cargada en 0x8DA7, VRAM 0x1980)
+; DATOS tabla_tramos_fila12: Veintitres bytes: la rampa de tiles F0..FE,F0..F7
+;   de la que salen los tramos de la fila 12 (primera pasada, base cargada en
+;   0x8DA7, VRAM 0x1980)
 ;   0x8e1b..0x8e32  (23 bytes)
-; DATOS tabla_tramos_fila13: Catorce bytes 0xFF, los tramos de la fila 13 (segunda pasada). 0x8DCA carga 0x8E32 FIJO y copia tantos bytes como diga el tramo, sin indexar: no lleva el `add hl,bc` que si tiene la fila 12 en 0x8DAA. Con el tramo mayor que hay en los cuatro layouts, 0x0A, la lectura mas lejana es 0x8E3B, o sea que nunca llega al sprite de 0x8E40
-;   0x8e32..0x8e40  (14 bytes)
-; DATOS sprite_hundiendose_derecha_1: Primera capa del jugador mirando a la derecha. La copia 0x8C0F a 0xE138
-;   0x8e40..0x8e60  (32 bytes)
-; DATOS sprite_hundiendose_derecha_2: Segunda capa de la misma pose. La copia 0x8C04 a 0xE15E
-;   0x8e60..0x8e80  (32 bytes)
-; DATOS sprite_hundiendose_3: Primera capa de la tercera pose, la que carga 0x8CB9 a 0xE138
-;   0x8e80..0x8ea0  (32 bytes)
-; DATOS sprite_hundiendose_4: Segunda capa de esa pose, que carga 0x8CAE a 0xE15E
-;   0x8ea0..0x8ec0  (32 bytes)
-; DATOS sprite_hundiendose_izquierda_1: El espejo de 0x8E60 dandole la vuelta a los bits de cada byte, y falla en uno solo de los 32 (el byte 23 vale 0x0F donde saldria 0x0E). La copia 0x8C27 a 0xE138, y 0x8330 sube sus dos mitades a la VRAM 0x3D00 y 0x3AC0
-;   0x8ec0..0x8ee0  (32 bytes)
-; DATOS sprite_hundiendose_izquierda_2: El espejo de 0x8E40 con los bits de cada byte del reves, y este EXACTO: los 32 bytes. La copia 0x8C1C a 0xE15E, y 0x8348 sube sus mitades a 0x3D10 y 0x3AD0
-;   0x8ee0..0x8f00  (32 bytes)
-; DATOS reloj_inicial_duplicado: Los mismos cinco tiles del reloj de salida que hay en 0x8A69 -BA B8 C2 B8 B8, que se lee "20:00"- pero con 0x00 detras en vez del divisor 0x3C. Nadie lo copia: la unica palabra del cartucho que vale 0x8F00 esta en 0xA3A3, dentro de una tabla de patrones, o sea que es coincidencia de bytes y no un puntero. Una segunda copia que se quedo sin usar
-;   0x8f00..0x8f06  (6 bytes)
-; DATOS guion_celdas_columna: Guion de 16 celdas: cabecera de tres columnas (15-17) en las filas 14-17 y un mastil de UNA sola columna, la 16, con el tile 0x20, en las filas 18-21. Tiles 0x20-0x36. Lo llaman 0x8D4D y 0x8D60
-;   0x8f06..0x8f48  (66 bytes)
-; DATOS guion_celdas_bloque_a: Guion de 24 celdas: DOS bloques de 3 columnas por 4 filas, en las filas 14-17 y las columnas 10-12 y 20-22. El centro, de la 13 a la 19, no se toca. Tiles 0x2A-0x56. Lo llama 0x8D12
-;   0x8f48..0x8faa  (98 bytes)
-; DATOS guion_celdas_bloque_b: Los mismos dos bloques de 3x4 en las columnas 10-12 y 20-22, con el tile 0x30 arriba y el 0x40 abajo. Lo llama 0x8D0B
-;   0x8faa..0x900c  (98 bytes)
-; DATOS guion_celdas_pilares_a: Guion de 16 celdas: dos pilares de dos columnas de ancho en las filas 18-21, columnas 5-6 y 26-27. No es una franja que cruce la pantalla: entre los dos pilares no se pinta nada. Tiles 0x18/0x19/0x1A a la derecha y 0x2C a la izquierda. Lo llama 0x8D66
-;   0x900c..0x904e  (66 bytes)
-; DATOS guion_celdas_pilares_b: Los mismos dos pilares con los tiles cambiados de lado. Lo llama 0x8D53
-;   0x904e..0x9090  (66 bytes)
-; DATOS fila_de_tiles_23: Catorce numeros de tile en crudo que 0x8B51-0x8B5A copia con B1C3 a la VRAM 0x1AE2, o sea la fila 23 del name table, columnas 2-15
-;   0x9090..0x909e  (14 bytes)
-; DATOS grafico_rle_tiles_a: Bloque RLE para B142: 360 bytes descomprimidos a la VRAM desde 0x0000, el principio de la tabla de patrones. Lo carga 0x8B15
-;   0x909e..0x915b  (189 bytes)
-; DATOS grafico_rle_tiles_b: Bloque RLE para B142: 760 bytes a la VRAM desde 0x0480, mas patrones de la tabla de tiles. Lo carga 0x8B1B
-;   0x915b..0x939d  (578 bytes)
-; DATOS grafico_rle_sprites_a: Bloque RLE para B142: 416 bytes a la VRAM desde 0x3880, dentro de la tabla de patrones de sprites (0x3800-0x3FFF). Lo carga 0x8B5E
-;   0x939d..0x9473  (214 bytes)
-; DATOS grafico_rle_sprites_b: Bloque RLE para B142: 288 bytes a la VRAM desde 0x3B40, mas patrones de sprites. Lo carga 0x8B6F
-;   0x9473..0x956a  (247 bytes)
-; DATOS grafico_rle_sprites_c: Bloque RLE para B142: 288 bytes a la VRAM desde 0x3D80, mas patrones de sprites. Lo carga 0x8B80
-;   0x956a..0x95fe  (148 bytes)
-; DATOS tiles_decorado_3: 128 bytes: 16 patrones de tile en crudo, la entrada [3] de la tabla 0xA086. Se copian a la VRAM 0x0380 con B1C3
-;   0x95fe..0x967e  (128 bytes)
-; DATOS tiles_decorado_2: 128 bytes, la entrada [2] de la tabla 0xA086
-;   0x967e..0x96fe  (128 bytes)
-; DATOS tiles_decorado_0: 128 bytes, la entrada [0] de la tabla 0xA086
-;   0x96fe..0x977e  (128 bytes)
-; DATOS tiles_decorado_1: 128 bytes, la entrada [1] de la tabla 0xA086
-;   0x977e..0x97fe  (128 bytes)
-; DATOS patron_de_sprite_relleno: Un patron de sprite de 32 bytes en crudo, que empieza por FF FF: 0xA002-0xA023 lo copia tal cual con B1C3 a TRES huecos de la tabla de sprites, 0x3C20, 0x3D40 y 0x3E60
-;   0x97fe..0x981e  (32 bytes)
-; DATOS sprites_rle_1: Bloque RLE para B142: 64 bytes a la VRAM 0x3FC0 (los dos ultimos patrones de sprite). Lo carga 0xAB57
-;   0x981e..0x9850  (50 bytes)
-; DATOS sprites_rle_2: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAB21
-;   0x9850..0x9865  (21 bytes)
-; DATOS sprites_rle_3: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAABD
-;   0x9865..0x989e  (57 bytes)
-; DATOS sprites_rle_4: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAC22
-;   0x989e..0x98bb  (29 bytes)
-; DATOS sprites_rle_5: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xABC8
-;   0x98bb..0x98e0  (37 bytes)
-; DATOS sprites_rle_6: Bloque RLE para B142: 64 bytes a la VRAM 0x3800, los DOS PRIMEROS patrones de sprite. Lo carga 0xACB6
-;   0x98e0..0x9919  (57 bytes)
-; DATOS sprites_rle_7: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAD75
-;   0x9919..0x9944  (43 bytes)
-; DATOS sprites_rle_8: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAD1F
-;   0x9944..0x9989  (69 bytes)
-; DATOS sprites_rle_9: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga 0xAA74
-;   0x9989..0x99af  (38 bytes)
-; DATOS parado_capa_verde: 32 bytes a la VRAM 0x39A0, que es el patron 0x34: las piernas (color 0x0C) del jugador PARADO, que es tambien el primer cuadro del salto (lo clavan a mano 0x8970 y 0x881B, y no sale en ningun guion de animacion). Lo recarga 0x8307 al acabar de reaparecer, y hace falta porque la animacion de morir escribe ahi mismo el muneco troceado (0x8C4F)
-;   0x99af..0x99cf  (32 bytes)
-; DATOS trepa_capa_verde: 32 bytes a la VRAM 0x39E0, que es el patron 0x3C: la mitad de abajo (las piernas, color 0x0C) del jugador TREPANDO. Lo recarga la escena de hoyos en 0xAA07, porque en las escenas con liana ese mismo hueco lo ocupa la cuerda que traza 0xA594. Y justo despues, 0xAA43 lo espeja al patron 0x60, que es el otro fotograma del guion de trepar (0x8AF9)
-;   0x99cf..0x99ef  (32 bytes)
-; DATOS parado_capa_roja: 32 bytes a la VRAM 0x3BE0, que es el patron 0x7C = (0x34-0x20)+0x68: la mitad de arriba del mismo fotograma, en color 0x06. Lo recarga 0x82FB por lo mismo que el anterior (0x8C43 lo pisa)
-;   0x99ef..0x9a0f  (32 bytes)
-; DATOS trepa_capa_roja: 32 bytes a la VRAM 0x3C20, que es el patron 0x84 = (0x3C-0x20)+0x68: la mitad de arriba del mismo fotograma, el cuerpo en color 0x06. Lo recarga 0xAA13
-;   0x9a0f..0x9a2f  (32 bytes)
-; DATOS trepa_capa_blanca: 32 bytes a la VRAM 0x3E60, que es el patron 0xCC = (0x3C-0x20)+0xB0: la tercera capa del mismo fotograma, los cuatro puntos de color 0x0F que caen sobre la cabeza. Lo recarga 0xAA1F
-;   0x9a2f..0x9a4f  (32 bytes)
-; DATOS tapa_del_suelo: 32 bytes a la VRAM 0x3800, que es el patron 0x00: NO es el jugador, es una barra maciza de 16x5. Se pone en el sprite 0xE292 con color 0x0B a la altura Y=0x7A -la linea del suelo- al bajar por la escalera (0x8432-0x8442) y al caer por el hoyo (0x876E-0x877D). Como 0xE292 es una entrada mas baja que la del jugador (0xE2A2), se pinta DELANTE: es lo que tapa al muneco mientras cruza el suelo. Lo copia 0xAA2B
-;   0x9a4f..0x9a6f  (32 bytes)
-; ----------------------------------------------------------------------
+DATA_tabla_tramos_fila12:
 	defb 0f0h,0f1h,0f2h,0f3h,0f4h,0f5h,0f6h,0f7h,0f8h,0f9h,0fah,0fbh,0fch,0fdh,0feh,0f0h	; 8e1b  ................
-	defb 0f1h,0f2h,0f3h,0f4h,0f5h,0f6h,0f7h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 8e2b  ................
-	defb 0ffh,0ffh,0ffh,0ffh,0ffh,000h,000h,000h,000h,003h,003h,003h,000h,003h,007h,00eh	; 8e3b  ................
-	defb 00dh,006h,007h,002h,003h,003h,003h,001h,001h,001h,001h,001h,001h,001h,001h,000h	; 8e4b  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,0c0h,000h,000h,000h,080h,0c0h,0c0h	; 8e5b  ................
-	defb 0c0h,0d0h,0d0h,040h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,070h,000h,0c0h,000h	; 8e6b  ...@........p...
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,003h,003h,003h,000h,00fh,03fh	; 8e7b  ...............?
-	defb 073h,063h,063h,003h,023h,003h,0e7h,03eh,018h,000h,000h,000h,000h,000h,000h,000h	; 8e8b  scc.#..>........
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,0c0h,000h,000h,000h,0c0h,0e0h	; 8e9b  ................
-	defb 062h,0beh,09ch,0c0h,0c0h,0f8h,018h,018h,01eh,000h,000h,000h,000h,000h,000h,000h	; 8eab  b...............
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,003h,000h,000h,000h,001h,003h,003h	; 8ebb  ................
-	defb 003h,00bh,00bh,002h,003h,003h,003h,003h,003h,003h,003h,003h,00fh,000h,003h,000h	; 8ecb  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,0c0h,0c0h,0c0h,000h,0c0h,0e0h,070h	; 8edb  ...............p
-	defb 0b0h,060h,0e0h,040h,0c0h,0c0h,0c0h,080h,080h,080h,080h,080h,080h,080h,080h,000h	; 8eeb  .`.@............
-	defb 000h,000h,000h,000h,000h,0bah,0b8h,0c2h,0b8h,0b8h,000h,010h,000h,0cfh,001h,031h	; 8efb  ...............1
-	defb 000h,0d0h,001h,033h,000h,0d1h,001h,034h,000h,0efh,001h,032h,000h,0f0h,001h,036h	; 8f0b  ...3...4...2...6
-	defb 000h,0f1h,001h,035h,000h,010h,002h,020h,000h,030h,002h,020h,000h,050h,002h,020h	; 8f1b  ...5... .0. .P. 
-	defb 000h,070h,002h,020h,000h,090h,002h,020h,000h,0b0h,002h,020h,000h,00fh,002h,028h	; 8f2b  .p. ... ... ...(
-	defb 000h,02fh,002h,028h,000h,011h,002h,029h,000h,031h,002h,029h,000h,018h,000h,0cah	; 8f3b  ./.(...).1.)....
-	defb 001h,037h,000h,0cbh,001h,033h,000h,0cch,001h,053h,000h,0eah,001h,050h,000h,0ebh	; 8f4b  .7...3...S...P..
-	defb 001h,036h,000h,0ech,001h,054h,000h,0d4h,001h,055h,000h,0d5h,001h,033h,000h,0d6h	; 8f5b  .6...T...U...3..
-	defb 001h,051h,000h,0f4h,001h,056h,000h,0f5h,001h,036h,000h,0f6h,001h,052h,000h,00ah	; 8f6b  .Q...V...6...R..
-	defb 002h,02ah,000h,00bh,002h,02ch,000h,00ch,002h,02bh,000h,02ah,002h,02ah,000h,02bh	; 8f7b  .*...,...+.*.*.+
-	defb 002h,02ch,000h,02ch,002h,02bh,000h,014h,002h,02ah,000h,015h,002h,02ch,000h,016h	; 8f8b  .,.,.+...*...,..
-	defb 002h,02bh,000h,034h,002h,02ah,000h,035h,002h,02ch,000h,036h,002h,02bh,000h,018h	; 8f9b  .+.4.*.5.,.6.+..
-	defb 000h,0cah,001h,030h,000h,0cbh,001h,030h,000h,0cch,001h,030h,000h,0eah,001h,030h	; 8fab  ...0...0...0...0
-	defb 000h,0ebh,001h,030h,000h,0ech,001h,030h,000h,0d4h,001h,030h,000h,0d5h,001h,030h	; 8fbb  ...0...0...0...0
-	defb 000h,0d6h,001h,030h,000h,0f4h,001h,030h,000h,0f5h,001h,030h,000h,0f6h,001h,030h	; 8fcb  ...0...0...0...0
-	defb 000h,00ah,002h,040h,000h,00bh,002h,040h,000h,00ch,002h,040h,000h,02ah,002h,040h	; 8fdb  ...@...@...@.*.@
-	defb 000h,02bh,002h,040h,000h,02ch,002h,040h,000h,014h,002h,040h,000h,015h,002h,040h	; 8feb  .+.@.,.@...@...@
-	defb 000h,016h,002h,040h,000h,034h,002h,040h,000h,035h,002h,040h,000h,036h,002h,040h	; 8ffb  ...@.4.@.5.@.6.@
-	defb 000h,010h,000h,05ah,002h,018h,000h,05bh,002h,018h,000h,07ah,002h,019h,000h,07bh	; 900b  ...Z...[...z...{
-	defb 002h,019h,000h,09ah,002h,01ah,000h,09bh,002h,01ah,000h,0bah,002h,018h,000h,0bbh	; 901b  ................
-	defb 002h,018h,000h,045h,002h,02ch,000h,046h,002h,02ch,000h,065h,002h,02ch,000h,066h	; 902b  ...E.,.F.,.e.,.f
-	defb 002h,02ch,000h,085h,002h,02ch,000h,086h,002h,02ch,000h,0a5h,002h,02ch,000h,0a6h	; 903b  .,...,...,...,..
-	defb 002h,02ch,000h,010h,000h,045h,002h,018h,000h,046h,002h,018h,000h,065h,002h,019h	; 904b  .,...E...F...e..
-	defb 000h,066h,002h,019h,000h,085h,002h,01ah,000h,086h,002h,01ah,000h,0a5h,002h,018h	; 905b  .f..............
-	defb 000h,0a6h,002h,018h,000h,05ah,002h,02ch,000h,05bh,002h,02ch,000h,07ah,002h,02ch	; 906b  .....Z.,.[.,.z.,
-	defb 000h,07bh,002h,02ch,000h,09ah,002h,02ch,000h,09bh,002h,02ch,000h,0bah,002h,02ch	; 907b  .{.,...,...,...,
-	defb 000h,0bbh,002h,02ch,000h,0c8h,0c9h,0cah,0cbh,0cch,0cdh,0ceh,0cfh,0d0h,0d1h,0d2h	; 908b  ...,............
-	defb 0d3h,0d4h,0d5h,000h,000h,008h,0fch,0b8h,008h,000h,008h,03fh,050h,030h,030h,070h	; 909b  ...........?P00p
-	defb 0e0h,0c0h,080h,000h,000h,00ch,00ch,00eh,007h,003h,001h,000h,000h,0a0h,054h,0e0h	; 90ab  ..............T.
-	defb 070h,030h,030h,03ch,03fh,03fh,007h,030h,030h,060h,0e0h,0c0h,080h,000h,000h,0e0h	; 90bb  p00<??.00`......
-	defb 07fh,00fh,003h,005h,000h,042h,080h,0e0h,004h,0ffh,041h,00fh,0a0h,058h,0dfh,0dfh	; 90cb  .....B....A..X..
-	defb 000h,0fbh,0fbh,000h,0dfh,0dfh,000h,0fbh,0fbh,000h,0dfh,0dfh,000h,0fbh,0fbh,000h	; 90db  ................
-	defb 0dfh,0dfh,000h,0fbh,0fbh,000h,0a8h,048h,0ffh,0ffh,000h,000h,0ffh,0ffh,000h,000h	; 90eb  .......H........
-	defb 0b8h,008h,0f8h,008h,01fh,008h,0e0h,008h,007h,008h,000h,098h,00dh,000h,006h,007h	; 90fb  ................
-	defb 00ah,000h,003h,0ffh,005h,000h,006h,0e0h,005h,000h,003h,0ffh,00ah,000h,003h,01fh	; 910b  ................
-	defb 00bh,000h,045h,080h,0c0h,0f0h,0f8h,0f8h,0b0h,008h,000h,0b8h,006h,000h,002h,0ffh	; 911b  ..E.............
-	defb 0b8h,003h,01fh,00ah,000h,006h,0f8h,00ah,000h,006h,0f8h,00ah,000h,006h,01fh,01bh	; 912b  ................
-	defb 000h,042h,007h,0ffh,005h,000h,043h,00fh,0ffh,0ffh,004h,000h,044h,01fh,0ffh,0ffh	; 913b  .B....C.....D...
-	defb 0ffh,003h,000h,041h,03fh,004h,0ffh,005h,000h,003h,0ffh,004h,000h,004h,0ffh,000h	; 914b  ...A?...........
+	defb 0f1h,0f2h,0f3h,0f4h,0f5h,0f6h,0f7h	; 8e2b
+
+; ----------------------------------------------------------------------
+; DATOS tabla_tramos_fila13: Catorce bytes 0xFF, los tramos de la fila 13
+;   (segunda pasada). 0x8DCA carga 0x8E32 FIJO y copia tantos bytes como diga
+;   el tramo, sin indexar: no lleva el `add hl,bc` que si tiene la fila 12 en
+;   0x8DAA. Con el tramo mayor que hay en los cuatro layouts, 0x0A, la lectura
+;   mas lejana es 0x8E3B, o sea que nunca llega al sprite de 0x8E40
+;   0x8e32..0x8e40  (14 bytes)
+DATA_tabla_tramos_fila13:
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 8e32  ..............
+
+; ----------------------------------------------------------------------
+; DATOS sprite_hundiendose_derecha_1: Primera capa del jugador mirando a la
+;   derecha. La copia 0x8C0F a 0xE138
+;   0x8e40..0x8e60  (32 bytes)
+DATA_sprite_hundiendose_derecha_1:
+	defb 000h,000h,000h,000h,003h,003h,003h,000h	; 8e40  ........
+	defb 003h,007h,00eh,00dh,006h,007h,002h,003h	; 8e48  ........
+	defb 003h,003h,001h,001h,001h,001h,001h,001h	; 8e50  ........
+	defb 001h,001h,000h,000h,000h,000h,000h,000h	; 8e58  ........
+
+; ----------------------------------------------------------------------
+; DATOS sprite_hundiendose_derecha_2: Segunda capa de la misma pose. La copia
+;   0x8C04 a 0xE15E
+;   0x8e60..0x8e80  (32 bytes)
+DATA_sprite_hundiendose_derecha_2:
+	defb 000h,000h,000h,000h,0c0h,000h,000h,000h	; 8e60  ........
+	defb 080h,0c0h,0c0h,0c0h,0d0h,0d0h,040h,0c0h	; 8e68  ......@.
+	defb 0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,070h	; 8e70  .......p
+	defb 000h,0c0h,000h,000h,000h,000h,000h,000h	; 8e78  ........
+
+; ----------------------------------------------------------------------
+; DATOS sprite_hundiendose_3: Primera capa de la tercera pose, la que carga
+;   0x8CB9 a 0xE138
+;   0x8e80..0x8ea0  (32 bytes)
+DATA_sprite_hundiendose_3:
+	defb 000h,000h,000h,000h,000h,003h,003h,003h	; 8e80  ........
+	defb 000h,00fh,03fh,073h,063h,063h,003h,023h	; 8e88  ..?scc.#
+	defb 003h,0e7h,03eh,018h,000h,000h,000h,000h	; 8e90  ..>.....
+	defb 000h,000h,000h,000h,000h,000h,000h,000h	; 8e98  ........
+
+; ----------------------------------------------------------------------
+; DATOS sprite_hundiendose_4: Segunda capa de esa pose, que carga 0x8CAE a
+;   0xE15E
+;   0x8ea0..0x8ec0  (32 bytes)
+DATA_sprite_hundiendose_4:
+	defb 000h,000h,000h,000h,000h,0c0h,000h,000h	; 8ea0  ........
+	defb 000h,0c0h,0e0h,062h,0beh,09ch,0c0h,0c0h	; 8ea8  ...b....
+	defb 0f8h,018h,018h,01eh,000h,000h,000h,000h	; 8eb0  ........
+	defb 000h,000h,000h,000h,000h,000h,000h,000h	; 8eb8  ........
+
+; ----------------------------------------------------------------------
+; DATOS sprite_hundiendose_izquierda_1: El espejo de 0x8E60 dandole la vuelta
+;   a los bits de cada byte, y falla en uno solo de los 32 (el byte 23 vale
+;   0x0F donde saldria 0x0E). La copia 0x8C27 a 0xE138, y 0x8330 sube sus dos
+;   mitades a la VRAM 0x3D00 y 0x3AC0
+;   0x8ec0..0x8ee0  (32 bytes)
+DATA_sprite_hundiendose_izquierda_1:
+	defb 000h,000h,000h,000h,003h,000h,000h,000h	; 8ec0  ........
+	defb 001h,003h,003h,003h,00bh,00bh,002h,003h	; 8ec8  ........
+	defb 003h,003h,003h,003h,003h,003h,003h,00fh	; 8ed0  ........
+	defb 000h,003h,000h,000h,000h,000h,000h,000h	; 8ed8  ........
+
+; ----------------------------------------------------------------------
+; DATOS sprite_hundiendose_izquierda_2: El espejo de 0x8E40 con los bits de
+;   cada byte del reves, y este EXACTO: los 32 bytes. La copia 0x8C1C a
+;   0xE15E, y 0x8348 sube sus mitades a 0x3D10 y 0x3AD0
+;   0x8ee0..0x8f00  (32 bytes)
+DATA_sprite_hundiendose_izquierda_2:
+	defb 000h,000h,000h,000h,0c0h,0c0h,0c0h,000h	; 8ee0  ........
+	defb 0c0h,0e0h,070h,0b0h,060h,0e0h,040h,0c0h	; 8ee8  ..p.`.@.
+	defb 0c0h,0c0h,080h,080h,080h,080h,080h,080h	; 8ef0  ........
+	defb 080h,080h,000h,000h,000h,000h,000h,000h	; 8ef8  ........
+
+; ----------------------------------------------------------------------
+; DATOS reloj_inicial_duplicado: Los mismos cinco tiles del reloj de salida
+;   que hay en 0x8A69 -BA B8 C2 B8 B8, que se lee "20:00"- pero con 0x00
+;   detras en vez del divisor 0x3C. Nadie lo copia: la unica palabra del
+;   cartucho que vale 0x8F00 esta en 0xA3A3, dentro de una tabla de patrones,
+;   o sea que es coincidencia de bytes y no un puntero. Una segunda copia que
+;   se quedo sin usar
+;   0x8f00..0x8f06  (6 bytes)
+DATA_reloj_inicial_duplicado:
+	defb 0bah,0b8h,0c2h,0b8h,0b8h,000h	; 8f00
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_columna: Guion de 16 celdas: cabecera de tres columnas
+;   (15-17) en las filas 14-17 y un mastil de UNA sola columna, la 16, con el
+;   tile 0x20, en las filas 18-21. Tiles 0x20-0x36. Lo llaman 0x8D4D y 0x8D60
+;   0x8f06..0x8f48  (66 bytes)
+DATA_guion_celdas_columna:
+	defb 010h,000h,0cfh,001h,031h,000h,0d0h,001h,033h,000h,0d1h,001h,034h,000h,0efh,001h	; 8f06  ....1...3...4...
+	defb 032h,000h,0f0h,001h,036h,000h,0f1h,001h,035h,000h,010h,002h,020h,000h,030h,002h	; 8f16  2...6...5... .0.
+	defb 020h,000h,050h,002h,020h,000h,070h,002h,020h,000h,090h,002h,020h,000h,0b0h,002h	; 8f26   .P. .p. ... ...
+	defb 020h,000h,00fh,002h,028h,000h,02fh,002h,028h,000h,011h,002h,029h,000h,031h,002h	; 8f36   ...(./.(...).1.
+	defb 029h,000h	; 8f46
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_bloque_a: Guion de 24 celdas: DOS bloques de 3 columnas
+;   por 4 filas, en las filas 14-17 y las columnas 10-12 y 20-22. El centro,
+;   de la 13 a la 19, no se toca. Tiles 0x2A-0x56. Lo llama 0x8D12
+;   0x8f48..0x8faa  (98 bytes)
+DATA_guion_celdas_bloque_a:
+	defb 018h,000h,0cah,001h,037h,000h,0cbh,001h,033h,000h,0cch,001h,053h,000h,0eah,001h	; 8f48  ....7...3...S...
+	defb 050h,000h,0ebh,001h,036h,000h,0ech,001h,054h,000h,0d4h,001h,055h,000h,0d5h,001h	; 8f58  P...6...T...U...
+	defb 033h,000h,0d6h,001h,051h,000h,0f4h,001h,056h,000h,0f5h,001h,036h,000h,0f6h,001h	; 8f68  3...Q...V...6...
+	defb 052h,000h,00ah,002h,02ah,000h,00bh,002h,02ch,000h,00ch,002h,02bh,000h,02ah,002h	; 8f78  R...*...,...+.*.
+	defb 02ah,000h,02bh,002h,02ch,000h,02ch,002h,02bh,000h,014h,002h,02ah,000h,015h,002h	; 8f88  *.+.,.,.+...*...
+	defb 02ch,000h,016h,002h,02bh,000h,034h,002h,02ah,000h,035h,002h,02ch,000h,036h,002h	; 8f98  ,...+.4.*.5.,.6.
+	defb 02bh,000h	; 8fa8
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_bloque_b: Los mismos dos bloques de 3x4 en las columnas
+;   10-12 y 20-22, con el tile 0x30 arriba y el 0x40 abajo. Lo llama 0x8D0B
+;   0x8faa..0x900c  (98 bytes)
+DATA_guion_celdas_bloque_b:
+	defb 018h,000h,0cah,001h,030h,000h,0cbh,001h,030h,000h,0cch,001h,030h,000h,0eah,001h	; 8faa  ....0...0...0...
+	defb 030h,000h,0ebh,001h,030h,000h,0ech,001h,030h,000h,0d4h,001h,030h,000h,0d5h,001h	; 8fba  0...0...0...0...
+	defb 030h,000h,0d6h,001h,030h,000h,0f4h,001h,030h,000h,0f5h,001h,030h,000h,0f6h,001h	; 8fca  0...0...0...0...
+	defb 030h,000h,00ah,002h,040h,000h,00bh,002h,040h,000h,00ch,002h,040h,000h,02ah,002h	; 8fda  0...@...@...@.*.
+	defb 040h,000h,02bh,002h,040h,000h,02ch,002h,040h,000h,014h,002h,040h,000h,015h,002h	; 8fea  @.+.@.,.@...@...
+	defb 040h,000h,016h,002h,040h,000h,034h,002h,040h,000h,035h,002h,040h,000h,036h,002h	; 8ffa  @...@.4.@.5.@.6.
+	defb 040h,000h	; 900a
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_pilares_a: Guion de 16 celdas: dos pilares de dos
+;   columnas de ancho en las filas 18-21, columnas 5-6 y 26-27. No es una
+;   franja que cruce la pantalla: entre los dos pilares no se pinta nada.
+;   Tiles 0x18/0x19/0x1A a la derecha y 0x2C a la izquierda. Lo llama 0x8D66
+;   0x900c..0x904e  (66 bytes)
+DATA_guion_celdas_pilares_a:
+	defb 010h,000h,05ah,002h,018h,000h,05bh,002h,018h,000h,07ah,002h,019h,000h,07bh,002h	; 900c  ..Z...[...z...{.
+	defb 019h,000h,09ah,002h,01ah,000h,09bh,002h,01ah,000h,0bah,002h,018h,000h,0bbh,002h	; 901c  ................
+	defb 018h,000h,045h,002h,02ch,000h,046h,002h,02ch,000h,065h,002h,02ch,000h,066h,002h	; 902c  ..E.,.F.,.e.,.f.
+	defb 02ch,000h,085h,002h,02ch,000h,086h,002h,02ch,000h,0a5h,002h,02ch,000h,0a6h,002h	; 903c  ,...,...,...,...
+	defb 02ch,000h	; 904c
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_pilares_b: Los mismos dos pilares con los tiles cambiados
+;   de lado. Lo llama 0x8D53
+;   0x904e..0x9090  (66 bytes)
+DATA_guion_celdas_pilares_b:
+	defb 010h,000h,045h,002h,018h,000h,046h,002h,018h,000h,065h,002h,019h,000h,066h,002h	; 904e  ..E...F...e...f.
+	defb 019h,000h,085h,002h,01ah,000h,086h,002h,01ah,000h,0a5h,002h,018h,000h,0a6h,002h	; 905e  ................
+	defb 018h,000h,05ah,002h,02ch,000h,05bh,002h,02ch,000h,07ah,002h,02ch,000h,07bh,002h	; 906e  ..Z.,.[.,.z.,.{.
+	defb 02ch,000h,09ah,002h,02ch,000h,09bh,002h,02ch,000h,0bah,002h,02ch,000h,0bbh,002h	; 907e  ,...,...,...,...
+	defb 02ch,000h	; 908e
+
+; ----------------------------------------------------------------------
+; DATOS fila_de_tiles_23: Catorce numeros de tile en crudo que 0x8B51-0x8B5A
+;   copia con B1C3 a la VRAM 0x1AE2, o sea la fila 23 del name table, columnas
+;   2-15
+;   0x9090..0x909e  (14 bytes)
+DATA_fila_de_tiles_23:
+	defb 0c8h,0c9h,0cah,0cbh,0cch,0cdh,0ceh,0cfh,0d0h,0d1h,0d2h,0d3h,0d4h,0d5h	; 9090  ..............
+
+; ----------------------------------------------------------------------
+; DATOS grafico_rle_tiles_a: Bloque RLE para B142: 360 bytes descomprimidos a
+;   la VRAM desde 0x0000, el principio de la tabla de patrones. Lo carga
+;   0x8B15
+;   0x909e..0x915b  (189 bytes)
+DATA_grafico_rle_tiles_a:
+	defb 000h,000h,008h,0fch,0b8h,008h,000h,008h,03fh,050h,030h,030h,070h,0e0h,0c0h,080h	; 909e  ........?P00p...
+	defb 000h,000h,00ch,00ch,00eh,007h,003h,001h,000h,000h,0a0h,054h,0e0h,070h,030h,030h	; 90ae  ...........T.p00
+	defb 03ch,03fh,03fh,007h,030h,030h,060h,0e0h,0c0h,080h,000h,000h,0e0h,07fh,00fh,003h	; 90be  <??.00`.........
+	defb 005h,000h,042h,080h,0e0h,004h,0ffh,041h,00fh,0a0h,058h,0dfh,0dfh,000h,0fbh,0fbh	; 90ce  ..B....A..X.....
+	defb 000h,0dfh,0dfh,000h,0fbh,0fbh,000h,0dfh,0dfh,000h,0fbh,0fbh,000h,0dfh,0dfh,000h	; 90de  ................
+	defb 0fbh,0fbh,000h,0a8h,048h,0ffh,0ffh,000h,000h,0ffh,0ffh,000h,000h,0b8h,008h,0f8h	; 90ee  ....H...........
+	defb 008h,01fh,008h,0e0h,008h,007h,008h,000h,098h,00dh,000h,006h,007h,00ah,000h,003h	; 90fe  ................
+	defb 0ffh,005h,000h,006h,0e0h,005h,000h,003h,0ffh,00ah,000h,003h,01fh,00bh,000h,045h	; 910e  ...............E
+	defb 080h,0c0h,0f0h,0f8h,0f8h,0b0h,008h,000h,0b8h,006h,000h,002h,0ffh,0b8h,003h,01fh	; 911e  ................
+	defb 00ah,000h,006h,0f8h,00ah,000h,006h,0f8h,00ah,000h,006h,01fh,01bh,000h,042h,007h	; 912e  ..............B.
+	defb 0ffh,005h,000h,043h,00fh,0ffh,0ffh,004h,000h,044h,01fh,0ffh,0ffh,0ffh,003h,000h	; 913e  ...C.....D......
+	defb 041h,03fh,004h,0ffh,005h,000h,003h,0ffh,004h,000h,004h,0ffh,000h	; 914e  A?...........
+
+; ----------------------------------------------------------------------
+; DATOS grafico_rle_tiles_b: Bloque RLE para B142: 760 bytes a la VRAM desde
+;   0x0480, mas patrones de la tabla de tiles. Lo carga 0x8B1B
+;   0x915b..0x939d  (578 bytes)
+DATA_grafico_rle_tiles_b:
 	defb 080h,004h,043h,000h,000h,001h,007h,000h,046h,0f0h,03ch,01eh,00eh,00eh,01ch,009h	; 915b  ..C.....F.<.....
 	defb 000h,04eh,003h,007h,000h,007h,000h,007h,000h,0f0h,0c0h,0fch,000h,0fch,000h,0ffh	; 916b  .N..............
 	defb 005h,000h,003h,080h,017h,000h,042h,001h,006h,004h,000h,044h,01fh,060h,081h,006h	; 917b  ......B....D.`..
@@ -1858,116 +2010,321 @@ pinta_el_subsuelo:
 	defb 0feh,0fbh,0b7h,0bfh,0ffh,0ffh,068h,000h,00ch,01ch,09fh,0bfh,0fdh,07fh,0bfh,000h	; 936b  ......h.........
 	defb 003h,007h,08fh,0cdh,0fdh,0dfh,0efh,00ch,01eh,0bfh,0efh,0dfh,0fdh,0feh,0ffh,004h	; 937b  ................
 	defb 00eh,08eh,08bh,09fh,0d7h,0ffh,0ffh,000h,000h,0c0h,0c1h,0e3h,0e2h,0bbh,0efh,008h	; 938b  ................
-	defb 0ffh,000h,080h,038h,005h,000h,002h,0ffh,00eh,000h,042h,0ffh,0feh,010h,000h,002h	; 939b  ...8......B.....
-	defb 0ffh,00eh,000h,042h,0fch,0f8h,010h,000h,002h,0ffh,00eh,000h,042h,0f0h,0e0h,010h	; 93ab  ...B........B...
-	defb 000h,041h,0ffh,00fh,000h,041h,0c0h,004h,000h,048h,001h,003h,003h,007h,0feh,0f8h	; 93bb  .A...A...H......
-	defb 080h,080h,008h,000h,044h,0e0h,0f0h,0f8h,01ch,004h,00ch,041h,00fh,007h,000h,049h	; 93cb  ....D......A...I
-	defb 003h,003h,001h,001h,003h,007h,01eh,018h,010h,007h,000h,045h,0c0h,0c0h,0e0h,0e0h	; 93db  ...........E....
-	defb 070h,004h,030h,041h,03ch,006h,000h,04ah,003h,003h,001h,001h,001h,00fh,00dh,009h	; 93eb  p.0A<..J........
-	defb 001h,001h,006h,000h,04ah,0c0h,0e0h,0f0h,0f0h,0e0h,0c0h,080h,080h,080h,0e0h,006h	; 93fb  ....J...........
-	defb 000h,004h,003h,046h,007h,006h,00ch,018h,018h,01ch,006h,000h,047h,0c0h,0f8h,0fch	; 940b  ...F........G...
-	defb 00ch,00ch,00ch,00eh,009h,000h,049h,003h,003h,007h,006h,00eh,01ch,070h,040h,040h	; 941b  ......I......p@@
-	defb 007h,000h,048h,0c0h,0e0h,0f0h,038h,018h,018h,018h,01eh,008h,000h,002h,003h,008h	; 942b  ..H...8.........
-	defb 001h,006h,000h,007h,0c0h,043h,070h,000h,0c0h,006h,000h,044h,003h,0e7h,03eh,018h	; 943b  .....Cp....D..>.
-	defb 00ch,000h,044h,0f8h,018h,018h,01eh,00ch,000h,048h,007h,00fh,01fh,018h,00ch,006h	; 944b  ..D......H......
-	defb 006h,01eh,008h,000h,00bh,0c0h,041h,0f0h,004h,000h,043h,07fh,07eh,038h,00dh,000h	; 945b  ......A...C.~8..
-	defb 044h,0e0h,038h,00fh,006h,00ch,000h,000h,040h,03bh,004h,000h,003h,001h,049h,000h	; 946b  D.8.....@;....I.
-	defb 003h,00fh,00dh,00dh,00dh,005h,001h,001h,004h,000h,04ch,0e0h,080h,080h,000h,0c0h	; 947b  ..........L.....
-	defb 0e0h,0e0h,0e0h,0f8h,0f8h,0e0h,0e0h,004h,000h,003h,001h,049h,000h,003h,007h,00eh	; 948b  ...........I....
-	defb 00dh,007h,003h,002h,003h,004h,000h,044h,0e0h,080h,080h,000h,004h,0c0h,044h,0e0h	; 949b  .......D......D.
-	defb 0e0h,040h,0c0h,004h,000h,003h,001h,049h,000h,001h,003h,003h,007h,007h,003h,002h	; 94ab  .@.....I........
-	defb 003h,004h,000h,045h,0e0h,080h,080h,000h,0c0h,005h,0e0h,042h,040h,0c0h,004h,000h	; 94bb  ...E.......B@...
-	defb 003h,001h,049h,000h,003h,00eh,01fh,01bh,01bh,01bh,00bh,003h,004h,000h,04ch,0e0h	; 94cb  ..I...........L.
-	defb 080h,080h,000h,0c0h,0e0h,0e0h,0e0h,0f8h,0f0h,0c0h,0c0h,004h,000h,003h,001h,049h	; 94db  ...............I
-	defb 000h,007h,01fh,039h,033h,033h,023h,003h,003h,004h,000h,049h,0e0h,080h,080h,000h	; 94eb  ...933#....I....
-	defb 0e0h,0e0h,0f0h,0deh,0cch,003h,0c0h,004h,000h,003h,003h,049h,000h,003h,007h,00eh	; 94fb  ...........I....
-	defb 00dh,006h,007h,002h,003h,004h,000h,041h,0c0h,003h,000h,048h,080h,0c0h,0c0h,0c0h	; 950b  .......A...H....
-	defb 0d0h,0d0h,040h,0c0h,005h,000h,003h,003h,048h,000h,00fh,03eh,073h,063h,063h,003h	; 951b  ..@.....H..>scc.
-	defb 003h,005h,000h,04bh,0c0h,000h,000h,000h,0c0h,0e0h,062h,0beh,09ch,0c0h,0c0h,006h	; 952b  ...K......b.....
-	defb 000h,04ah,001h,003h,003h,018h,019h,01fh,00fh,007h,003h,003h,006h,000h,04ah,080h	; 953b  .J............J.
-	defb 0c0h,0c0h,000h,080h,0e0h,0f0h,0f0h,0e0h,0c0h,004h,000h,048h,0f0h,0c0h,0c0h,000h	; 954b  ...........H....
-	defb 0f0h,0ffh,0cfh,0e0h,004h,0f0h,006h,000h,004h,0c0h,041h,080h,005h,000h,000h,080h	; 955b  ..........A.....
-	defb 03dh,007h,000h,041h,001h,005h,000h,041h,008h,007h,000h,047h,060h,060h,0c0h,000h	; 956b  =..A...A...G``..
-	defb 000h,000h,004h,00bh,000h,041h,001h,006h,000h,041h,001h,006h,000h,043h,060h,060h	; 957b  .....A...A...C``
-	defb 0c0h,005h,000h,042h,010h,080h,008h,000h,041h,001h,006h,000h,041h,001h,006h,000h	; 958b  ...B....A...A...
-	defb 043h,060h,060h,0c0h,006h,000h,041h,080h,008h,000h,041h,001h,006h,000h,041h,010h	; 959b  C``...A...A...A.
-	defb 006h,000h,047h,060h,060h,0c0h,000h,000h,000h,004h,00bh,000h,041h,001h,005h,000h	; 95ab  ..G``.......A...
-	defb 041h,010h,007h,000h,046h,060h,060h,0c0h,000h,000h,001h,00ch,000h,041h,003h,006h	; 95bb  A...F``......A..
-	defb 000h,041h,001h,006h,000h,043h,0c0h,0c0h,080h,005h,000h,042h,008h,080h,009h,000h	; 95cb  .A...C.....B....
-	defb 041h,003h,005h,000h,041h,060h,007h,000h,045h,0c0h,0c0h,080h,000h,001h,00ch,000h	; 95db  A...A`..E.......
-	defb 043h,001h,00dh,001h,00dh,000h,043h,080h,0c0h,080h,00bh,000h,043h,030h,030h,0e0h	; 95eb  C.....C.....C00.
-	defb 018h,000h,000h,0ffh,0ffh,01fh,007h,000h,000h,000h,000h,0ffh,0ffh,0ffh,0ffh,0f8h	; 95fb  ................
-	defb 000h,000h,000h,0ffh,0ffh,0ffh,0f0h,000h,000h,000h,000h,0ffh,0f8h,0f8h,000h,000h	; 960b  ................
-	defb 000h,000h,000h,0f0h,01fh,003h,000h,000h,000h,000h,000h,0ffh,0ffh,0ffh,07eh,000h	; 961b  ..............~.
-	defb 000h,000h,000h,0ffh,0c0h,0c0h,000h,000h,000h,000h,000h,0ffh,0ffh,03fh,00fh,00fh	; 962b  .............?..
-	defb 00fh,003h,003h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0cch,0b0h,0c0h	; 963b  ................
-	defb 080h,000h,000h,007h,007h,000h,000h,000h,000h,000h,000h,0ffh,0ffh,03fh,03fh,03fh	; 964b  .............???
-	defb 00fh,003h,003h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0f3h,0e7h,0fdh	; 965b  ................
-	defb 0ffh,0f7h,0f0h,0feh,0feh,0f8h,0f8h,0f0h,0f0h,080h,000h,00fh,000h,000h,000h,000h	; 966b  ................
-	defb 000h,000h,000h,007h,000h,000h,000h,000h,000h,000h,000h,0ffh,03fh,007h,000h,000h	; 967b  ............?...
-	defb 000h,000h,000h,0ffh,0ffh,0e7h,0ffh,0ffh,0ffh,01ch,000h,0ffh,0ffh,0ffh,0ffh,0ffh	; 968b  ................
-	defb 0ffh,01fh,000h,0e7h,0f3h,0ffh,0ffh,0ffh,0ffh,0ffh,03fh,0ffh,0ffh,0ffh,0efh,09fh	; 969b  ..........?.....
-	defb 0fch,0f8h,0e0h,0ffh,0ffh,0ffh,0ffh,0ffh,03fh,00fh,003h,0ffh,0ffh,0ffh,0ffh,0ffh	; 96ab  ........?.......
-	defb 0ffh,0ffh,0ffh,0ffh,0efh,0dfh,0dfh,0ffh,0ffh,0fch,0f0h,0fch,0f0h,0c0h,0c0h,0c0h	; 96bb  ................
-	defb 080h,000h,000h,003h,003h,000h,000h,000h,000h,000h,000h,0ffh,0ffh,03fh,03fh,003h	; 96cb  .............??.
-	defb 003h,000h,000h,0ffh,0c7h,0e7h,0ffh,0ffh,0ffh,03fh,03fh,0ffh,0ffh,0ffh,0ffh,0ffh	; 96db  .........??.....
-	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0fdh,0e7h,0fch,0fch,0c0h,0ffh,0ffh,0f8h,0f0h,080h	; 96eb  ................
-	defb 000h,000h,000h,0ffh,0ffh,0ffh,0ffh,0e0h,0e0h,080h,080h,0ffh,0ffh,09fh,0f7h,0ffh	; 96fb  ................
-	defb 003h,003h,000h,0ffh,0ffh,0ffh,0ffh,0f7h,0efh,0ffh,0fch,0ffh,0ffh,0ffh,0bfh,0e7h	; 970b  ................
-	defb 0ffh,0ffh,03fh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0f7h,0cfh	; 971b  ..?.............
-	defb 0ffh,0fch,0e0h,0ffh,0ffh,0ffh,0fch,0fch,0f0h,000h,000h,000h,000h,000h,000h,000h	; 972b  ................
-	defb 000h,000h,000h,01fh,007h,007h,000h,000h,000h,000h,000h,0ffh,0efh,0cfh,0ffh,0ffh	; 973b  ................
-	defb 007h,007h,003h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0bfh,0ffh,0efh	; 974b  ................
-	defb 0ffh,0cfh,00fh,0ffh,0ffh,0ffh,0ffh,0dfh,0ffh,0f0h,0e0h,0ffh,0fbh,09fh,0ffh,00fh	; 975b  ................
-	defb 003h,003h,000h,0ffh,0f7h,0feh,0f8h,0f0h,0f0h,0c0h,000h,0ffh,0e0h,000h,000h,000h	; 976b  ................
-	defb 000h,000h,000h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,00fh,000h,0ffh,0f8h,0f0h,0f0h,0c0h	; 977b  ................
-	defb 000h,000h,000h,001h,000h,000h,000h,000h,000h,000h,000h,0ffh,03fh,03fh,003h,003h	; 978b  ............??..
-	defb 000h,000h,000h,0ffh,0ffh,0efh,0f7h,0ffh,0ffh,0f1h,001h,0ffh,0ffh,0f7h,0e7h,0edh	; 979b  ................
-	defb 0f6h,0f1h,0e0h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,09fh,0fdh,0f3h,0ffh	; 97ab  ................
-	defb 0ffh,0f7h,0f3h,0fch,0fch,0fch,0f0h,0c0h,0c0h,080h,000h,0ffh,07fh,007h,007h,001h	; 97bb  ................
-	defb 001h,001h,000h,0ffh,0ffh,0ffh,0bfh,0ffh,0ffh,0ffh,03eh,0ffh,09fh,0ffh,0f9h,0ffh	; 97cb  ..........>.....
-	defb 0cfh,083h,003h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0f9h	; 97db  ................
-	defb 0ffh,083h,000h,0ffh,0ffh,0ffh,0e7h,0c0h,0c0h,080h,000h,0ffh,0ffh,0ffh,0ebh,0ffh	; 97eb  ................
-	defb 007h,000h,000h,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 97fb  ................
-	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 980b  ................
-	defb 0ffh,0ffh,0ffh,0c0h,03fh,005h,000h,046h,001h,007h,01fh,000h,07fh,07fh,00ah,000h	; 981b  ....?..F........
-	defb 046h,0f8h,0e4h,09ch,078h,070h,040h,005h,000h,04bh,001h,012h,020h,010h,080h,041h	; 982b  F...xp@..K.. ..A
-	defb 007h,01fh,000h,07fh,07fh,006h,000h,04ah,010h,024h,000h,000h,0f8h,0e4h,09ch,078h	; 983b  .......J.$.....x
-	defb 070h,040h,005h,000h,000h,0c0h,03fh,020h,000h,048h,001h,012h,020h,010h,080h,040h	; 984b  p@....? .H.. ..@
-	defb 000h,010h,009h,000h,042h,010h,024h,00dh,000h,000h,0c0h,03fh,04ch,000h,004h,002h	; 985b  ....B.$....?L...
-	defb 003h,007h,037h,011h,00dh,00fh,00fh,006h,003h,007h,000h,049h,030h,060h,0e0h,0e4h	; 986b  ..7........I0`..
-	defb 0e4h,0f8h,0f8h,0e0h,040h,006h,000h,04ah,004h,006h,00eh,02eh,027h,013h,01bh,00fh	; 987b  ....@..J....'...
-	defb 007h,003h,005h,000h,04bh,020h,020h,060h,0c0h,0c0h,0cch,0d0h,0f0h,030h,060h,040h	; 988b  ....K  `.....0`@
-	defb 004h,000h,000h,0c0h,03fh,005h,000h,049h,001h,001h,00fh,00ch,00fh,000h,000h,00fh	; 989b  ....?..I........
-	defb 001h,007h,000h,049h,080h,080h,0e0h,000h,0e0h,060h,060h,0e0h,080h,022h,000h,000h	; 98ab  ...I.....``.."..
+	defb 0ffh,000h	; 939b
+
+; ----------------------------------------------------------------------
+; DATOS grafico_rle_sprites_a: Bloque RLE para B142: 416 bytes a la VRAM desde
+;   0x3880, dentro de la tabla de patrones de sprites (0x3800-0x3FFF). Lo
+;   carga 0x8B5E
+;   0x939d..0x9473  (214 bytes)
+DATA_grafico_rle_sprites_a:
+	defb 080h,038h,005h,000h,002h,0ffh,00eh,000h,042h,0ffh,0feh,010h,000h,002h,0ffh,00eh	; 939d  .8......B.......
+	defb 000h,042h,0fch,0f8h,010h,000h,002h,0ffh,00eh,000h,042h,0f0h,0e0h,010h,000h,041h	; 93ad  .B........B....A
+	defb 0ffh,00fh,000h,041h,0c0h,004h,000h,048h,001h,003h,003h,007h,0feh,0f8h,080h,080h	; 93bd  ...A...H........
+	defb 008h,000h,044h,0e0h,0f0h,0f8h,01ch,004h,00ch,041h,00fh,007h,000h,049h,003h,003h	; 93cd  ..D......A...I..
+	defb 001h,001h,003h,007h,01eh,018h,010h,007h,000h,045h,0c0h,0c0h,0e0h,0e0h,070h,004h	; 93dd  .........E....p.
+	defb 030h,041h,03ch,006h,000h,04ah,003h,003h,001h,001h,001h,00fh,00dh,009h,001h,001h	; 93ed  0A<..J..........
+	defb 006h,000h,04ah,0c0h,0e0h,0f0h,0f0h,0e0h,0c0h,080h,080h,080h,0e0h,006h,000h,004h	; 93fd  ..J.............
+	defb 003h,046h,007h,006h,00ch,018h,018h,01ch,006h,000h,047h,0c0h,0f8h,0fch,00ch,00ch	; 940d  .F........G.....
+	defb 00ch,00eh,009h,000h,049h,003h,003h,007h,006h,00eh,01ch,070h,040h,040h,007h,000h	; 941d  ....I......p@@..
+	defb 048h,0c0h,0e0h,0f0h,038h,018h,018h,018h,01eh,008h,000h,002h,003h,008h,001h,006h	; 942d  H...8...........
+	defb 000h,007h,0c0h,043h,070h,000h,0c0h,006h,000h,044h,003h,0e7h,03eh,018h,00ch,000h	; 943d  ...Cp....D..>...
+	defb 044h,0f8h,018h,018h,01eh,00ch,000h,048h,007h,00fh,01fh,018h,00ch,006h,006h,01eh	; 944d  D......H........
+	defb 008h,000h,00bh,0c0h,041h,0f0h,004h,000h,043h,07fh,07eh,038h,00dh,000h,044h,0e0h	; 945d  ....A...C.~8..D.
+	defb 038h,00fh,006h,00ch,000h,000h	; 946d
+
+; ----------------------------------------------------------------------
+; DATOS grafico_rle_sprites_b: Bloque RLE para B142: 288 bytes a la VRAM desde
+;   0x3B40, mas patrones de sprites. Lo carga 0x8B6F
+;   0x9473..0x956a  (247 bytes)
+DATA_grafico_rle_sprites_b:
+	defb 040h,03bh,004h,000h,003h,001h,049h,000h,003h,00fh,00dh,00dh,00dh,005h,001h,001h	; 9473  @;....I.........
+	defb 004h,000h,04ch,0e0h,080h,080h,000h,0c0h,0e0h,0e0h,0e0h,0f8h,0f8h,0e0h,0e0h,004h	; 9483  ..L.............
+	defb 000h,003h,001h,049h,000h,003h,007h,00eh,00dh,007h,003h,002h,003h,004h,000h,044h	; 9493  ...I...........D
+	defb 0e0h,080h,080h,000h,004h,0c0h,044h,0e0h,0e0h,040h,0c0h,004h,000h,003h,001h,049h	; 94a3  ......D..@.....I
+	defb 000h,001h,003h,003h,007h,007h,003h,002h,003h,004h,000h,045h,0e0h,080h,080h,000h	; 94b3  ...........E....
+	defb 0c0h,005h,0e0h,042h,040h,0c0h,004h,000h,003h,001h,049h,000h,003h,00eh,01fh,01bh	; 94c3  ...B@.....I.....
+	defb 01bh,01bh,00bh,003h,004h,000h,04ch,0e0h,080h,080h,000h,0c0h,0e0h,0e0h,0e0h,0f8h	; 94d3  ......L.........
+	defb 0f0h,0c0h,0c0h,004h,000h,003h,001h,049h,000h,007h,01fh,039h,033h,033h,023h,003h	; 94e3  .......I...933#.
+	defb 003h,004h,000h,049h,0e0h,080h,080h,000h,0e0h,0e0h,0f0h,0deh,0cch,003h,0c0h,004h	; 94f3  ...I............
+	defb 000h,003h,003h,049h,000h,003h,007h,00eh,00dh,006h,007h,002h,003h,004h,000h,041h	; 9503  ...I...........A
+	defb 0c0h,003h,000h,048h,080h,0c0h,0c0h,0c0h,0d0h,0d0h,040h,0c0h,005h,000h,003h,003h	; 9513  ...H......@.....
+	defb 048h,000h,00fh,03eh,073h,063h,063h,003h,003h,005h,000h,04bh,0c0h,000h,000h,000h	; 9523  H..>scc....K....
+	defb 0c0h,0e0h,062h,0beh,09ch,0c0h,0c0h,006h,000h,04ah,001h,003h,003h,018h,019h,01fh	; 9533  ..b......J......
+	defb 00fh,007h,003h,003h,006h,000h,04ah,080h,0c0h,0c0h,000h,080h,0e0h,0f0h,0f0h,0e0h	; 9543  ......J.........
+	defb 0c0h,004h,000h,048h,0f0h,0c0h,0c0h,000h,0f0h,0ffh,0cfh,0e0h,004h,0f0h,006h,000h	; 9553  ...H............
+	defb 004h,0c0h,041h,080h,005h,000h,000h	; 9563
+
+; ----------------------------------------------------------------------
+; DATOS grafico_rle_sprites_c: Bloque RLE para B142: 288 bytes a la VRAM desde
+;   0x3D80, mas patrones de sprites. Lo carga 0x8B80
+;   0x956a..0x95fe  (148 bytes)
+DATA_grafico_rle_sprites_c:
+	defb 080h,03dh,007h,000h,041h,001h,005h,000h,041h,008h,007h,000h,047h,060h,060h,0c0h	; 956a  .=..A...A...G``.
+	defb 000h,000h,000h,004h,00bh,000h,041h,001h,006h,000h,041h,001h,006h,000h,043h,060h	; 957a  ......A...A...C`
+	defb 060h,0c0h,005h,000h,042h,010h,080h,008h,000h,041h,001h,006h,000h,041h,001h,006h	; 958a  `...B....A...A..
+	defb 000h,043h,060h,060h,0c0h,006h,000h,041h,080h,008h,000h,041h,001h,006h,000h,041h	; 959a  .C``...A...A...A
+	defb 010h,006h,000h,047h,060h,060h,0c0h,000h,000h,000h,004h,00bh,000h,041h,001h,005h	; 95aa  ...G``.......A..
+	defb 000h,041h,010h,007h,000h,046h,060h,060h,0c0h,000h,000h,001h,00ch,000h,041h,003h	; 95ba  .A...F``......A.
+	defb 006h,000h,041h,001h,006h,000h,043h,0c0h,0c0h,080h,005h,000h,042h,008h,080h,009h	; 95ca  ..A...C.....B...
+	defb 000h,041h,003h,005h,000h,041h,060h,007h,000h,045h,0c0h,0c0h,080h,000h,001h,00ch	; 95da  .A...A`..E......
+	defb 000h,043h,001h,00dh,001h,00dh,000h,043h,080h,0c0h,080h,00bh,000h,043h,030h,030h	; 95ea  .C.....C.....C00
+	defb 0e0h,018h,000h,000h	; 95fa
+
+; ----------------------------------------------------------------------
+; DATOS tiles_decorado_3: 128 bytes: 16 patrones de tile en crudo, la entrada
+;   [3] de la tabla 0xA086. Se copian a la VRAM 0x0380 con B1C3
+;   0x95fe..0x967e  (128 bytes)
+DATA_tiles_decorado_3:
+	defb 0ffh,0ffh,01fh,007h,000h,000h,000h,000h	; 95fe  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0f8h,000h,000h,000h	; 9606  ........
+	defb 0ffh,0ffh,0ffh,0f0h,000h,000h,000h,000h	; 960e  ........
+	defb 0ffh,0f8h,0f8h,000h,000h,000h,000h,000h	; 9616  ........
+	defb 0f0h,01fh,003h,000h,000h,000h,000h,000h	; 961e  ........
+	defb 0ffh,0ffh,0ffh,07eh,000h,000h,000h,000h	; 9626  ...~....
+	defb 0ffh,0c0h,0c0h,000h,000h,000h,000h,000h	; 962e  ........
+	defb 0ffh,0ffh,03fh,00fh,00fh,00fh,003h,003h	; 9636  ..?.....
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 963e  ........
+	defb 0ffh,0ffh,0cch,0b0h,0c0h,080h,000h,000h	; 9646  ........
+	defb 007h,007h,000h,000h,000h,000h,000h,000h	; 964e  ........
+	defb 0ffh,0ffh,03fh,03fh,03fh,00fh,003h,003h	; 9656  ..???...
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 965e  ........
+	defb 0ffh,0ffh,0f3h,0e7h,0fdh,0ffh,0f7h,0f0h	; 9666  ........
+	defb 0feh,0feh,0f8h,0f8h,0f0h,0f0h,080h,000h	; 966e  ........
+	defb 00fh,000h,000h,000h,000h,000h,000h,000h	; 9676  ........
+
+; ----------------------------------------------------------------------
+; DATOS tiles_decorado_2: 128 bytes, la entrada [2] de la tabla 0xA086
+;   0x967e..0x96fe  (128 bytes)
+DATA_tiles_decorado_2:
+	defb 007h,000h,000h,000h,000h,000h,000h,000h	; 967e  ........
+	defb 0ffh,03fh,007h,000h,000h,000h,000h,000h	; 9686  .?......
+	defb 0ffh,0ffh,0e7h,0ffh,0ffh,0ffh,01ch,000h	; 968e  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,01fh,000h	; 9696  ........
+	defb 0e7h,0f3h,0ffh,0ffh,0ffh,0ffh,0ffh,03fh	; 969e  .......?
+	defb 0ffh,0ffh,0ffh,0efh,09fh,0fch,0f8h,0e0h	; 96a6  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,03fh,00fh,003h	; 96ae  .....?..
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 96b6  ........
+	defb 0ffh,0efh,0dfh,0dfh,0ffh,0ffh,0fch,0f0h	; 96be  ........
+	defb 0fch,0f0h,0c0h,0c0h,0c0h,080h,000h,000h	; 96c6  ........
+	defb 003h,003h,000h,000h,000h,000h,000h,000h	; 96ce  ........
+	defb 0ffh,0ffh,03fh,03fh,003h,003h,000h,000h	; 96d6  ..??....
+	defb 0ffh,0c7h,0e7h,0ffh,0ffh,0ffh,03fh,03fh	; 96de  ......??
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 96e6  ........
+	defb 0ffh,0ffh,0ffh,0fdh,0e7h,0fch,0fch,0c0h	; 96ee  ........
+	defb 0ffh,0ffh,0f8h,0f0h,080h,000h,000h,000h	; 96f6  ........
+
+; ----------------------------------------------------------------------
+; DATOS tiles_decorado_0: 128 bytes, la entrada [0] de la tabla 0xA086
+;   0x96fe..0x977e  (128 bytes)
+DATA_tiles_decorado_0:
+	defb 0ffh,0ffh,0ffh,0ffh,0e0h,0e0h,080h,080h	; 96fe  ........
+	defb 0ffh,0ffh,09fh,0f7h,0ffh,003h,003h,000h	; 9706  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0f7h,0efh,0ffh,0fch	; 970e  ........
+	defb 0ffh,0ffh,0ffh,0bfh,0e7h,0ffh,0ffh,03fh	; 9716  .......?
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 971e  ........
+	defb 0ffh,0ffh,0ffh,0f7h,0cfh,0ffh,0fch,0e0h	; 9726  ........
+	defb 0ffh,0ffh,0ffh,0fch,0fch,0f0h,000h,000h	; 972e  ........
+	defb 000h,000h,000h,000h,000h,000h,000h,000h	; 9736  ........
+	defb 01fh,007h,007h,000h,000h,000h,000h,000h	; 973e  ........
+	defb 0ffh,0efh,0cfh,0ffh,0ffh,007h,007h,003h	; 9746  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 974e  ........
+	defb 0ffh,0ffh,0bfh,0ffh,0efh,0ffh,0cfh,00fh	; 9756  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0dfh,0ffh,0f0h,0e0h	; 975e  ........
+	defb 0ffh,0fbh,09fh,0ffh,00fh,003h,003h,000h	; 9766  ........
+	defb 0ffh,0f7h,0feh,0f8h,0f0h,0f0h,0c0h,000h	; 976e  ........
+	defb 0ffh,0e0h,000h,000h,000h,000h,000h,000h	; 9776  ........
+
+; ----------------------------------------------------------------------
+; DATOS tiles_decorado_1: 128 bytes, la entrada [1] de la tabla 0xA086
+;   0x977e..0x97fe  (128 bytes)
+DATA_tiles_decorado_1:
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,00fh,000h	; 977e  ........
+	defb 0ffh,0f8h,0f0h,0f0h,0c0h,000h,000h,000h	; 9786  ........
+	defb 001h,000h,000h,000h,000h,000h,000h,000h	; 978e  ........
+	defb 0ffh,03fh,03fh,003h,003h,000h,000h,000h	; 9796  .??.....
+	defb 0ffh,0ffh,0efh,0f7h,0ffh,0ffh,0f1h,001h	; 979e  ........
+	defb 0ffh,0ffh,0f7h,0e7h,0edh,0f6h,0f1h,0e0h	; 97a6  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 97ae  ........
+	defb 0ffh,09fh,0fdh,0f3h,0ffh,0ffh,0f7h,0f3h	; 97b6  ........
+	defb 0fch,0fch,0fch,0f0h,0c0h,0c0h,080h,000h	; 97be  ........
+	defb 0ffh,07fh,007h,007h,001h,001h,001h,000h	; 97c6  ........
+	defb 0ffh,0ffh,0ffh,0bfh,0ffh,0ffh,0ffh,03eh	; 97ce  .......>
+	defb 0ffh,09fh,0ffh,0f9h,0ffh,0cfh,083h,003h	; 97d6  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 97de  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0f9h,0ffh,083h,000h	; 97e6  ........
+	defb 0ffh,0ffh,0ffh,0e7h,0c0h,0c0h,080h,000h	; 97ee  ........
+	defb 0ffh,0ffh,0ffh,0ebh,0ffh,007h,000h,000h	; 97f6  ........
+
+; ----------------------------------------------------------------------
+; DATOS patron_de_sprite_relleno: Un patron de sprite de 32 bytes en crudo,
+;   que empieza por FF FF: 0xA002-0xA023 lo copia tal cual con B1C3 a TRES
+;   huecos de la tabla de sprites, 0x3C20, 0x3D40 y 0x3E60
+;   0x97fe..0x981e  (32 bytes)
+DATA_patron_de_sprite_relleno:
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 97fe  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 9806  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 980e  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 9816  ........
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_1: Bloque RLE para B142: 64 bytes a la VRAM 0x3FC0 (los
+;   dos ultimos patrones de sprite). Lo carga 0xAB57
+;   0x981e..0x9850  (50 bytes)
+DATA_sprites_rle_1:
+	defb 0c0h,03fh,005h,000h,046h,001h,007h,01fh,000h,07fh,07fh,00ah,000h,046h,0f8h,0e4h	; 981e  .?..F........F..
+	defb 09ch,078h,070h,040h,005h,000h,04bh,001h,012h,020h,010h,080h,041h,007h,01fh,000h	; 982e  .xp@..K.. ..A...
+	defb 07fh,07fh,006h,000h,04ah,010h,024h,000h,000h,0f8h,0e4h,09ch,078h,070h,040h,005h	; 983e  ....J.$.....xp@.
+	defb 000h,000h	; 984e
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_2: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga
+;   0xAB21
+;   0x9850..0x9865  (21 bytes)
+DATA_sprites_rle_2:
+	defb 0c0h,03fh,020h,000h,048h,001h,012h,020h,010h,080h,040h,000h,010h,009h,000h,042h	; 9850  .? .H.. ..@....B
+	defb 010h,024h,00dh,000h,000h	; 9860
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_3: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga
+;   0xAABD
+;   0x9865..0x989e  (57 bytes)
+DATA_sprites_rle_3:
+	defb 0c0h,03fh,04ch,000h,004h,002h,003h,007h,037h,011h,00dh,00fh,00fh,006h,003h,007h	; 9865  .?L.....7.......
+	defb 000h,049h,030h,060h,0e0h,0e4h,0e4h,0f8h,0f8h,0e0h,040h,006h,000h,04ah,004h,006h	; 9875  .I0`......@..J..
+	defb 00eh,02eh,027h,013h,01bh,00fh,007h,003h,005h,000h,04bh,020h,020h,060h,0c0h,0c0h	; 9885  ..'.......K  `..
+	defb 0cch,0d0h,0f0h,030h,060h,040h,004h,000h,000h	; 9895  ...0`@...
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_4: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga
+;   0xAC22
+;   0x989e..0x98bb  (29 bytes)
+DATA_sprites_rle_4:
+	defb 0c0h,03fh,005h,000h,049h,001h,001h,00fh,00ch,00fh,000h,000h,00fh,001h,007h,000h	; 989e  .?..I...........
+	defb 049h,080h,080h,0e0h,000h,0e0h,060h,060h,0e0h,080h,022h,000h,000h	; 98ae  I.....``.."..
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_5: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga
+;   0xABC8
+;   0x98bb..0x98e0  (37 bytes)
+DATA_sprites_rle_5:
 	defb 0c0h,03fh,047h,000h,000h,005h,01fh,00fh,003h,001h,00bh,000h,045h,0e0h,0f8h,0f0h	; 98bb  .?G.........E...
 	defb 0c0h,080h,00bh,000h,045h,007h,01fh,00fh,003h,001h,00bh,000h,045h,0a0h,078h,0f0h	; 98cb  ....E.......E.x.
-	defb 0c0h,080h,009h,000h,000h,000h,038h,04ch,000h,000h,01fh,078h,061h,060h,078h,03fh	; 98db  ......8L...xa`x?
-	defb 01fh,007h,003h,00ch,007h,000h,049h,080h,080h,018h,060h,018h,080h,0e0h,01ch,0ceh	; 98eb  ......I...`.....
-	defb 005h,000h,04bh,01fh,038h,061h,060h,070h,078h,03eh,01fh,007h,000h,018h,006h,000h	; 98fb  ..K.8a`px>......
-	defb 04ah,080h,000h,000h,018h,070h,080h,080h,0e6h,018h,06eh,004h,000h,000h,0c0h,03fh	; 990b  J....p....n....?
-	defb 006h,000h,044h,07fh,013h,06ch,07fh,00ah,000h,046h,060h,078h,0feh,03eh,0ceh,0feh	; 991b  ..D..l...F`x.>..
-	defb 007h,000h,049h,030h,03eh,007h,001h,000h,000h,000h,06ch,07fh,009h,000h,047h,09ch	; 992b  ..I0>.....l...G.
-	defb 0fch,07eh,01eh,00eh,0ceh,0feh,006h,000h,000h,0c0h,03fh,060h,000h,003h,00eh,019h	; 993b  .~........?`....
-	defb 01fh,01fh,019h,01fh,01fh,01ch,013h,00eh,019h,019h,00eh,007h,000h,0c0h,070h,0f8h	; 994b  ..............p.
-	defb 0f8h,078h,0f8h,0f8h,0f8h,038h,0c8h,070h,098h,098h,070h,0e0h,060h,000h,003h,00eh	; 995b  .x...8.p..p.`...
-	defb 01fh,01fh,01eh,01fh,01fh,01fh,01ch,013h,00eh,019h,019h,00eh,007h,000h,0c0h,070h	; 996b  ...............p
-	defb 098h,0f8h,078h,098h,0f8h,0f8h,038h,0c8h,070h,098h,098h,070h,0e0h,000h,0c0h,03fh	; 997b  ..x...8.p..p...?
-	defb 042h,000h,020h,009h,000h,043h,07fh,000h,07fh,00ch,000h,048h,008h,0c8h,000h,0c0h	; 998b  B. ..C.....H....
-	defb 000h,000h,000h,010h,009h,000h,043h,07fh,000h,07fh,00ch,000h,046h,004h,0c4h,000h	; 999b  ......C.....F...
-	defb 0c0h,000h,000h,000h,003h,003h,001h,001h,001h,001h,001h,001h,001h,001h,000h,000h	; 99ab  ................
-	defb 000h,000h,000h,000h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,070h,000h,0c0h,000h,000h	; 99bb  ...........p....
-	defb 000h,000h,000h,000h,007h,00fh,01fh,018h,00ch,006h,006h,01eh,000h,000h,000h,000h	; 99cb  ................
-	defb 000h,000h,000h,000h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0f0h	; 99db  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,003h,003h,003h,000h,003h,007h,00eh,00dh	; 99eb  ................
-	defb 006h,007h,002h,003h,000h,000h,000h,000h,0c0h,000h,000h,000h,080h,0c0h,0c0h,0c0h	; 99fb  ................
-	defb 0d0h,0d0h,040h,0c0h,000h,000h,000h,000h,000h,000h,001h,003h,003h,018h,019h,01fh	; 9a0b  ..@.............
-	defb 00fh,007h,003h,003h,000h,000h,000h,000h,000h,000h,080h,0c0h,0c0h,000h,080h,0e0h	; 9a1b  ................
-	defb 0f0h,0f0h,0e0h,0c0h,000h,000h,000h,000h,000h,000h,000h,001h,00dh,001h,000h,000h	; 9a2b  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,080h,0c0h,080h,000h,000h	; 9a3b  ................
-	defb 000h,000h,000h,000h,0ffh,0ffh,0ffh,0ffh,0ffh,000h,000h,000h,000h,000h,000h,000h	; 9a4b  ................
-	defb 000h,000h,000h,000h,0ffh,0ffh,0ffh,0ffh,0ffh,000h,000h,000h,000h,000h,000h,000h	; 9a5b  ................
-	defb 000h,000h,000h,000h	; 9a6b  ....
+	defb 0c0h,080h,009h,000h,000h	; 98db
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_6: Bloque RLE para B142: 64 bytes a la VRAM 0x3800, los
+;   DOS PRIMEROS patrones de sprite. Lo carga 0xACB6
+;   0x98e0..0x9919  (57 bytes)
+DATA_sprites_rle_6:
+	defb 000h,038h,04ch,000h,000h,01fh,078h,061h,060h,078h,03fh,01fh,007h,003h,00ch,007h	; 98e0  .8L...xa`x?.....
+	defb 000h,049h,080h,080h,018h,060h,018h,080h,0e0h,01ch,0ceh,005h,000h,04bh,01fh,038h	; 98f0  .I...`.......K.8
+	defb 061h,060h,070h,078h,03eh,01fh,007h,000h,018h,006h,000h,04ah,080h,000h,000h,018h	; 9900  a`px>......J....
+	defb 070h,080h,080h,0e6h,018h,06eh,004h,000h,000h	; 9910  p....n...
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_7: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga
+;   0xAD75
+;   0x9919..0x9944  (43 bytes)
+DATA_sprites_rle_7:
+	defb 0c0h,03fh,006h,000h,044h,07fh,013h,06ch,07fh,00ah,000h,046h,060h,078h,0feh,03eh	; 9919  .?..D..l...F`x.>
+	defb 0ceh,0feh,007h,000h,049h,030h,03eh,007h,001h,000h,000h,000h,06ch,07fh,009h,000h	; 9929  ....I0>.....l...
+	defb 047h,09ch,0fch,07eh,01eh,00eh,0ceh,0feh,006h,000h,000h	; 9939  G..~.......
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_8: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga
+;   0xAD1F
+;   0x9944..0x9989  (69 bytes)
+DATA_sprites_rle_8:
+	defb 0c0h,03fh,060h,000h,003h,00eh,019h,01fh,01fh,019h,01fh,01fh,01ch,013h,00eh,019h	; 9944  .?`.............
+	defb 019h,00eh,007h,000h,0c0h,070h,0f8h,0f8h,078h,0f8h,0f8h,0f8h,038h,0c8h,070h,098h	; 9954  .....p..x...8.p.
+	defb 098h,070h,0e0h,060h,000h,003h,00eh,01fh,01fh,01eh,01fh,01fh,01fh,01ch,013h,00eh	; 9964  .p.`............
+	defb 019h,019h,00eh,007h,000h,0c0h,070h,098h,0f8h,078h,098h,0f8h,0f8h,038h,0c8h,070h	; 9974  ......p..x...8.p
+	defb 098h,098h,070h,0e0h,000h	; 9984
+
+; ----------------------------------------------------------------------
+; DATOS sprites_rle_9: Bloque RLE para B142: 64 bytes a 0x3FC0. Lo carga
+;   0xAA74
+;   0x9989..0x99af  (38 bytes)
+DATA_sprites_rle_9:
+	defb 0c0h,03fh,042h,000h,020h,009h,000h,043h,07fh,000h,07fh,00ch,000h,048h,008h,0c8h	; 9989  .?B. ..C.....H..
+	defb 000h,0c0h,000h,000h,000h,010h,009h,000h,043h,07fh,000h,07fh,00ch,000h,046h,004h	; 9999  ........C.....F.
+	defb 0c4h,000h,0c0h,000h,000h,000h	; 99a9
+
+; ----------------------------------------------------------------------
+; DATOS parado_capa_verde: 32 bytes a la VRAM 0x39A0, que es el patron 0x34:
+;   las piernas (color 0x0C) del jugador PARADO, que es tambien el primer
+;   cuadro del salto (lo clavan a mano 0x8970 y 0x881B, y no sale en ningun
+;   guion de animacion). Lo recarga 0x8307 al acabar de reaparecer, y hace
+;   falta porque la animacion de morir escribe ahi mismo el muneco troceado
+;   (0x8C4F)
+;   0x99af..0x99cf  (32 bytes)
+DATA_parado_capa_verde:
+	defb 003h,003h,001h,001h,001h,001h,001h,001h	; 99af  ........
+	defb 001h,001h,000h,000h,000h,000h,000h,000h	; 99b7  ........
+	defb 0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,070h	; 99bf  .......p
+	defb 000h,0c0h,000h,000h,000h,000h,000h,000h	; 99c7  ........
+
+; ----------------------------------------------------------------------
+; DATOS trepa_capa_verde: 32 bytes a la VRAM 0x39E0, que es el patron 0x3C: la
+;   mitad de abajo (las piernas, color 0x0C) del jugador TREPANDO. Lo recarga
+;   la escena de hoyos en 0xAA07, porque en las escenas con liana ese mismo
+;   hueco lo ocupa la cuerda que traza 0xA594. Y justo despues, 0xAA43 lo
+;   espeja al patron 0x60, que es el otro fotograma del guion de trepar
+;   (0x8AF9)
+;   0x99cf..0x99ef  (32 bytes)
+DATA_trepa_capa_verde:
+	defb 007h,00fh,01fh,018h,00ch,006h,006h,01eh	; 99cf  ........
+	defb 000h,000h,000h,000h,000h,000h,000h,000h	; 99d7  ........
+	defb 0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h,0c0h	; 99df  ........
+	defb 0c0h,0c0h,0c0h,0f0h,000h,000h,000h,000h	; 99e7  ........
+
+; ----------------------------------------------------------------------
+; DATOS parado_capa_roja: 32 bytes a la VRAM 0x3BE0, que es el patron 0x7C =
+;   (0x34-0x20)+0x68: la mitad de arriba del mismo fotograma, en color 0x06.
+;   Lo recarga 0x82FB por lo mismo que el anterior (0x8C43 lo pisa)
+;   0x99ef..0x9a0f  (32 bytes)
+DATA_parado_capa_roja:
+	defb 000h,000h,000h,000h,003h,003h,003h,000h	; 99ef  ........
+	defb 003h,007h,00eh,00dh,006h,007h,002h,003h	; 99f7  ........
+	defb 000h,000h,000h,000h,0c0h,000h,000h,000h	; 99ff  ........
+	defb 080h,0c0h,0c0h,0c0h,0d0h,0d0h,040h,0c0h	; 9a07  ......@.
+
+; ----------------------------------------------------------------------
+; DATOS trepa_capa_roja: 32 bytes a la VRAM 0x3C20, que es el patron 0x84 =
+;   (0x3C-0x20)+0x68: la mitad de arriba del mismo fotograma, el cuerpo en
+;   color 0x06. Lo recarga 0xAA13
+;   0x9a0f..0x9a2f  (32 bytes)
+DATA_trepa_capa_roja:
+	defb 000h,000h,000h,000h,000h,000h,001h,003h	; 9a0f  ........
+	defb 003h,018h,019h,01fh,00fh,007h,003h,003h	; 9a17  ........
+	defb 000h,000h,000h,000h,000h,000h,080h,0c0h	; 9a1f  ........
+	defb 0c0h,000h,080h,0e0h,0f0h,0f0h,0e0h,0c0h	; 9a27  ........
+
+; ----------------------------------------------------------------------
+; DATOS trepa_capa_blanca: 32 bytes a la VRAM 0x3E60, que es el patron 0xCC =
+;   (0x3C-0x20)+0xB0: la tercera capa del mismo fotograma, los cuatro puntos
+;   de color 0x0F que caen sobre la cabeza. Lo recarga 0xAA1F
+;   0x9a2f..0x9a4f  (32 bytes)
+DATA_trepa_capa_blanca:
+	defb 000h,000h,000h,000h,000h,000h,000h,001h	; 9a2f  ........
+	defb 00dh,001h,000h,000h,000h,000h,000h,000h	; 9a37  ........
+	defb 000h,000h,000h,000h,000h,000h,000h,080h	; 9a3f  ........
+	defb 0c0h,080h,000h,000h,000h,000h,000h,000h	; 9a47  ........
+
+; ----------------------------------------------------------------------
+; DATOS tapa_del_suelo: 32 bytes a la VRAM 0x3800, que es el patron 0x00: NO
+;   es el jugador, es una barra maciza de 16x5. Se pone en el sprite 0xE292
+;   con color 0x0B a la altura Y=0x7A -la linea del suelo- al bajar por la
+;   escalera (0x8432-0x8442) y al caer por el hoyo (0x876E-0x877D). Como
+;   0xE292 es una entrada mas baja que la del jugador (0xE2A2), se pinta
+;   DELANTE: es lo que tapa al muneco mientras cruza el suelo. Lo copia 0xAA2B
+;   0x9a4f..0x9a6f  (32 bytes)
+DATA_tapa_del_suelo:
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,000h,000h,000h	; 9a4f  ........
+	defb 000h,000h,000h,000h,000h,000h,000h,000h	; 9a57  ........
+	defb 0ffh,0ffh,0ffh,0ffh,0ffh,000h,000h,000h	; 9a5f  ........
+	defb 000h,000h,000h,000h,000h,000h,000h,000h	; 9a67  ........
 
 ; ======================================================================
 ; CODIGO 0x9a6f..0x9cbd  (590 bytes)
@@ -2309,8 +2666,8 @@ pausa_reanuda:
 ; ----------------------------------------------------------------------
 ; DATOS ret_huerfano_9cbd: Un `ret` detras del `ret` que cierra 0x9CAC
 ;   0x9cbd..0x9cbe  (1 bytes)
-; ----------------------------------------------------------------------
-	defb 0c9h	; 9cbd  .
+DATA_ret_huerfano_9cbd:
+	defb 0c9h	; 9cbd
 
 ; ======================================================================
 ; CODIGO 0x9cbe..0xa086  (968 bytes)
@@ -2858,22 +3215,34 @@ repone_decorado:		; Vuelve a poner los patrones de sprite y el juego de tiles gu
 	ret			;a085
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_juegos_de_tiles: Cuatro palabras: punteros a los cuatro juegos de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E [3]=0x95FE. La lee 0x9FB3 con el indice en DE, y ese indice son los BITS 6-7 DEL LFSR DE PANTALLA, que 0x9F91-0x9FA3 extrae y dobla: el mundo elige decorado con dos bits
+; DATOS tabla_juegos_de_tiles: Cuatro palabras: punteros a los cuatro juegos
+;   de 16 tiles de arriba, en el orden [0]=0x96FE [1]=0x977E [2]=0x967E
+;   [3]=0x95FE. La lee 0x9FB3 con el indice en DE, y ese indice son los BITS
+;   6-7 DEL LFSR DE PANTALLA, que 0x9F91-0x9FA3 extrae y dobla: el mundo elige
+;   decorado con dos bits
 ;   0xa086..0xa08e  (8 bytes)
-; DATOS tabla_de_layouts: Cuatro palabras: punteros a los cuatro layouts de escena de abajo, [0]=0xA1EE [1]=0xA29A [2]=0xA13E [3]=0xA096. La lee 0x9FD1 y el layout lo consume 0x8D70
-;   0xa08e..0xa096  (8 bytes)
-; DATOS layout_escena_3: Layout de escena (entrada [3]): 0x71 + 0x20 + 5 bytes y un guion de 4 celdas que cierra en 0xA13E clavado
-;   0xa096..0xa13e  (168 bytes)
-; DATOS layout_escena_2: Layout de escena (entrada [2]), guion de 6 celdas, cierra en 0xA1EE
-;   0xa13e..0xa1ee  (176 bytes)
-; DATOS layout_escena_0: Layout de escena (entrada [0]), guion de 5 celdas, cierra en 0xA29A
-;   0xa1ee..0xa29a  (172 bytes)
-; DATOS layout_escena_1: Layout de escena (entrada [1]), guion de 3 celdas, cierra en 0xA33E, que es justo donde empieza la tabla siguiente
-;   0xa29a..0xa33e  (164 bytes)
-; DATOS tabla_patrones_14x18: Catorce registros de 18 bytes. El bucle de 0x9E3F copia de cada registro un patron de tile de 8 bytes (la columna dentro del registro la elige DE) a la VRAM desde 0x0640, avanzando de registro en registro. 14 x 18 = 252 bytes, y cierra el hueco exacto
-;   0xa33e..0xa43a  (252 bytes)
+DATA_tabla_juegos_de_tiles:
+	defw 096feh	; a086  -> DATA_tiles_decorado_0
+	defw 0977eh	; a088  -> DATA_tiles_decorado_1
+	defw 0967eh	; a08a  -> DATA_tiles_decorado_2
+	defw 095feh	; a08c  -> DATA_tiles_decorado_3
+
 ; ----------------------------------------------------------------------
-	defb 0feh,096h,07eh,097h,07eh,096h,0feh,095h,0eeh,0a1h,09ah,0a2h,03eh,0a1h,096h,0a0h	; a086  ..~.~.......>...
+; DATOS tabla_de_layouts: Cuatro palabras: punteros a los cuatro layouts de
+;   escena de abajo, [0]=0xA1EE [1]=0xA29A [2]=0xA13E [3]=0xA096. La lee
+;   0x9FD1 y el layout lo consume 0x8D70
+;   0xa08e..0xa096  (8 bytes)
+DATA_tabla_de_layouts:
+	defw 0a1eeh	; a08e  -> DATA_layout_escena_0
+	defw 0a29ah	; a090  -> DATA_layout_escena_1
+	defw 0a13eh	; a092  -> DATA_layout_escena_2
+	defw 0a096h	; a094  -> DATA_layout_escena_3
+
+; ----------------------------------------------------------------------
+; DATOS layout_escena_3: Layout de escena (entrada [3]): 0x71 + 0x20 + 5 bytes
+;   y un guion de 4 celdas que cierra en 0xA13E clavado
+;   0xa096..0xa13e  (168 bytes)
+DATA_layout_escena_3:
 	defb 0e6h,038h,038h,0eeh,038h,038h,038h,0efh,0edh,038h,038h,038h,0d8h,038h,038h,0d9h	; a096  .88.888..888.88.
 	defb 038h,0dah,038h,038h,0dbh,0e6h,038h,038h,0efh,0e7h,038h,038h,0dch,038h,0dbh,0e9h	; a0a6  8.88..88..88.8..
 	defb 038h,0ech,0efh,038h,0d9h,038h,038h,0eah,0edh,038h,0dfh,038h,0e3h,0e5h,038h,038h	; a0b6  8..8.88..8.8..88
@@ -2884,55 +3253,80 @@ repone_decorado:		; Vuelve a poner los patrones de sprite y el juego de tiles gu
 	defb 080h,008h,008h,008h,008h,008h,008h,008h,008h,000h,008h,008h,008h,000h,008h,008h	; a106  ................
 	defb 008h,008h,008h,008h,000h,008h,008h,008h,000h,008h,008h,008h,008h,008h,008h,008h	; a116  ................
 	defb 008h,008h,003h,006h,003h,008h,004h,000h,00dh,001h,011h,000h,012h,001h,015h,000h	; a126  ................
-	defb 007h,001h,010h,000h,038h,001h,011h,000h,038h,0eeh,0efh,038h,038h,038h,0d8h,038h	; a136  ....8...8..888.8
-	defb 0e8h,038h,038h,038h,0e6h,038h,0dch,0ddh,0deh,038h,0e0h,0e1h,038h,0efh,0dbh,038h	; a146  .888.8...8..8..8
-	defb 038h,0deh,0dfh,0e0h,038h,0e1h,038h,0e6h,0e7h,0edh,038h,0d8h,0d9h,0dah,038h,0dbh	; a156  8...8.8...8...8.
-	defb 038h,038h,0e7h,0e8h,038h,038h,038h,0eah,0ebh,0ech,038h,0d8h,0d9h,038h,038h,0dbh	; a166  88..888...8..88.
-	defb 038h,038h,0dch,0ddh,0deh,0dfh,038h,038h,038h,038h,038h,038h,038h,0dah,0dbh,038h	; a176  88....8888888..8
-	defb 0e6h,0e7h,0e8h,038h,0dch,0dch,038h,0ddh,038h,070h,071h,072h,073h,074h,075h,076h	; a186  ...8..8.8pqrstuv
-	defb 077h,078h,079h,07ah,07bh,07ch,07dh,07eh,07fh,08fh,08eh,08dh,08ch,08bh,08ah,089h	; a196  wxyz{|}~........
-	defb 088h,087h,086h,085h,084h,083h,082h,081h,080h,008h,008h,008h,008h,008h,008h,008h	; a1a6  ................
-	defb 000h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h,000h,008h,008h,008h,008h	; a1b6  ................
-	defb 008h,000h,008h,008h,008h,008h,008h,008h,008h,007h,005h,004h,005h,007h,006h,000h	; a1c6  ................
-	defb 005h,001h,012h,000h,006h,001h,013h,000h,019h,001h,017h,000h,01ah,001h,016h,000h	; a1d6  ................
-	defb 00ch,001h,015h,000h,013h,001h,011h,000h,0efh,038h,038h,0eeh,038h,038h,0ech,0edh	; a1e6  .........88.88..
-	defb 038h,038h,0e6h,038h,038h,0ddh,038h,038h,038h,0deh,0dfh,0e0h,038h,0e1h,038h,0e2h	; a1f6  88.88.888...8.8.
-	defb 0e3h,038h,038h,0e4h,0e5h,038h,038h,0e6h,0e7h,038h,0d8h,0d9h,0dah,038h,0dbh,0dch	; a206  .88..88..8...8..
-	defb 0ddh,038h,038h,0deh,0dfh,038h,0e0h,0e1h,0e2h,038h,0e3h,038h,0e4h,0e5h,0e6h,038h	; a216  .88..8...8.8...8
-	defb 0dch,0ddh,0dfh,038h,0e6h,0d8h,038h,038h,038h,038h,038h,038h,0d8h,0d9h,0dah,038h	; a226  ...8..888888...8
-	defb 0dbh,0dch,0ddh,038h,0deh,0deh,0dfh,038h,0e0h,070h,071h,072h,073h,074h,075h,076h	; a236  ...8...8.pqrstuv
-	defb 077h,078h,079h,07ah,07bh,07ch,07dh,07eh,07fh,08fh,08eh,08dh,08ch,08bh,08ah,089h	; a246  wxyz{|}~........
-	defb 088h,087h,086h,085h,084h,083h,082h,081h,080h,008h,008h,008h,008h,000h,008h,008h	; a256  ................
-	defb 008h,008h,008h,000h,008h,008h,008h,008h,008h,008h,008h,008h,008h,008h,000h,008h	; a266  ................
-	defb 008h,008h,008h,008h,000h,008h,008h,008h,008h,004h,005h,00ah,005h,004h,005h,000h	; a276  ................
-	defb 002h,001h,012h,000h,003h,001h,013h,000h,01ch,001h,017h,000h,01dh,001h,016h,000h	; a286  ................
-	defb 014h,001h,010h,000h,038h,038h,0e8h,038h,038h,0e8h,0e9h,038h,0eah,038h,038h,038h	; a296  ....88.88..8.888
-	defb 0ebh,0ech,038h,038h,038h,0edh,0eeh,0eeh,038h,0efh,038h,0d8h,0d9h,038h,0dah,0dbh	; a2a6  ..888...8.8..8..
-	defb 0dch,038h,0dch,0ddh,038h,038h,0deh,0dfh,038h,038h,0e0h,0e1h,038h,0d8h,038h,0d9h	; a2b6  .8..88..88..8.8.
-	defb 0dah,038h,0dah,0dbh,038h,038h,0dch,0ddh,0deh,038h,0dfh,0e2h,038h,0e1h,038h,0e4h	; a2c6  .8..88...8..8.8.
-	defb 0e5h,0e6h,038h,038h,038h,038h,038h,038h,0d9h,0dah,038h,0dbh,038h,0e6h,0e7h,0dah	; a2d6  ..888888..8.8...
-	defb 038h,038h,0dah,0dbh,038h,070h,071h,072h,073h,074h,075h,076h,077h,078h,079h,07ah	; a2e6  88..8pqrstuvwxyz
-	defb 07bh,07ch,07dh,07eh,07fh,08fh,08eh,08dh,08ch,08bh,08ah,089h,088h,087h,086h,085h	; a2f6  {|}~............
-	defb 084h,083h,082h,081h,080h,008h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h	; a306  ................
-	defb 008h,000h,008h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h,008h,000h,008h	; a316  ................
-	defb 008h,008h,008h,008h,008h,006h,005h,006h,005h,006h,003h,000h,018h,001h,010h,000h	; a326  ................
-	defb 007h,001h,011h,000h,005h,001h,010h,000h,000h,0f8h,088h,081h,089h,0f9h,000h,000h	; a336  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,0e7h,024h,0e7h	; a346  ..............$.
-	defb 004h,004h,000h,000h,003h,007h,00dh,019h,03fh,061h,0c1h,000h,000h,000h,000h,0b6h	; a356  ........?a......
-	defb 092h,09eh,002h,01eh,000h,000h,01fh,000h,03ch,020h,020h,020h,03ch,000h,000h,002h	; a366  ........<   <...
-	defb 000h,072h,042h,042h,000h,000h,000h,000h,0ffh,080h,088h,088h,088h,088h,088h,000h	; a376  .rBB............
-	defb 000h,001h,001h,079h,049h,079h,008h,078h,000h,000h,083h,086h,08ch,098h,0b0h,0e0h	; a386  ...yIy.x........
-	defb 0c0h,000h,000h,002h,00fh,0e2h,022h,023h,000h,000h,000h,000h,0ffh,000h,08fh,088h	; a396  ......"#........
-	defb 08fh,081h,08fh,000h,000h,001h,083h,001h,001h,083h,000h,000h,000h,000h,0f0h,000h	; a3a6  ................
-	defb 011h,011h,011h,011h,011h,000h,000h,01eh,012h,01eh,002h,09eh,000h,000h,000h,000h	; a3b6  ................
-	defb 000h,000h,0f1h,011h,011h,011h,0f1h,000h,000h,03ch,024h,03ch,024h,03ch,000h,000h	; a3c6  .........<$<$<..
-	defb 000h,000h,000h,000h,010h,090h,050h,030h,010h,000h,000h,078h,008h,078h,040h,078h	; a3d6  ......P0...x.x@x
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,001h,003h,001h	; a3e6  ................
-	defb 001h,083h,080h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,01eh	; a3f6  ................
-	defb 012h,01eh,002h,09eh,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a406  ................
-	defb 000h,03ch,024h,03ch,024h,03ch,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a416  .<$<$<..........
-	defb 000h,000h,000h,048h,048h,078h,008h,008h,000h,000h,000h,000h,000h,000h,000h,000h	; a426  ...HHx..........
-	defb 000h,000h,000h,000h	; a436  ....
+	defb 007h,001h,010h,000h,038h,001h,011h,000h	; a136  ....8...
+
+; ----------------------------------------------------------------------
+; DATOS layout_escena_2: Layout de escena (entrada [2]), guion de 6 celdas,
+;   cierra en 0xA1EE
+;   0xa13e..0xa1ee  (176 bytes)
+DATA_layout_escena_2:
+	defb 038h,0eeh,0efh,038h,038h,038h,0d8h,038h,0e8h,038h,038h,038h,0e6h,038h,0dch,0ddh	; a13e  8..888.8.888.8..
+	defb 0deh,038h,0e0h,0e1h,038h,0efh,0dbh,038h,038h,0deh,0dfh,0e0h,038h,0e1h,038h,0e6h	; a14e  .8..8..88...8.8.
+	defb 0e7h,0edh,038h,0d8h,0d9h,0dah,038h,0dbh,038h,038h,0e7h,0e8h,038h,038h,038h,0eah	; a15e  ..8...8.88..888.
+	defb 0ebh,0ech,038h,0d8h,0d9h,038h,038h,0dbh,038h,038h,0dch,0ddh,0deh,0dfh,038h,038h	; a16e  ..8..88.88....88
+	defb 038h,038h,038h,038h,038h,0dah,0dbh,038h,0e6h,0e7h,0e8h,038h,0dch,0dch,038h,0ddh	; a17e  88888..8...8..8.
+	defb 038h,070h,071h,072h,073h,074h,075h,076h,077h,078h,079h,07ah,07bh,07ch,07dh,07eh	; a18e  8pqrstuvwxyz{|}~
+	defb 07fh,08fh,08eh,08dh,08ch,08bh,08ah,089h,088h,087h,086h,085h,084h,083h,082h,081h	; a19e  ................
+	defb 080h,008h,008h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h,008h,000h,008h	; a1ae  ................
+	defb 008h,008h,008h,000h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h,008h,008h	; a1be  ................
+	defb 008h,007h,005h,004h,005h,007h,006h,000h,005h,001h,012h,000h,006h,001h,013h,000h	; a1ce  ................
+	defb 019h,001h,017h,000h,01ah,001h,016h,000h,00ch,001h,015h,000h,013h,001h,011h,000h	; a1de  ................
+
+; ----------------------------------------------------------------------
+; DATOS layout_escena_0: Layout de escena (entrada [0]), guion de 5 celdas,
+;   cierra en 0xA29A
+;   0xa1ee..0xa29a  (172 bytes)
+DATA_layout_escena_0:
+	defb 0efh,038h,038h,0eeh,038h,038h,0ech,0edh,038h,038h,0e6h,038h,038h,0ddh,038h,038h	; a1ee  .88.88..88.88.88
+	defb 038h,0deh,0dfh,0e0h,038h,0e1h,038h,0e2h,0e3h,038h,038h,0e4h,0e5h,038h,038h,0e6h	; a1fe  8...8.8..88..88.
+	defb 0e7h,038h,0d8h,0d9h,0dah,038h,0dbh,0dch,0ddh,038h,038h,0deh,0dfh,038h,0e0h,0e1h	; a20e  .8...8...88..8..
+	defb 0e2h,038h,0e3h,038h,0e4h,0e5h,0e6h,038h,0dch,0ddh,0dfh,038h,0e6h,0d8h,038h,038h	; a21e  .8.8...8...8..88
+	defb 038h,038h,038h,038h,0d8h,0d9h,0dah,038h,0dbh,0dch,0ddh,038h,0deh,0deh,0dfh,038h	; a22e  8888...8...8...8
+	defb 0e0h,070h,071h,072h,073h,074h,075h,076h,077h,078h,079h,07ah,07bh,07ch,07dh,07eh	; a23e  .pqrstuvwxyz{|}~
+	defb 07fh,08fh,08eh,08dh,08ch,08bh,08ah,089h,088h,087h,086h,085h,084h,083h,082h,081h	; a24e  ................
+	defb 080h,008h,008h,008h,008h,000h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h	; a25e  ................
+	defb 008h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h,008h,000h,008h,008h,008h	; a26e  ................
+	defb 008h,004h,005h,00ah,005h,004h,005h,000h,002h,001h,012h,000h,003h,001h,013h,000h	; a27e  ................
+	defb 01ch,001h,017h,000h,01dh,001h,016h,000h,014h,001h,010h,000h	; a28e  ............
+
+; ----------------------------------------------------------------------
+; DATOS layout_escena_1: Layout de escena (entrada [1]), guion de 3 celdas,
+;   cierra en 0xA33E, que es justo donde empieza la tabla siguiente
+;   0xa29a..0xa33e  (164 bytes)
+DATA_layout_escena_1:
+	defb 038h,038h,0e8h,038h,038h,0e8h,0e9h,038h,0eah,038h,038h,038h,0ebh,0ech,038h,038h	; a29a  88.88..8.888..88
+	defb 038h,0edh,0eeh,0eeh,038h,0efh,038h,0d8h,0d9h,038h,0dah,0dbh,0dch,038h,0dch,0ddh	; a2aa  8...8.8..8...8..
+	defb 038h,038h,0deh,0dfh,038h,038h,0e0h,0e1h,038h,0d8h,038h,0d9h,0dah,038h,0dah,0dbh	; a2ba  88..88..8.8..8..
+	defb 038h,038h,0dch,0ddh,0deh,038h,0dfh,0e2h,038h,0e1h,038h,0e4h,0e5h,0e6h,038h,038h	; a2ca  88...8..8.8...88
+	defb 038h,038h,038h,038h,0d9h,0dah,038h,0dbh,038h,0e6h,0e7h,0dah,038h,038h,0dah,0dbh	; a2da  8888..8.8...88..
+	defb 038h,070h,071h,072h,073h,074h,075h,076h,077h,078h,079h,07ah,07bh,07ch,07dh,07eh	; a2ea  8pqrstuvwxyz{|}~
+	defb 07fh,08fh,08eh,08dh,08ch,08bh,08ah,089h,088h,087h,086h,085h,084h,083h,082h,081h	; a2fa  ................
+	defb 080h,008h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h,008h,000h,008h,008h	; a30a  ................
+	defb 008h,008h,008h,008h,000h,008h,008h,008h,008h,008h,000h,008h,008h,008h,008h,008h	; a31a  ................
+	defb 008h,006h,005h,006h,005h,006h,003h,000h,018h,001h,010h,000h,007h,001h,011h,000h	; a32a  ................
+	defb 005h,001h,010h,000h	; a33a
+
+; ----------------------------------------------------------------------
+; DATOS tabla_patrones_14x18: Catorce registros de 18 bytes. El bucle de
+;   0x9E3F copia de cada registro un patron de tile de 8 bytes (la columna
+;   dentro del registro la elige DE) a la VRAM desde 0x0640, avanzando de
+;   registro en registro. 14 x 18 = 252 bytes, y cierra el hueco exacto
+;   0xa33e..0xa43a  (252 bytes)
+DATA_tabla_patrones_14x18:
+	defb 000h,0f8h,088h,081h,089h,0f9h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a33e  ..................
+	defb 000h,000h,000h,0e7h,024h,0e7h,004h,004h,000h,000h,003h,007h,00dh,019h,03fh,061h,0c1h,000h	; a350  ....$.........?a..
+	defb 000h,000h,000h,0b6h,092h,09eh,002h,01eh,000h,000h,01fh,000h,03ch,020h,020h,020h,03ch,000h	; a362  ............<   <.
+	defb 000h,002h,000h,072h,042h,042h,000h,000h,000h,000h,0ffh,080h,088h,088h,088h,088h,088h,000h	; a374  ...rBB............
+	defb 000h,001h,001h,079h,049h,079h,008h,078h,000h,000h,083h,086h,08ch,098h,0b0h,0e0h,0c0h,000h	; a386  ...yIy.x..........
+	defb 000h,002h,00fh,0e2h,022h,023h,000h,000h,000h,000h,0ffh,000h,08fh,088h,08fh,081h,08fh,000h	; a398  ...."#............
+	defb 000h,001h,083h,001h,001h,083h,000h,000h,000h,000h,0f0h,000h,011h,011h,011h,011h,011h,000h	; a3aa  ..................
+	defb 000h,01eh,012h,01eh,002h,09eh,000h,000h,000h,000h,000h,000h,0f1h,011h,011h,011h,0f1h,000h	; a3bc  ..................
+	defb 000h,03ch,024h,03ch,024h,03ch,000h,000h,000h,000h,000h,000h,010h,090h,050h,030h,010h,000h	; a3ce  .<$<$<........P0..
+	defb 000h,078h,008h,078h,040h,078h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a3e0  .x.x@x............
+	defb 000h,001h,003h,001h,001h,083h,080h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a3f2  ..................
+	defb 000h,01eh,012h,01eh,002h,09eh,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a404  ..................
+	defb 000h,03ch,024h,03ch,024h,03ch,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a416  .<$<$<............
+	defb 000h,048h,048h,078h,008h,008h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; a428  .HHx..............
 
 ; ======================================================================
 ; CODIGO 0xa43a..0xa61a  (480 bytes)
@@ -3210,18 +3604,52 @@ lleva_al_jugador_colgado_y:
 	ret			;a619
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_del_balanceo: Treinta y tres registros de cuatro bytes, uno por fase del balanceo de la liana: 0xA47D indexa con (0xE1CB)*4 y la fase va y viene entre 1 (vertical) y 0x20 (tumbada). Los cuatro bytes: (1) pendiente de la cuerda en 1/256 de pixel por fila, 0x00 a 0xC9 (el DE que 0xA4C4 acumula); (2) PERIODO del objeto (0xA48F lo escribe en 0xE33F), 1 cuadro en el centro y 9 en el extremo: el balanceo frena en las puntas como un pendulo, y media ida son 75 cuadros sumando los 32 periodos; (3) cuantas veces mas se suma la pendiente hasta el punto de agarre (0xA529, guardado en 0xE1CC), 0x10 vertical a 0x06 extremo; (4) en que paso de la curva del salto arranca la caida al soltarse (0xA546 -> 0xE1E2, 0x821A -> IX+0x17), 0x00 vertical a 0x10 extremo. Acaba donde empieza su consumidor, 0xA69E
+; DATOS tabla_del_balanceo: Treinta y tres registros de cuatro bytes, uno por
+;   fase del balanceo de la liana: 0xA47D indexa con (0xE1CB)*4 y la fase va y
+;   viene entre 1 (vertical) y 0x20 (tumbada). Los cuatro bytes: (1) pendiente
+;   de la cuerda en 1/256 de pixel por fila, 0x00 a 0xC9 (el DE que 0xA4C4
+;   acumula); (2) PERIODO del objeto (0xA48F lo escribe en 0xE33F), 1 cuadro
+;   en el centro y 9 en el extremo: el balanceo frena en las puntas como un
+;   pendulo, y media ida son 75 cuadros sumando los 32 periodos; (3) cuantas
+;   veces mas se suma la pendiente hasta el punto de agarre (0xA529, guardado
+;   en 0xE1CC), 0x10 vertical a 0x06 extremo; (4) en que paso de la curva del
+;   salto arranca la caida al soltarse (0xA546 -> 0xE1E2, 0x821A -> IX+0x17),
+;   0x00 vertical a 0x10 extremo. Acaba donde empieza su consumidor, 0xA69E
 ;   0xa61a..0xa69e  (132 bytes)
-; ----------------------------------------------------------------------
-	defb 000h,001h,010h,000h,007h,001h,010h,000h,00eh,001h,010h,000h,015h,001h,010h,000h	; a61a  ................
-	defb 01ch,001h,010h,000h,024h,001h,010h,000h,02bh,001h,00fh,001h,033h,001h,00fh,001h	; a62a  ....$...+...3...
-	defb 03ah,001h,00fh,001h,041h,001h,00fh,001h,049h,002h,00fh,001h,055h,002h,00eh,002h	; a63a  :...A...I...U...
-	defb 05ch,002h,00eh,002h,061h,002h,00dh,003h,069h,002h,00dh,003h,072h,002h,00ch,004h	; a64a  \...a...i...r...
-	defb 07ch,002h,00bh,005h,080h,002h,00bh,005h,083h,002h,00bh,005h,089h,002h,00ah,006h	; a65a  |...............
-	defb 08dh,002h,00ah,006h,091h,002h,00ah,006h,098h,002h,009h,008h,09ch,002h,009h,008h	; a66a  ................
-	defb 0a0h,002h,009h,008h,0a6h,003h,008h,00bh,0aah,003h,008h,00bh,0aeh,003h,008h,00bh	; a67a  ................
-	defb 0b5h,004h,007h,00fh,0b9h,004h,007h,00fh,0bdh,004h,007h,00fh,0c5h,006h,006h,010h	; a68a  ................
-	defb 0c9h,009h,006h,010h	; a69a  ....
+DATA_tabla_del_balanceo:
+	defb 000h,001h,010h,000h	; a61a
+	defb 007h,001h,010h,000h	; a61e
+	defb 00eh,001h,010h,000h	; a622
+	defb 015h,001h,010h,000h	; a626
+	defb 01ch,001h,010h,000h	; a62a
+	defb 024h,001h,010h,000h	; a62e
+	defb 02bh,001h,00fh,001h	; a632
+	defb 033h,001h,00fh,001h	; a636
+	defb 03ah,001h,00fh,001h	; a63a
+	defb 041h,001h,00fh,001h	; a63e
+	defb 049h,002h,00fh,001h	; a642
+	defb 055h,002h,00eh,002h	; a646
+	defb 05ch,002h,00eh,002h	; a64a
+	defb 061h,002h,00dh,003h	; a64e
+	defb 069h,002h,00dh,003h	; a652
+	defb 072h,002h,00ch,004h	; a656
+	defb 07ch,002h,00bh,005h	; a65a
+	defb 080h,002h,00bh,005h	; a65e
+	defb 083h,002h,00bh,005h	; a662
+	defb 089h,002h,00ah,006h	; a666
+	defb 08dh,002h,00ah,006h	; a66a
+	defb 091h,002h,00ah,006h	; a66e
+	defb 098h,002h,009h,008h	; a672
+	defb 09ch,002h,009h,008h	; a676
+	defb 0a0h,002h,009h,008h	; a67a
+	defb 0a6h,003h,008h,00bh	; a67e
+	defb 0aah,003h,008h,00bh	; a682
+	defb 0aeh,003h,008h,00bh	; a686
+	defb 0b5h,004h,007h,00fh	; a68a
+	defb 0b9h,004h,007h,00fh	; a68e
+	defb 0bdh,004h,007h,00fh	; a692
+	defb 0c5h,006h,006h,010h	; a696
+	defb 0c9h,009h,006h,010h	; a69a
 
 ; ======================================================================
 ; CODIGO 0xa69e..0xaa73  (981 bytes)
@@ -3673,8 +4101,8 @@ hoyos_carga_sprites:
 ; ----------------------------------------------------------------------
 ; DATOS ret_huerfano_aa73: Un `ret` detras del `jp` de 0xAA70
 ;   0xaa73..0xaa74  (1 bytes)
-; ----------------------------------------------------------------------
-	defb 0c9h	; aa73  .
+DATA_ret_huerfano_aa73:
+	defb 0c9h	; aa73
 
 ; ======================================================================
 ; CODIGO 0xaa74..0xacb4  (576 bytes)
@@ -3940,8 +4368,8 @@ charca_cajas_y_rotulo:		; Comun a la brea y al agua: la caja del charco y el rot
 ; ----------------------------------------------------------------------
 ; DATOS ret_huerfano_acb4: Un `ret` detras del `jp` de 0xACB1
 ;   0xacb4..0xacb5  (1 bytes)
-; ----------------------------------------------------------------------
-	defb 0c9h	; acb4  .
+DATA_ret_huerfano_acb4:
+	defb 0c9h	; acb4
 
 ; ======================================================================
 ; CODIGO 0xacb5..0xade7  (306 bytes)
@@ -4075,8 +4503,8 @@ escena_tipo_4_cocodrilos:
 ; ----------------------------------------------------------------------
 ; DATOS ret_huerfano_ade7: Un `ret` detras del `jp` de 0xADE4
 ;   0xade7..0xade8  (1 bytes)
-; ----------------------------------------------------------------------
-	defb 0c9h	; ade7  .
+DATA_ret_huerfano_ade7:
+	defb 0c9h	; ade7
 
 ; ======================================================================
 ; CODIGO 0xade8..0xae37  (79 bytes)
@@ -4119,8 +4547,8 @@ monta_objeto_de_escena_despacha:
 ; ----------------------------------------------------------------------
 ; DATOS ret_huerfano_ae37: Un `ret` detras del `jp` de 0xAE34
 ;   0xae37..0xae38  (1 bytes)
-; ----------------------------------------------------------------------
-	defb 0c9h	; ae37  .
+DATA_ret_huerfano_ae37:
+	defb 0c9h	; ae37
 
 ; ======================================================================
 ; CODIGO 0xae38..0xae90  (88 bytes)
@@ -4158,124 +4586,366 @@ monta_la_liana_objeto:
 	ret			;ae8f
 
 ; ----------------------------------------------------------------------
-; DATOS colores_del_tesoro: Dos parejas (4B 00 4B 00) de las que solo se usa el primer byte de cada una: 0xAB1B copia el de 0xAE90 y 0xAB51 el de 0xAE92 a la VRAM 0x2013, el color del tile del tesoro. Los dos valen 0x4B, asi que lo que distingue a las dos barras es el patron y no el color
+; DATOS colores_del_tesoro: Dos parejas (4B 00 4B 00) de las que solo se usa
+;   el primer byte de cada una: 0xAB1B copia el de 0xAE90 y 0xAB51 el de
+;   0xAE92 a la VRAM 0x2013, el color del tile del tesoro. Los dos valen 0x4B,
+;   asi que lo que distingue a las dos barras es el patron y no el color
 ;   0xae90..0xae94  (4 bytes)
-; DATOS tabla_de_submodos_1: Ocho punteros de palabra para el despachador parametrico de 0xA99F, indexados por el submodo (0xE224)=(0xE222)&7. La base la carga el llamante de 0xADE4. Solo dos rutinas distintas, alternadas de dos en dos: 0xACB5 y 0xAE38
+DATA_colores_del_tesoro:
+	defb 04bh,000h	; ae90
+	defb 04bh,000h	; ae92
+
+; ----------------------------------------------------------------------
+; DATOS tabla_de_submodos_1: Ocho punteros de palabra para el despachador
+;   parametrico de 0xA99F, indexados por el submodo (0xE224)=(0xE222)&7. La
+;   base la carga el llamante de 0xADE4. Solo dos rutinas distintas,
+;   alternadas de dos en dos: 0xACB5 y 0xAE38
 ;   0xae94..0xaea4  (16 bytes)
-; DATOS tabla_de_submodos_2: Ocho punteros de palabra para 0xA99F, mismos indices. La base la carga 0xAE2E, y SOLO cuando el modo (0xE225) es 5. Cuatro rutinas distintas repetidas dos veces: 0xAC11, 0xAB51, 0xAB1B, 0xABB7
+DATA_tabla_de_submodos_1:
+	defw 0acb5h	; ae94  -> variante_que_no_hace_nada
+	defw 0acb5h	; ae96  -> variante_que_no_hace_nada
+	defw 0ae38h	; ae98  -> monta_la_liana
+	defw 0ae38h	; ae9a  -> monta_la_liana
+	defw 0acb5h	; ae9c  -> variante_que_no_hace_nada
+	defw 0acb5h	; ae9e  -> variante_que_no_hace_nada
+	defw 0ae38h	; aea0  -> monta_la_liana
+	defw 0ae38h	; aea2  -> monta_la_liana
+
+; ----------------------------------------------------------------------
+; DATOS tabla_de_submodos_2: Ocho punteros de palabra para 0xA99F, mismos
+;   indices. La base la carga 0xAE2E, y SOLO cuando el modo (0xE225) es 5.
+;   Cuatro rutinas distintas repetidas dos veces: 0xAC11, 0xAB51, 0xAB1B,
+;   0xABB7
 ;   0xaea4..0xaeb4  (16 bytes)
-; DATOS tabla_de_modos: Ocho punteros de palabra, uno por TIPO DE ESCENA (los bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
+DATA_tabla_de_submodos_2:
+	defw 0ac11h	; aea4  -> tesoro_de_2000
+	defw 0ab51h	; aea6  -> tesoro_de_3000
+	defw 0ab1bh	; aea8  -> tesoro_de_4000
+	defw 0abb7h	; aeaa  -> tesoro_de_5000
+	defw 0ac11h	; aeac  -> tesoro_de_2000
+	defw 0ab51h	; aeae  -> tesoro_de_3000
+	defw 0ab1bh	; aeb0  -> tesoro_de_4000
+	defw 0abb7h	; aeb2  -> tesoro_de_5000
+
+; ----------------------------------------------------------------------
+; DATOS tabla_de_modos: Ocho punteros de palabra, uno por TIPO DE ESCENA (los
+;   bits 3-5 del LFSR de pantalla 0xE222). El despachador de 0x9F81-0x9F8D lee
+;   el indice de 0xE225, lo dobla y salta por aqui con un call indirecto (ld
+;   de,9F8Eh / push de / jp (hl)). El indice lo calcula 0x9EF4-0x9EFF como
+;   ((0xE222)>>3)&7, o sea 0..7: ocho entradas y ni una mas
 ;   0xaeb4..0xaec4  (16 bytes)
-; DATOS tabla_de_submodos_3: Ocho punteros de palabra para 0xA99F, mismos indices. La cargan los llamantes de 0xAA70, 0xACB1 y el camino de 0xAE24 cuando el modo no es 5. Seis de las ocho entradas apuntan al mismo sitio, 0xAD1F; las otras dos, 0xAAB7 y 0xAA74
+DATA_tabla_de_modos:
+	defw 0a9aah	; aeb4  -> escena_tipo_0_y_1_hoyos
+	defw 0a9aah	; aeb6  -> escena_tipo_0_y_1_hoyos
+	defw 0ac7ch	; aeb8  -> escena_tipo_2_brea
+	defw 0ac6bh	; aeba  -> escena_tipo_3_agua
+	defw 0ad75h	; aebc  -> escena_tipo_4_cocodrilos
+	defw 0adf6h	; aebe  -> escena_tipo_5_tesoro
+	defw 0ae04h	; aec0  -> escena_tipo_6_brea_con_liana
+	defw 0ade8h	; aec2  -> escena_tipo_7_agua_con_liana
+
+; ----------------------------------------------------------------------
+; DATOS tabla_de_submodos_3: Ocho punteros de palabra para 0xA99F, mismos
+;   indices. La cargan los llamantes de 0xAA70, 0xACB1 y el camino de 0xAE24
+;   cuando el modo no es 5. Seis de las ocho entradas apuntan al mismo sitio,
+;   0xAD1F; las otras dos, 0xAAB7 y 0xAA74
 ;   0xaec4..0xaed4  (16 bytes)
-; DATOS guion_celdas_rotulo: Guion de 28 celdas en las filas 14-15, columnas 9-22: dos lineas de tiles consecutivos (0x58-0x6F), un rotulo pintado celda a celda. Lo llaman 0xACA8 y 0xADC1
+DATA_tabla_de_submodos_3:
+	defw 0ad1fh	; aec4  -> monta_los_troncos
+	defw 0ad1fh	; aec6  -> monta_los_troncos
+	defw 0ad1fh	; aec8  -> monta_los_troncos
+	defw 0ad1fh	; aeca  -> monta_los_troncos
+	defw 0ad1fh	; aecc  -> monta_los_troncos
+	defw 0ad1fh	; aece  -> monta_los_troncos
+	defw 0aab7h	; aed0  -> monta_la_fogata
+	defw 0aa74h	; aed2  -> monta_la_serpiente
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_rotulo: Guion de 28 celdas en las filas 14-15, columnas
+;   9-22: dos lineas de tiles consecutivos (0x58-0x6F), un rotulo pintado
+;   celda a celda. Lo llaman 0xACA8 y 0xADC1
 ;   0xaed4..0xaf46  (114 bytes)
+DATA_guion_celdas_rotulo:
+	defb 01ch,000h,0c9h,001h,058h,000h,0cah,001h,059h,000h,0cbh,001h,05ah,000h,0cch,001h	; aed4  ....X...Y...Z...
+	defb 05dh,000h,0cdh,001h,05bh,000h,0ceh,001h,05eh,000h,0cfh,001h,05ch,000h,0d0h,001h	; aee4  ]...[...^...\...
+	defb 063h,000h,0d1h,001h,05eh,000h,0d2h,001h,062h,000h,0d3h,001h,05dh,000h,0d4h,001h	; aef4  c...^...b...]...
+	defb 061h,000h,0d5h,001h,060h,000h,0d6h,001h,05fh,000h,0e9h,001h,064h,000h,0eah,001h	; af04  a...`..._...d...
+	defb 065h,000h,0ebh,001h,066h,000h,0ech,001h,069h,000h,0edh,001h,067h,000h,0eeh,001h	; af14  e...f...i...g...
+	defb 06ah,000h,0efh,001h,068h,000h,0f0h,001h,06fh,000h,0f1h,001h,06ah,000h,0f2h,001h	; af24  j...h...o...j...
+	defb 06eh,000h,0f3h,001h,069h,000h,0f4h,001h,06dh,000h,0f5h,001h,06ch,000h,0f6h,001h	; af34  n...i...m...l...
+	defb 06bh,000h	; af44
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e26a: Doce bytes que 0xAE44 copia a 0xE26A
 ;   0xaf46..0xaf52  (12 bytes)
-; DATOS guion_anim_sigue_derecha: 03 00 / 03 04 / 00 00: dos fotogramas de tres cuadros. Lo carga 0xA6EE cuando el bicho de 0xE2ED va hacia la derecha
+DATA_inicializador_e26a:
+	defb 02fh,068h,084h,00ch,02fh,078h,0a8h,00ch,02fh,088h,0cch,00ch	; af46  /h../x../...
+
+; ----------------------------------------------------------------------
+; DATOS guion_anim_sigue_derecha: 03 00 / 03 04 / 00 00: dos fotogramas de
+;   tres cuadros. Lo carga 0xA6EE cuando el bicho de 0xE2ED va hacia la
+;   derecha
 ;   0xaf52..0xaf58  (6 bytes)
-; DATOS guion_anim_sigue_izquierda: 03 08 / 03 0C / 00 00: los mismos tiempos con los otros dos patrones. Lo carga 0xA6CF, el camino de la izquierda
+DATA_guion_anim_sigue_derecha:
+	defb 003h,000h	; af52
+	defb 003h,004h	; af54
+	defb 000h,000h	; af56
+
+; ----------------------------------------------------------------------
+; DATOS guion_anim_sigue_izquierda: 03 08 / 03 0C / 00 00: los mismos tiempos
+;   con los otros dos patrones. Lo carga 0xA6CF, el camino de la izquierda
 ;   0xaf58..0xaf5e  (6 bytes)
+DATA_guion_anim_sigue_izquierda:
+	defb 003h,008h	; af58
+	defb 003h,00ch	; af5a
+	defb 000h,000h	; af5c
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e292: Cuatro bytes que 0xACD0 copia a 0xE292
 ;   0xaf5e..0xaf62  (4 bytes)
-; DATOS plantilla_objeto_e2ed: Plantilla de objeto de 22 bytes que 0xACDB copia a 0xE2ED. Su manejador (offset 0x12) es 0xA69E
+DATA_inicializador_e292:
+	defb 0a2h,080h,000h,00fh	; af5e
+
+; ----------------------------------------------------------------------
+; DATOS plantilla_objeto_e2ed: Plantilla de objeto de 22 bytes que 0xACDB
+;   copia a 0xE2ED. Su manejador (offset 0x12) es 0xA69E
 ;   0xaf62..0xaf78  (22 bytes)
+DATA_plantilla_objeto_e2ed:
+	defb 0e0h,000h,000h,000h,000h,000h,007h,000h,001h,008h,0ddh,000h,052h,0afh,001h,000h,003h,005h,09eh,0a6h,092h,0e2h	; af62  ............R.........
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e2a2: Cuatro bytes que 0xACED copia a 0xE2A2
 ;   0xaf78..0xaf7c  (4 bytes)
+DATA_inicializador_e2a2:
+	defb 06dh,020h,034h,00ch	; af78
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e2a6: Cuatro bytes que 0xACF8 copia a 0xE2A6
 ;   0xaf7c..0xaf80  (4 bytes)
+DATA_inicializador_e2a6:
+	defb 06dh,020h,034h,006h	; af7c
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e2aa: Cuatro bytes que 0xAD03 copia a 0xE2AA
 ;   0xaf80..0xaf84  (4 bytes)
-; DATOS guion_anim_sin_usar: Un guion entero y bien formado -nueve fotogramas, patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384 palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma es lento, de rotulo o de decorado, no de bicho
+DATA_inicializador_e2aa:
+	defb 06dh,020h,034h,00fh	; af80
+
+; ----------------------------------------------------------------------
+; DATOS guion_anim_sin_usar: Un guion entero y bien formado -nueve fotogramas,
+;   patrones 0x20 a 0x40 de cuatro en cuatro, cincuenta cuadros cada uno- que
+;   NO USA NADIE: ni una instruccion lo carga, ni ninguna de las 16384
+;   palabras del cartucho vale su direccion. Cincuenta cuadros por fotograma
+;   es lento, de rotulo o de decorado, no de bicho
 ;   0xaf84..0xaf98  (20 bytes)
-; DATOS plantilla_objeto_e2d5: Plantilla de objeto de 24 bytes que 0xAD0E copia a 0xE2D5. Su manejador es 0x8125
+DATA_guion_anim_sin_usar:
+	defb 032h,020h	; af84
+	defb 032h,024h	; af86
+	defb 032h,028h	; af88
+	defb 032h,02ch	; af8a
+	defb 032h,030h	; af8c
+	defb 032h,034h	; af8e
+	defb 032h,038h	; af90
+	defb 032h,03ch	; af92
+	defb 032h,040h	; af94
+	defb 000h,000h	; af96
+
+; ----------------------------------------------------------------------
+; DATOS plantilla_objeto_e2d5: Plantilla de objeto de 24 bytes que 0xAD0E
+;   copia a 0xE2D5. Su manejador es 0x8125
 ;   0xaf98..0xafb0  (24 bytes)
-; DATOS guion_anim_troncos: 0A F8 / 0A FC / 00 00: dos patrones alternandose cada diez cuadros, que es el tronco rodando. Lo apunta el campo +0x0C de la plantilla de 0xAFC2, cuyo manejador es 0xA728
+DATA_plantilla_objeto_e2d5:
+	defb 0c0h,000h,001h,000h,000h,000h,000h,0b4h,000h,010h,0ddh,000h,000h,000h,001h,000h,001h,005h,025h,081h,0a2h,0e2h,000h,000h	; af98  ..................%.....
+
+; ----------------------------------------------------------------------
+; DATOS guion_anim_troncos: 0A F8 / 0A FC / 00 00: dos patrones alternandose
+;   cada diez cuadros, que es el tronco rodando. Lo apunta el campo +0x0C de
+;   la plantilla de 0xAFC2, cuyo manejador es 0xA728
 ;   0xafb0..0xafb6  (6 bytes)
+DATA_guion_anim_troncos:
+	defb 00ah,0f8h	; afb0
+	defb 00ah,0fch	; afb2
+	defb 000h,000h	; afb4
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e282: Cuatro bytes que 0xAD2E copia a 0xE282
 ;   0xafb6..0xafba  (4 bytes)
-; DATOS inicializadores_troncos_2_y_3: Dos bloques de cuatro bytes (Y, X, patron, color) iguales entre si -6F E0 F8 06- y hermanos del de 0xAFB6, que es el primer tronco. Nadie los copia: 0xAD2E se lleva solo los cuatro del primero y 0xA745 coloca los otros dos por codigo a partir de el. O sea que los datos estan escritos y no se usan
+DATA_inicializador_e282:
+	defb 06fh,0c3h,0f8h,006h	; afb6
+
+; ----------------------------------------------------------------------
+; DATOS inicializadores_troncos_2_y_3: Dos bloques de cuatro bytes (Y, X,
+;   patron, color) iguales entre si -6F E0 F8 06- y hermanos del de 0xAFB6,
+;   que es el primer tronco. Nadie los copia: 0xAD2E se lleva solo los cuatro
+;   del primero y 0xA745 coloca los otros dos por codigo a partir de el. O sea
+;   que los datos estan escritos y no se usan
 ;   0xafba..0xafc2  (8 bytes)
-; DATOS plantilla_objeto_e303: Plantilla de objeto de 22 bytes que 0xAD39 copia a 0xE303. Su manejador es 0xA728
+DATA_inicializadores_troncos_2_y_3:
+	defb 06fh,0e0h,0f8h,006h	; afba
+	defb 06fh,0e0h,0f8h,006h	; afbe
+
+; ----------------------------------------------------------------------
+; DATOS plantilla_objeto_e303: Plantilla de objeto de 22 bytes que 0xAD39
+;   copia a 0xE303. Su manejador es 0xA728
 ;   0xafc2..0xafd8  (22 bytes)
-; DATOS guion_anim_cocodrilos: 01 F8 / 01 FC / 00 00: los mismos dos patrones que el tronco pero cambiando cada cuadro, que es la boca del cocodrilo. Lo apunta la plantilla de 0xAFEA, manejador 0xA7F5
+DATA_plantilla_objeto_e303:
+	defb 0e0h,000h,000h,000h,000h,000h,001h,038h,0ffh,000h,000h,000h,0b0h,0afh,001h,000h,001h,002h,028h,0a7h,082h,0e2h	; afc2  .......8..........(...
+
+; ----------------------------------------------------------------------
+; DATOS guion_anim_cocodrilos: 01 F8 / 01 FC / 00 00: los mismos dos patrones
+;   que el tronco pero cambiando cada cuadro, que es la boca del cocodrilo. Lo
+;   apunta la plantilla de 0xAFEA, manejador 0xA7F5
 ;   0xafd8..0xafde  (6 bytes)
+DATA_guion_anim_cocodrilos:
+	defb 001h,0f8h	; afd8
+	defb 001h,0fch	; afda
+	defb 000h,000h	; afdc
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e282_b: Cuatro bytes que 0xAD84 copia a 0xE282
 ;   0xafde..0xafe2  (4 bytes)
+DATA_inicializador_e282_b:
+	defb 070h,078h,0f8h,001h	; afde
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e286: Cuatro bytes que 0xAD8F copia a 0xE286
 ;   0xafe2..0xafe6  (4 bytes)
+DATA_inicializador_e286:
+	defb 070h,060h,0f8h,001h	; afe2
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e28a: Cuatro bytes que 0xAD9A copia a 0xE28A
 ;   0xafe6..0xafea  (4 bytes)
-; DATOS plantilla_objeto_e303_b: Otra plantilla de 22 bytes para 0xE303, copiada por 0xADA5. Su manejador es 0xA7F5
-;   0xafea..0xb000  (22 bytes)
-; DATOS guion_anim_estorbo: Siete pares con esperas desiguales (2, 1, 3, 2, 2, 4, 1) entre los patrones 0xF8 y 0xFC: un parpadeo irregular. Lo apunta la plantilla de 0xB014, la del estorbo de la derecha
-;   0xb000..0xb010  (16 bytes)
-; DATOS inicializador_e28e: Los cuatro bytes de atributo del sprite 9 (Y=0x6F, X=0xC3, patron=0xF8, color=0x06) que copian a 0xE28E SEIS sitios distintos (0xAA89, 0xAACC, 0xAB3C, 0xAB72, 0xABD7, 0xAC31)
-;   0xb010..0xb014  (4 bytes)
-; DATOS plantilla_objeto_e319: Plantilla de objeto de 22 bytes que copian a 0xE319 cinco sitios (0xAA94, 0xAAD7, 0xAB94, 0xABE2, 0xAC3C). Su campo de manejador viene a CERO: se rellena despues en marcha
-;   0xb014..0xb02a  (22 bytes)
-; DATOS plantilla_objeto_e2bf: Plantilla de objeto de 22 bytes que el arranque (0x8094) copia a 0xE2BF y 0xAE54 copia a 0xE32F. Su manejador es 0xA962
-;   0xb02a..0xb040  (22 bytes)
-; DATOS guion_celdas_serpiente: Guion de 6 celdas: LA SERPIENTE, 3x2 en filas 14-15, columnas 24-26, tiles 0x90-0x95. Lo llama 0xAA7D
-;   0xb040..0xb05a  (26 bytes)
-; DATOS guion_celdas_objeto_2: Guion de 6 celdas: mismo hueco 3x2, tiles 0xA8-0xAD. Lo llama 0xABC5
-;   0xb05a..0xb074  (26 bytes)
-; DATOS guion_celdas_objeto_3: Guion de 6 celdas: mismo hueco 3x2, tiles 0xB0-0xB5. Lo llama 0xAC1F
-;   0xb074..0xb08e  (26 bytes)
-; DATOS guion_celdas_borrado: Guion de 6 celdas: el mismo hueco de 3x2, pero las seis con el MISMO tile 0x30, que es el blanco. O sea que no pinta nada: BORRA el objeto. Lo llaman 0x87B9 (al recoger el tesoro), 0x8D59 y 0x8D6C
-;   0xb08e..0xb0a8  (26 bytes)
-; DATOS guion_celdas_tesoro: Guion de 6 celdas: EL TESORO, mismo hueco 3x2, tiles 0x98-0x9D (los patrones los carga antes la rutina de cada tesoro: saco, barra o anillo). Lo llama 0xAB88
-;   0xb0a8..0xb0c2  (26 bytes)
-; DATOS guion_celdas_fogata: Guion de 3 celdas: LA FOGATA, solo la fila 15 del hueco, columnas 24-26, tiles 0xA0-0xA2. Lo llama 0xAABA
-;   0xb0c2..0xb0d0  (14 bytes)
-; DATOS filas_del_rotulo: Cuatro filas de 8 tiles (0x58-0x6F, mas el blanco 0x30 en las cuatro esquinas). Las copian CUATRO sitios, uno por fila: 0xA889, 0xA89C, 0xA8BB y 0xA8D1, todos con la longitud leida de 0xE133 y con 8 menos esa longitud como desplazamiento (0xA896, 0xA8CB): el rotulo dibujandose por columnas
-;   0xb0d0..0xb0f0  (32 bytes)
-; DATOS colores_iniciales: Treinta y dos bytes de color que 0x8A01 copia a la VRAM 0x2000, el principio de la tabla de colores. Los tres del offset +0x0B (0xB0FB, 7B 7B 7B) los reescriben en 0x200B tres sitios (0xAC6B, 0xADB2 y 0xADE8), deshaciendo el parche de 0xB110
-;   0xb0f0..0xb110  (32 bytes)
-; DATOS colores_alternativos: Tres bytes (1B 1B 1B) que escriben en la VRAM 0x200B tres sitios distintos (0xAC7C, 0xADF6 y 0xAE07), encima de los originales: el parche de color que deshacen 0xAC6B, 0xADB2 y 0xADE8
-;   0xb110..0xb113  (3 bytes)
+DATA_inicializador_e28a:
+	defb 070h,090h,0f8h,001h	; afe6
+
 ; ----------------------------------------------------------------------
-	defb 04bh,000h,04bh,000h,0b5h,0ach,0b5h,0ach,038h,0aeh,038h,0aeh,0b5h,0ach,0b5h,0ach	; ae90  K.K.....8.8.....
-	defb 038h,0aeh,038h,0aeh,011h,0ach,051h,0abh,01bh,0abh,0b7h,0abh,011h,0ach,051h,0abh	; aea0  8.8...Q.......Q.
-	defb 01bh,0abh,0b7h,0abh,0aah,0a9h,0aah,0a9h,07ch,0ach,06bh,0ach,075h,0adh,0f6h,0adh	; aeb0  ........|.k.u...
-	defb 004h,0aeh,0e8h,0adh,01fh,0adh,01fh,0adh,01fh,0adh,01fh,0adh,01fh,0adh,01fh,0adh	; aec0  ................
-	defb 0b7h,0aah,074h,0aah,01ch,000h,0c9h,001h,058h,000h,0cah,001h,059h,000h,0cbh,001h	; aed0  ..t.....X...Y...
-	defb 05ah,000h,0cch,001h,05dh,000h,0cdh,001h,05bh,000h,0ceh,001h,05eh,000h,0cfh,001h	; aee0  Z...]...[...^...
-	defb 05ch,000h,0d0h,001h,063h,000h,0d1h,001h,05eh,000h,0d2h,001h,062h,000h,0d3h,001h	; aef0  \...c...^...b...
-	defb 05dh,000h,0d4h,001h,061h,000h,0d5h,001h,060h,000h,0d6h,001h,05fh,000h,0e9h,001h	; af00  ]...a...`..._...
-	defb 064h,000h,0eah,001h,065h,000h,0ebh,001h,066h,000h,0ech,001h,069h,000h,0edh,001h	; af10  d...e...f...i...
-	defb 067h,000h,0eeh,001h,06ah,000h,0efh,001h,068h,000h,0f0h,001h,06fh,000h,0f1h,001h	; af20  g...j...h...o...
-	defb 06ah,000h,0f2h,001h,06eh,000h,0f3h,001h,069h,000h,0f4h,001h,06dh,000h,0f5h,001h	; af30  j...n...i...m...
-	defb 06ch,000h,0f6h,001h,06bh,000h,02fh,068h,084h,00ch,02fh,078h,0a8h,00ch,02fh,088h	; af40  l...k./h../x../.
-	defb 0cch,00ch,003h,000h,003h,004h,000h,000h,003h,008h,003h,00ch,000h,000h,0a2h,080h	; af50  ................
-	defb 000h,00fh,0e0h,000h,000h,000h,000h,000h,007h,000h,001h,008h,0ddh,000h,052h,0afh	; af60  ..............R.
-	defb 001h,000h,003h,005h,09eh,0a6h,092h,0e2h,06dh,020h,034h,00ch,06dh,020h,034h,006h	; af70  ........m 4.m 4.
-	defb 06dh,020h,034h,00fh,032h,020h,032h,024h,032h,028h,032h,02ch,032h,030h,032h,034h	; af80  m 4.2 2$2(2,2024
-	defb 032h,038h,032h,03ch,032h,040h,000h,000h,0c0h,000h,001h,000h,000h,000h,000h,0b4h	; af90  282<2@..........
-	defb 000h,010h,0ddh,000h,000h,000h,001h,000h,001h,005h,025h,081h,0a2h,0e2h,000h,000h	; afa0  ..........%.....
-	defb 00ah,0f8h,00ah,0fch,000h,000h,06fh,0c3h,0f8h,006h,06fh,0e0h,0f8h,006h,06fh,0e0h	; afb0  ......o...o...o.
-	defb 0f8h,006h,0e0h,000h,000h,000h,000h,000h,001h,038h,0ffh,000h,000h,000h,0b0h,0afh	; afc0  .........8......
-	defb 001h,000h,001h,002h,028h,0a7h,082h,0e2h,001h,0f8h,001h,0fch,000h,000h,070h,078h	; afd0  ....(.........px
-	defb 0f8h,001h,070h,060h,0f8h,001h,070h,090h,0f8h,001h,0e0h,000h,000h,000h,000h,000h	; afe0  ..p`..p.........
-	defb 000h,000h,000h,000h,000h,000h,0d8h,0afh,001h,000h,004h,005h,0f5h,0a7h,082h,0e2h	; aff0  ................
-	defb 002h,0f8h,001h,0fch,003h,0f8h,002h,0fch,002h,0f8h,004h,0fch,001h,0f8h,000h,000h	; b000  ................
-	defb 06fh,0c3h,0f8h,006h,0a0h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; b010  o...............
-	defb 000h,0b0h,001h,000h,004h,005h,000h,000h,08eh,0e2h,0c0h,000h,000h,000h,000h,000h	; b020  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,009h,004h,062h,0a9h,000h,000h	; b030  ............b...
+; DATOS plantilla_objeto_e303_b: Otra plantilla de 22 bytes para 0xE303,
+;   copiada por 0xADA5. Su manejador es 0xA7F5
+;   0xafea..0xb000  (22 bytes)
+DATA_plantilla_objeto_e303_b:
+	defb 0e0h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,0d8h,0afh,001h,000h,004h,005h,0f5h,0a7h,082h,0e2h	; afea  ......................
+
+; ----------------------------------------------------------------------
+; DATOS guion_anim_estorbo: Siete pares con esperas desiguales (2, 1, 3, 2, 2,
+;   4, 1) entre los patrones 0xF8 y 0xFC: un parpadeo irregular. Lo apunta la
+;   plantilla de 0xB014, la del estorbo de la derecha
+;   0xb000..0xb010  (16 bytes)
+DATA_guion_anim_estorbo:
+	defb 002h,0f8h	; b000
+	defb 001h,0fch	; b002
+	defb 003h,0f8h	; b004
+	defb 002h,0fch	; b006
+	defb 002h,0f8h	; b008
+	defb 004h,0fch	; b00a
+	defb 001h,0f8h	; b00c
+	defb 000h,000h	; b00e
+
+; ----------------------------------------------------------------------
+; DATOS inicializador_e28e: Los cuatro bytes de atributo del sprite 9 (Y=0x6F,
+;   X=0xC3, patron=0xF8, color=0x06) que copian a 0xE28E SEIS sitios distintos
+;   (0xAA89, 0xAACC, 0xAB3C, 0xAB72, 0xABD7, 0xAC31)
+;   0xb010..0xb014  (4 bytes)
+DATA_inicializador_e28e:
+	defb 06fh,0c3h,0f8h,006h	; b010
+
+; ----------------------------------------------------------------------
+; DATOS plantilla_objeto_e319: Plantilla de objeto de 22 bytes que copian a
+;   0xE319 cinco sitios (0xAA94, 0xAAD7, 0xAB94, 0xABE2, 0xAC3C). Su campo de
+;   manejador viene a CERO: se rellena despues en marcha
+;   0xb014..0xb02a  (22 bytes)
+DATA_plantilla_objeto_e319:
+	defb 0a0h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,0b0h,001h,000h,004h,005h,000h,000h,08eh,0e2h	; b014  ......................
+
+; ----------------------------------------------------------------------
+; DATOS plantilla_objeto_e2bf: Plantilla de objeto de 22 bytes que el arranque
+;   (0x8094) copia a 0xE2BF y 0xAE54 copia a 0xE32F. Su manejador es 0xA962
+;   0xb02a..0xb040  (22 bytes)
+DATA_plantilla_objeto_e2bf:
+	defb 0c0h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,009h,004h,062h,0a9h,000h,000h	; b02a  ..................b...
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_serpiente: Guion de 6 celdas: LA SERPIENTE, 3x2 en filas
+;   14-15, columnas 24-26, tiles 0x90-0x95. Lo llama 0xAA7D
+;   0xb040..0xb05a  (26 bytes)
+DATA_guion_celdas_serpiente:
 	defb 006h,000h,0d8h,001h,090h,000h,0d9h,001h,091h,000h,0dah,001h,092h,000h,0f8h,001h	; b040  ................
-	defb 093h,000h,0f9h,001h,094h,000h,0fah,001h,095h,000h,006h,000h,0d8h,001h,0a8h,000h	; b050  ................
-	defb 0d9h,001h,0a9h,000h,0dah,001h,0aah,000h,0f8h,001h,0abh,000h,0f9h,001h,0ach,000h	; b060  ................
-	defb 0fah,001h,0adh,000h,006h,000h,0d8h,001h,0b0h,000h,0d9h,001h,0b1h,000h,0dah,001h	; b070  ................
-	defb 0b2h,000h,0f8h,001h,0b3h,000h,0f9h,001h,0b4h,000h,0fah,001h,0b5h,000h,006h,000h	; b080  ................
-	defb 0d8h,001h,030h,000h,0d9h,001h,030h,000h,0dah,001h,030h,000h,0f8h,001h,030h,000h	; b090  ..0...0...0...0.
-	defb 0f9h,001h,030h,000h,0fah,001h,030h,000h,006h,000h,0d8h,001h,098h,000h,0d9h,001h	; b0a0  ..0...0.........
-	defb 099h,000h,0dah,001h,09ah,000h,0f8h,001h,09bh,000h,0f9h,001h,09ch,000h,0fah,001h	; b0b0  ................
-	defb 09dh,000h,003h,000h,0f8h,001h,0a0h,000h,0f9h,001h,0a1h,000h,0fah,001h,0a2h,000h	; b0c0  ................
-	defb 030h,058h,059h,05ah,05dh,05bh,05eh,05ch,063h,05eh,062h,05dh,061h,060h,05fh,030h	; b0d0  0XYZ][^\c^b]a`_0
-	defb 030h,064h,065h,066h,069h,067h,06ah,068h,06fh,06ah,06eh,069h,06dh,06ch,06bh,030h	; b0e0  0defigjhojnimlk0
-	defb 098h,097h,087h,08fh,091h,061h,01bh,08ch,006h,016h,01bh,07bh,07bh,07bh,0c7h,0c7h	; b0f0  .....a.....{{{..
-	defb 0c7h,0c7h,01bh,05bh,06bh,0dbh,0cbh,0fch,0fch,0f1h,0f1h,03ch,03ch,03ch,037h,037h	; b100  ...[k......<<<77
-	defb 01bh,01bh,01bh	; b110  ...
+	defb 093h,000h,0f9h,001h,094h,000h,0fah,001h,095h,000h	; b050  ..........
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_objeto_2: Guion de 6 celdas: mismo hueco 3x2, tiles
+;   0xA8-0xAD. Lo llama 0xABC5
+;   0xb05a..0xb074  (26 bytes)
+DATA_guion_celdas_objeto_2:
+	defb 006h,000h,0d8h,001h,0a8h,000h,0d9h,001h,0a9h,000h,0dah,001h,0aah,000h,0f8h,001h	; b05a  ................
+	defb 0abh,000h,0f9h,001h,0ach,000h,0fah,001h,0adh,000h	; b06a  ..........
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_objeto_3: Guion de 6 celdas: mismo hueco 3x2, tiles
+;   0xB0-0xB5. Lo llama 0xAC1F
+;   0xb074..0xb08e  (26 bytes)
+DATA_guion_celdas_objeto_3:
+	defb 006h,000h,0d8h,001h,0b0h,000h,0d9h,001h,0b1h,000h,0dah,001h,0b2h,000h,0f8h,001h	; b074  ................
+	defb 0b3h,000h,0f9h,001h,0b4h,000h,0fah,001h,0b5h,000h	; b084  ..........
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_borrado: Guion de 6 celdas: el mismo hueco de 3x2, pero
+;   las seis con el MISMO tile 0x30, que es el blanco. O sea que no pinta
+;   nada: BORRA el objeto. Lo llaman 0x87B9 (al recoger el tesoro), 0x8D59 y
+;   0x8D6C
+;   0xb08e..0xb0a8  (26 bytes)
+DATA_guion_celdas_borrado:
+	defb 006h,000h,0d8h,001h,030h,000h,0d9h,001h,030h,000h,0dah,001h,030h,000h,0f8h,001h	; b08e  ....0...0...0...
+	defb 030h,000h,0f9h,001h,030h,000h,0fah,001h,030h,000h	; b09e  0...0...0.
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_tesoro: Guion de 6 celdas: EL TESORO, mismo hueco 3x2,
+;   tiles 0x98-0x9D (los patrones los carga antes la rutina de cada tesoro:
+;   saco, barra o anillo). Lo llama 0xAB88
+;   0xb0a8..0xb0c2  (26 bytes)
+DATA_guion_celdas_tesoro:
+	defb 006h,000h,0d8h,001h,098h,000h,0d9h,001h,099h,000h,0dah,001h,09ah,000h,0f8h,001h	; b0a8  ................
+	defb 09bh,000h,0f9h,001h,09ch,000h,0fah,001h,09dh,000h	; b0b8  ..........
+
+; ----------------------------------------------------------------------
+; DATOS guion_celdas_fogata: Guion de 3 celdas: LA FOGATA, solo la fila 15 del
+;   hueco, columnas 24-26, tiles 0xA0-0xA2. Lo llama 0xAABA
+;   0xb0c2..0xb0d0  (14 bytes)
+DATA_guion_celdas_fogata:
+	defb 003h,000h,0f8h,001h,0a0h,000h,0f9h,001h,0a1h,000h,0fah,001h,0a2h,000h	; b0c2  ..............
+
+; ----------------------------------------------------------------------
+; DATOS filas_del_rotulo: Cuatro filas de 8 tiles (0x58-0x6F, mas el blanco
+;   0x30 en las cuatro esquinas). Las copian CUATRO sitios, uno por fila:
+;   0xA889, 0xA89C, 0xA8BB y 0xA8D1, todos con la longitud leida de 0xE133 y
+;   con 8 menos esa longitud como desplazamiento (0xA896, 0xA8CB): el rotulo
+;   dibujandose por columnas
+;   0xb0d0..0xb0f0  (32 bytes)
+DATA_filas_del_rotulo:
+	defb 030h,058h,059h,05ah,05dh,05bh,05eh,05ch	; b0d0  0XYZ][^\
+	defb 063h,05eh,062h,05dh,061h,060h,05fh,030h	; b0d8  c^b]a`_0
+	defb 030h,064h,065h,066h,069h,067h,06ah,068h	; b0e0  0defigjh
+	defb 06fh,06ah,06eh,069h,06dh,06ch,06bh,030h	; b0e8  ojnimlk0
+
+; ----------------------------------------------------------------------
+; DATOS colores_iniciales: Treinta y dos bytes de color que 0x8A01 copia a la
+;   VRAM 0x2000, el principio de la tabla de colores. Los tres del offset
+;   +0x0B (0xB0FB, 7B 7B 7B) los reescriben en 0x200B tres sitios (0xAC6B,
+;   0xADB2 y 0xADE8), deshaciendo el parche de 0xB110
+;   0xb0f0..0xb110  (32 bytes)
+DATA_colores_iniciales:
+	defb 098h,097h,087h,08fh,091h,061h,01bh,08ch	; b0f0  .....a..
+	defb 006h,016h,01bh,07bh,07bh,07bh,0c7h,0c7h	; b0f8  ...{{{..
+	defb 0c7h,0c7h,01bh,05bh,06bh,0dbh,0cbh,0fch	; b100  ...[k...
+	defb 0fch,0f1h,0f1h,03ch,03ch,03ch,037h,037h	; b108  ...<<<77
+
+; ----------------------------------------------------------------------
+; DATOS colores_alternativos: Tres bytes (1B 1B 1B) que escriben en la VRAM
+;   0x200B tres sitios distintos (0xAC7C, 0xADF6 y 0xAE07), encima de los
+;   originales: el parche de color que deshacen 0xAC6B, 0xADB2 y 0xADE8
+;   0xb110..0xb113  (3 bytes)
+DATA_colores_alternativos:
+	defb 01bh,01bh,01bh	; b110
 
 ; ======================================================================
 ; CODIGO 0xb113..0xb393  (640 bytes)
@@ -4782,12 +5452,23 @@ vector_de_sonido_vacio:
 	ret			;b392
 
 ; ----------------------------------------------------------------------
-; DATOS tabla_instaladora_de_vectores: Once registros de 3 bytes [ranura][puntero]: la rutina de 0xB32E copia el puntero al vector 0xE1E6+ranura*2 y pone 0xE1EE a 1. El limite lo fija el propio codigo (cp 0Bh / ret nc), y en 0xB3B4 empieza ya la primera rutina instalable
+; DATOS tabla_instaladora_de_vectores: Once registros de 3 bytes
+;   [ranura][puntero]: la rutina de 0xB32E copia el puntero al vector
+;   0xE1E6+ranura*2 y pone 0xE1EE a 1. El limite lo fija el propio codigo (cp
+;   0Bh / ret nc), y en 0xB3B4 empieza ya la primera rutina instalable
 ;   0xb393..0xb3b4  (33 bytes)
-; ----------------------------------------------------------------------
-	defb 003h,092h,0b3h,003h,092h,0b3h,001h,0ceh,0b3h,002h,02eh,0b5h,000h,075h,0b4h,001h	; b393  .............u..
-	defb 0b4h,0b3h,000h,0e4h,0b5h,000h,0beh,0b5h,000h,064h,0b5h,000h,09fh,0b4h,001h,0e6h	; b3a3  .........d......
-	defb 0b4h	; b3b3  .
+DATA_tabla_instaladora_de_vectores:
+	defb 003h,092h,0b3h	; b393
+	defb 003h,092h,0b3h	; b396
+	defb 001h,0ceh,0b3h	; b399
+	defb 002h,02eh,0b5h	; b39c
+	defb 000h,075h,0b4h	; b39f
+	defb 001h,0b4h,0b3h	; b3a2
+	defb 000h,0e4h,0b5h	; b3a5
+	defb 000h,0beh,0b5h	; b3a8
+	defb 000h,064h,0b5h	; b3ab
+	defb 000h,09fh,0b4h	; b3ae
+	defb 001h,0e6h,0b4h	; b3b1
 
 ; ======================================================================
 ; CODIGO 0xb3b4..0xb3bd  (9 bytes)
@@ -4800,11 +5481,13 @@ sonido_5:		; Canal B, guion de 0xB3BD
 	jp arranca_barrido_canal_b		;b3ba
 
 ; ----------------------------------------------------------------------
-; DATOS guion_sonido_b3bd: Guion de barrido del instalador 0xB3B4 (ld hl,0B3BDh / ld (0E1F5h),hl): DOS registros de 8 bytes (0xB3BD y 0xB3C5) y el 0x00 final en 0xB3CD
+; DATOS guion_sonido_b3bd: Guion de barrido del instalador 0xB3B4 (ld
+;   hl,0B3BDh / ld (0E1F5h),hl): DOS registros de 8 bytes (0xB3BD y 0xB3C5) y
+;   el 0x00 final en 0xB3CD
 ;   0xb3bd..0xb3ce  (17 bytes)
-; ----------------------------------------------------------------------
+DATA_guion_sonido_b3bd:
 	defb 033h,001h,001h,000h,000h,00ah,000h,030h,002h,00ch,003h,0ffh,000h,000h,000h,000h	; b3bd  3......0........
-	defb 000h	; b3cd  .
+	defb 000h	; b3cd
 
 ; ======================================================================
 ; CODIGO 0xb3ce..0xb3d7  (9 bytes)
@@ -4817,9 +5500,10 @@ sonido_2:		; Canal B, guion de 0xB3D7
 	jp arranca_barrido_canal_b		;b3d4
 
 ; ----------------------------------------------------------------------
-; DATOS guion_sonido_b3d7: Guion del instalador 0xB3CE, con sus secciones encadenadas y su 0x00 final en 0xB3EF
+; DATOS guion_sonido_b3d7: Guion del instalador 0xB3CE, con sus secciones
+;   encadenadas y su 0x00 final en 0xB3EF
 ;   0xb3d7..0xb3f0  (25 bytes)
-; ----------------------------------------------------------------------
+DATA_guion_sonido_b3d7:
 	defb 00ah,003h,001h,0ffh,0ffh,0e7h,000h,087h,001h,000h,000h,000h,000h,000h,000h,000h	; b3d7  ................
 	defb 008h,009h,001h,090h,000h,027h,0ffh,0b7h,000h	; b3e7  .....'...
 
@@ -4907,12 +5591,22 @@ sonido_4:		; Canal A, guion de 0xB47E
 	jp arranca_guion_canal_a		;b47b
 
 ; ----------------------------------------------------------------------
-; DATOS guion_sonido_b47e: Ocho registros de 4 bytes y el 0x00. Los periodos NO forman escala (037F, 0120, 0222, 012D, 019F, 0137, 01BF, 0143); lo que cae de golpe en golpe es el VOLUMEN, de 0x0D a 0x04: un sonido que se apaga. Instalador 0xB475 (jp 0xB5EA); cierra EXACTO donde empieza el codigo de 0xB49F
+; DATOS guion_sonido_b47e: Ocho registros de 4 bytes y el 0x00. Los periodos
+;   NO forman escala (037F, 0120, 0222, 012D, 019F, 0137, 01BF, 0143); lo que
+;   cae de golpe en golpe es el VOLUMEN, de 0x0D a 0x04: un sonido que se
+;   apaga. Instalador 0xB475 (jp 0xB5EA); cierra EXACTO donde empieza el
+;   codigo de 0xB49F
 ;   0xb47e..0xb49f  (33 bytes)
-; ----------------------------------------------------------------------
-	defb 002h,003h,07fh,00dh,001h,001h,020h,00ah,002h,002h,022h,009h,002h,001h,02dh,008h	; b47e  ...... ..."...-.
-	defb 002h,001h,09fh,007h,001h,001h,037h,006h,001h,001h,0bfh,005h,001h,001h,043h,004h	; b48e  ......7.......C.
-	defb 000h	; b49e  .
+DATA_guion_sonido_b47e:
+	defb 002h,003h,07fh,00dh	; b47e
+	defb 001h,001h,020h,00ah	; b482
+	defb 002h,002h,022h,009h	; b486
+	defb 002h,001h,02dh,008h	; b48a
+	defb 002h,001h,09fh,007h	; b48e
+	defb 001h,001h,037h,006h	; b492
+	defb 001h,001h,0bfh,005h	; b496
+	defb 001h,001h,043h,004h	; b49a
+	defb 000h	; b49e
 
 ; ======================================================================
 ; CODIGO 0xb49f..0xb56d  (206 bytes)
@@ -5027,15 +5721,31 @@ sonido_8:		; Canal A, guion de 0xB56D: el de recoger el tesoro
 	jp arranca_guion_canal_a		;b56a
 
 ; ----------------------------------------------------------------------
-; DATOS guion_sonido_b56d: Veinte registros. Instalador 0xB564; cierra EXACTO en 0xB5BE
+; DATOS guion_sonido_b56d: Veinte registros. Instalador 0xB564; cierra EXACTO
+;   en 0xB5BE
 ;   0xb56d..0xb5be  (81 bytes)
-; ----------------------------------------------------------------------
-	defb 003h,000h,0feh,00ah,002h,000h,000h,000h,003h,000h,0beh,00ah,002h,000h,000h,000h	; b56d  ................
-	defb 003h,000h,094h,00ah,002h,000h,000h,000h,00ah,000h,07fh,00ah,002h,000h,000h,000h	; b57d  ................
-	defb 002h,000h,094h,00ah,001h,000h,000h,000h,010h,000h,07fh,009h,001h,000h,000h,000h	; b58d  ................
-	defb 002h,000h,07fh,008h,001h,000h,000h,000h,002h,000h,07fh,007h,001h,000h,000h,000h	; b59d  ................
-	defb 002h,000h,07fh,006h,001h,000h,000h,000h,002h,000h,07fh,004h,001h,000h,000h,000h	; b5ad  ................
-	defb 000h	; b5bd  .
+DATA_guion_sonido_b56d:
+	defb 003h,000h,0feh,00ah	; b56d
+	defb 002h,000h,000h,000h	; b571
+	defb 003h,000h,0beh,00ah	; b575
+	defb 002h,000h,000h,000h	; b579
+	defb 003h,000h,094h,00ah	; b57d
+	defb 002h,000h,000h,000h	; b581
+	defb 00ah,000h,07fh,00ah	; b585
+	defb 002h,000h,000h,000h	; b589
+	defb 002h,000h,094h,00ah	; b58d
+	defb 001h,000h,000h,000h	; b591
+	defb 010h,000h,07fh,009h	; b595
+	defb 001h,000h,000h,000h	; b599
+	defb 002h,000h,07fh,008h	; b59d
+	defb 001h,000h,000h,000h	; b5a1
+	defb 002h,000h,07fh,007h	; b5a5
+	defb 001h,000h,000h,000h	; b5a9
+	defb 002h,000h,07fh,006h	; b5ad
+	defb 001h,000h,000h,000h	; b5b1
+	defb 002h,000h,07fh,004h	; b5b5
+	defb 001h,000h,000h,000h	; b5b9
+	defb 000h	; b5bd
 
 ; ======================================================================
 ; CODIGO 0xb5be..0xb5c7  (9 bytes)
@@ -5048,11 +5758,18 @@ sonido_7:		; Canal A, guion de 0xB5C7
 	jp arranca_guion_canal_a		;b5c4
 
 ; ----------------------------------------------------------------------
-; DATOS guion_sonido_b5c7: Siete registros. Instalador 0xB5BE; cierra EXACTO en 0xB5E4
+; DATOS guion_sonido_b5c7: Siete registros. Instalador 0xB5BE; cierra EXACTO
+;   en 0xB5E4
 ;   0xb5c7..0xb5e4  (29 bytes)
-; ----------------------------------------------------------------------
-	defb 01ch,002h,01bh,00ah,004h,001h,00dh,00ah,030h,001h,040h,00ah,005h,001h,00dh,00ah	; b5c7  ........0.@.....
-	defb 005h,001h,040h,00ah,005h,001h,00dh,00ah,013h,001h,040h,00ah,000h	; b5d7  ..@.......@..
+DATA_guion_sonido_b5c7:
+	defb 01ch,002h,01bh,00ah	; b5c7
+	defb 004h,001h,00dh,00ah	; b5cb
+	defb 030h,001h,040h,00ah	; b5cf
+	defb 005h,001h,00dh,00ah	; b5d3
+	defb 005h,001h,040h,00ah	; b5d7
+	defb 005h,001h,00dh,00ah	; b5db
+	defb 013h,001h,040h,00ah	; b5df
+	defb 000h	; b5e3
 
 ; ======================================================================
 ; CODIGO 0xb5e4..0xb632  (78 bytes)
@@ -5103,15 +5820,33 @@ guion_canal_a_nota:
 	ret			;b631
 
 ; ----------------------------------------------------------------------
-; DATOS guion_sonido_b632: Veinte registros de 4 bytes. Lo instala 0xB5E4 (ld hl,0B632h / ld (0E1EFh),hl) y despues, cada cuadro, 0xB605 recupera el puntero de 0xE1EF, 0xB608 lee el registro que toca y 0xB62E vuelve a guardar el puntero ya avanzado. Cierra EXACTO en 0xB683
+; DATOS guion_sonido_b632: Veinte registros de 4 bytes. Lo instala 0xB5E4 (ld
+;   hl,0B632h / ld (0E1EFh),hl) y despues, cada cuadro, 0xB605 recupera el
+;   puntero de 0xE1EF, 0xB608 lee el registro que toca y 0xB62E vuelve a
+;   guardar el puntero ya avanzado. Cierra EXACTO en 0xB683
 ;   0xb632..0xb683  (81 bytes)
-; ----------------------------------------------------------------------
-	defb 01ch,003h,027h,00bh,008h,002h,0cfh,009h,010h,002h,0a7h,00bh,010h,003h,027h,00ah	; b632  ..'...........'.
-	defb 004h,002h,03bh,00bh,004h,002h,050h,00ah,004h,002h,03bh,00bh,004h,002h,050h,00ah	; b642  ..;...P...;...P.
-	defb 004h,002h,03bh,00bh,004h,002h,050h,00ah,004h,002h,03bh,00bh,004h,002h,050h,00ah	; b652  ..;...P...;...P.
-	defb 004h,002h,03bh,00bh,004h,002h,050h,00ah,004h,002h,03bh,00bh,004h,002h,050h,00ah	; b662  ..;...P...;...P.
-	defb 004h,002h,03bh,00bh,004h,002h,050h,00ah,004h,002h,03bh,009h,004h,002h,050h,008h	; b672  ..;...P...;...P.
-	defb 000h	; b682  .
+DATA_guion_sonido_b632:
+	defb 01ch,003h,027h,00bh	; b632
+	defb 008h,002h,0cfh,009h	; b636
+	defb 010h,002h,0a7h,00bh	; b63a
+	defb 010h,003h,027h,00ah	; b63e
+	defb 004h,002h,03bh,00bh	; b642
+	defb 004h,002h,050h,00ah	; b646
+	defb 004h,002h,03bh,00bh	; b64a
+	defb 004h,002h,050h,00ah	; b64e
+	defb 004h,002h,03bh,00bh	; b652
+	defb 004h,002h,050h,00ah	; b656
+	defb 004h,002h,03bh,00bh	; b65a
+	defb 004h,002h,050h,00ah	; b65e
+	defb 004h,002h,03bh,00bh	; b662
+	defb 004h,002h,050h,00ah	; b666
+	defb 004h,002h,03bh,00bh	; b66a
+	defb 004h,002h,050h,00ah	; b66e
+	defb 004h,002h,03bh,00bh	; b672
+	defb 004h,002h,050h,00ah	; b676
+	defb 004h,002h,03bh,009h	; b67a
+	defb 004h,002h,050h,008h	; b67e
+	defb 000h	; b682
 
 ; ======================================================================
 ; CODIGO 0xb683..0xb6b0  (45 bytes)
@@ -5181,10 +5916,11 @@ retrocede_pantalla_lfsr:
 	ret			;b6af
 
 ; ----------------------------------------------------------------------
-; DATOS ret_huerfano_b6b0: Un `ret` detras del que cierra la rutina que retrocede el registro de pantalla
+; DATOS ret_huerfano_b6b0: Un `ret` detras del que cierra la rutina que
+;   retrocede el registro de pantalla
 ;   0xb6b0..0xb6b1  (1 bytes)
-; ----------------------------------------------------------------------
-	defb 0c9h	; b6b0  .
+DATA_ret_huerfano_b6b0:
+	defb 0c9h	; b6b0
 
 ; ======================================================================
 ; CODIGO 0xb6b1..0xb9e4  (819 bytes)
@@ -5582,130 +6318,217 @@ avanza_el_guion_de_la_demo:
 	ret			;b9e3
 
 ; ----------------------------------------------------------------------
-; DATOS guion_grabado_de_la_demo: Diecisiete parejas [cuadros][entrada] que 0xB9C8 recorre con el indice de IX+0x0B doblado: el primer byte va a IX+0x11 (0xB9D8) y el segundo a 0xE259 (0xB9DD), que es de donde la demo se saca los mandos. Acotada por la estructura siguiente, que empieza en 0xBA06
+; DATOS guion_grabado_de_la_demo: Diecisiete parejas [cuadros][entrada] que
+;   0xB9C8 recorre con el indice de IX+0x0B doblado: el primer byte va a
+;   IX+0x11 (0xB9D8) y el segundo a 0xE259 (0xB9DD), que es de donde la demo
+;   se saca los mandos. Acotada por la estructura siguiente, que empieza en
+;   0xBA06
 ;   0xb9e4..0xba06  (34 bytes)
-; DATOS filas_de_tiles_seguidos: Los tiles 0x0A a 0x17 dos veces seguidas (0xBA06 y 0xBA14) y detras diez 0x2C y un 0x2D, que ya no son continuacion de la serie sino relleno con otro tile. 0xB8FF copia desde 0xBA06 y 0xB917 desde 0xBA0D, los dos con la longitud sacada de 0xE2CE
+DATA_guion_grabado_de_la_demo:
+	defb 048h,000h	; b9e4
+	defb 03ah,008h	; b9e6
+	defb 020h,018h	; b9e8
+	defb 0bah,000h	; b9ea
+	defb 010h,002h	; b9ec
+	defb 040h,008h	; b9ee
+	defb 0ffh,000h	; b9f0
+	defb 0ffh,000h	; b9f2
+	defb 0ffh,000h	; b9f4
+	defb 001h,002h	; b9f6
+	defb 003h,004h	; b9f8
+	defb 005h,006h	; b9fa
+	defb 007h,008h	; b9fc
+	defb 000h,000h	; b9fe
+	defb 000h,000h	; ba00
+	defb 000h,000h	; ba02
+	defb 000h,000h	; ba04
+
+; ----------------------------------------------------------------------
+; DATOS filas_de_tiles_seguidos: Los tiles 0x0A a 0x17 dos veces seguidas
+;   (0xBA06 y 0xBA14) y detras diez 0x2C y un 0x2D, que ya no son continuacion
+;   de la serie sino relleno con otro tile. 0xB8FF copia desde 0xBA06 y 0xB917
+;   desde 0xBA0D, los dos con la longitud sacada de 0xE2CE
 ;   0xba06..0xba2d  (39 bytes)
-; DATOS fila_dibujo_6: Veinticinco tiles CONSECUTIVOS (0x22 a 0x3A) que 0xB6E2 copia a la VRAM 0x18C0, la fila 6 del name table, columnas 0-24. No es texto: es un dibujo troceado tile a tile, como todo lo que parece letra en este cartucho
+DATA_filas_de_tiles_seguidos:
+	defb 00ah,00bh,00ch,00dh,00eh,00fh,010h,011h,012h,013h,014h,015h,016h,017h,00ah,00bh	; ba06  ................
+	defb 00ch,00dh,00eh,00fh,010h,011h,012h,013h,014h,015h,016h,017h,02ch,02ch,02ch,02ch	; ba16  ............,,,,
+	defb 02ch,02ch,02ch,02ch,02ch,02ch,02dh	; ba26
+
+; ----------------------------------------------------------------------
+; DATOS fila_dibujo_6: Veinticinco tiles CONSECUTIVOS (0x22 a 0x3A) que 0xB6E2
+;   copia a la VRAM 0x18C0, la fila 6 del name table, columnas 0-24. No es
+;   texto: es un dibujo troceado tile a tile, como todo lo que parece letra en
+;   este cartucho
 ;   0xba2d..0xba46  (25 bytes)
+DATA_fila_dibujo_6:
+	defb 022h,023h,024h,025h,026h,027h,028h,029h,02ah,02bh,02ch,02dh,02eh,02fh,030h,031h	; ba2d  "#$%&'()*+,-./01
+	defb 032h,033h,034h,035h,036h,037h,038h,039h,03ah	; ba3d  23456789:
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e28e_b: Cuatro bytes que 0xB749 copia a 0xE28E
 ;   0xba46..0xba4a  (4 bytes)
+DATA_inicializador_e28e_b:
+	defb 02fh,000h,0f8h,000h	; ba46
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e132: Ochenta y ocho bytes que 0xB808 copia a 0xE132
 ;   0xba4a..0xbaa2  (88 bytes)
-; DATOS listas_nibble_espejo: Dos listas de 8 bytes, y la segunda es la primera CON LOS NIBBLES INTERCAMBIADOS (61->16, 91->19, B1->1B...). Consumidor sin encontrar: ni una instruccion trazada ni un puntero literal en toda la ROM apuntan aqui. Acotada por el inicializador que acaba en 0xBAA2 y el bloque RLE que empieza en 0xBAB2
+DATA_inicializador_e132:
+	defb 0feh,0fch,0f8h,0f0h,0e0h,0c0h,080h,000h,0c7h,0c0h,0cfh,0cch,0cch,0cch,0cch,0cfh	; ba4a  ................
+	defb 0ffh,018h,099h,019h,019h,019h,019h,099h,0f8h,018h,098h,099h,09bh,09eh,09ch,098h	; ba5a  ................
+	defb 03fh,060h,0c0h,08ch,00ch,00ch,00ch,00ch,0ffh,000h,0fch,0c0h,0fch,00ch,00ch,0fch	; ba6a  ?`..............
+	defb 080h,000h,0cfh,0cch,0cch,0cch,0cch,0cfh,000h,000h,0cch,0ceh,0cfh,0cdh,0cch,0cch	; ba7a  ................
+	defb 000h,000h,060h,060h,060h,0e0h,0e0h,060h,000h,000h,000h,000h,000h,000h,000h,000h	; ba8a  ..```..`........
+	defb 060h,090h,0b0h,0a0h,0c0h,030h,050h,040h	; ba9a  `....0P@
+
+; ----------------------------------------------------------------------
+; DATOS listas_nibble_espejo: Dos listas de 8 bytes, y la segunda es la
+;   primera CON LOS NIBBLES INTERCAMBIADOS (61->16, 91->19, B1->1B...).
+;   Consumidor sin encontrar: ni una instruccion trazada ni un puntero literal
+;   en toda la ROM apuntan aqui. Acotada por el inicializador que acaba en
+;   0xBAA2 y el bloque RLE que empieza en 0xBAB2
 ;   0xbaa2..0xbab2  (16 bytes)
-; DATOS graficos_rle_b7_sprites: Bloque RLE: 32 bytes a la VRAM 0x3FC0, o sea UN patron de sprite de 16x16 -0xB6B8 pone el registro 1 del VDP a 0xE2, con el bit 1 a uno-, el ultimo de la tabla que arranca en 0x3800. Lo carga 0xB729
+DATA_listas_nibble_espejo:
+	defb 061h,091h,0b1h,0a1h,0c1h,031h,051h,041h	; baa2  a....1QA
+	defb 016h,019h,01bh,01ah,01ch,013h,015h,014h	; baaa  ........
+
+; ----------------------------------------------------------------------
+; DATOS graficos_rle_b7_sprites: Bloque RLE: 32 bytes a la VRAM 0x3FC0, o sea
+;   UN patron de sprite de 16x16 -0xB6B8 pone el registro 1 del VDP a 0xE2,
+;   con el bit 1 a uno-, el ultimo de la tabla que arranca en 0x3800. Lo carga
+;   0xB729
 ;   0xbab2..0xbaca  (24 bytes)
-; DATOS graficos_rle_b7_sprites2: Bloque RLE: 96 bytes a la VRAM 0x3800, los tres primeros patrones de sprite. Lo carga 0xB72F
+DATA_graficos_rle_b7_sprites:
+	defb 0c0h,03fh,048h,001h,003h,006h,00ch,01fh,030h,060h,0c0h,008h,000h,043h,0c7h,0c0h	; bab2  .?H.....0`...C..
+	defb 0cfh,004h,0cch,041h,0cfh,008h,000h,000h	; bac2  ...A....
+
+; ----------------------------------------------------------------------
+; DATOS graficos_rle_b7_sprites2: Bloque RLE: 96 bytes a la VRAM 0x3800, los
+;   tres primeros patrones de sprite. Lo carga 0xB72F
 ;   0xbaca..0xbb01  (55 bytes)
-; DATOS graficos_rle_tiles_v1a: Bloque RLE: 112 bytes (14 tiles) a la VRAM 0x0850, banco 1 de la tabla de patrones. Rama del bit 1 de IX+0x0B apagado; lo carga 0xB8D1
+DATA_graficos_rle_b7_sprites2:
+	defb 000h,038h,047h,000h,07dh,04dh,07dh,061h,061h,061h,00ah,000h,046h,0f7h,036h,0f7h	; baca  .8G.}M}aaa..F.6.
+	defb 0e6h,0b6h,0b7h,00ah,000h,046h,0bdh,031h,03dh,00dh,00dh,0bdh,00ah,000h,046h,0ech	; bada  .....F.1=.....F.
+	defb 08eh,0cfh,08fh,08dh,0ech,00ah,000h,041h,0dfh,005h,0c6h,00ah,000h,046h,0bch,030h	; baea  .......A.....F.0
+	defb 03ch,00ch,00ch,03ch,009h,000h,000h	; bafa
+
+; ----------------------------------------------------------------------
+; DATOS graficos_rle_tiles_v1a: Bloque RLE: 112 bytes (14 tiles) a la VRAM
+;   0x0850, banco 1 de la tabla de patrones. Rama del bit 1 de IX+0x0B
+;   apagado; lo carga 0xB8D1
 ;   0xbb01..0xbb4a  (73 bytes)
-; DATOS graficos_rle_tiles_v1b: Bloque RLE: 112 bytes a la VRAM 0x1050. Son los mismos NUMEROS de tile que el banco 1 (0x0A-0x17) pero con DIBUJO DISTINTO: descomprimidos los dos, 72 de los 112 bytes cambian. Lo carga 0xB8D7
+DATA_graficos_rle_tiles_v1a:
+	defb 050h,008h,010h,000h,003h,07fh,005h,03fh,044h,0f8h,0fch,0feh,03fh,004h,01fh,044h	; bb01  P......?D...?..D
+	defb 0fdh,0fdh,079h,079h,004h,078h,043h,0ffh,0ffh,0bdh,005h,03ch,05ah,0ffh,0ffh,0beh	; bb11  ..yy.xC....<Z...
+	defb 0beh,03eh,03eh,03fh,03fh,0f8h,0f9h,039h,01bh,003h,076h,0f6h,0ffh,0f3h,0fbh,0f9h	; bb21  .>>??..9..v.....
+	defb 07dh,07dh,03dh,03dh,0ffh,0f1h,0f1h,006h,0e0h,042h,0f8h,0f8h,006h,0f0h,041h,07dh	; bb31  }}==.....B....A}
+	defb 007h,07ch,043h,0dfh,095h,091h,00dh,000h,000h	; bb41  .|C......
+
+; ----------------------------------------------------------------------
+; DATOS graficos_rle_tiles_v1b: Bloque RLE: 112 bytes a la VRAM 0x1050. Son
+;   los mismos NUMEROS de tile que el banco 1 (0x0A-0x17) pero con DIBUJO
+;   DISTINTO: descomprimidos los dos, 72 de los 112 bytes cambian. Lo carga
+;   0xB8D7
 ;   0xbb4a..0xbb95  (75 bytes)
-; DATOS graficos_rle_tiles_v2a: Bloque RLE: 112 bytes a la VRAM 0x0850, la variante con el bit 1 de IX+0x0B encendido. Lo carga 0xB8DF
+DATA_graficos_rle_tiles_v1b:
+	defb 050h,010h,010h,000h,006h,03fh,05bh,07fh,07fh,03fh,0feh,0fch,0f8h,000h,000h,080h	; bb4a  P....?[..?......
+	defb 080h,078h,078h,0fch,0fch,0fch,000h,000h,000h,03ch,03ch,07eh,07eh,07eh,000h,000h	; bb5a  .xx......<<~~~..
+	defb 000h,03fh,005h,03eh,046h,07fh,07fh,0ffh,07fh,07ch,03eh,004h,000h,044h,0ffh,0ffh	; bb6a  .?.>F....|>..D..
+	defb 01fh,03fh,004h,000h,044h,0e0h,0e2h,0e7h,0ffh,004h,000h,044h,0f0h,0f1h,0f3h,0ffh	; bb7a  .?..D......D....
+	defb 004h,000h,005h,07ch,043h,000h,07ch,07ch,010h,000h,000h	; bb8a  ...|C.||...
+
+; ----------------------------------------------------------------------
+; DATOS graficos_rle_tiles_v2a: Bloque RLE: 112 bytes a la VRAM 0x0850, la
+;   variante con el bit 1 de IX+0x0B encendido. Lo carga 0xB8DF
 ;   0xbb95..0xbbfb  (102 bytes)
-; DATOS graficos_rle_tiles_v2b: Bloque RLE: 112 bytes a la VRAM 0x1050, y cierra EXACTO contra el inicializador de 0xBC61. Lo carga 0xB8E5
+DATA_graficos_rle_tiles_v2a:
+	defb 050h,008h,00bh,000h,065h,0f8h,0fch,06eh,066h,066h,000h,000h,000h,01ch,03eh,03eh	; bb95  P...e..nff....>>
+	defb 036h,077h,000h,000h,000h,0e7h,0e7h,066h,066h,07eh,000h,000h,000h,07bh,07bh,031h	; bba5  6w.....ff~...{{1
+	defb 031h,031h,000h,000h,000h,0e0h,0f0h,0b8h,098h,098h,078h,000h,000h,000h,007h,00fh	; bbb5  11........x.....
+	defb 01ch,018h,018h,000h,000h,000h,09fh,0dfh,0cch,00ch,00fh,000h,000h,000h,0c1h,0e3h	; bbc5  ................
+	defb 0e3h,0e3h,0c7h,000h,000h,000h,0ceh,0efh,0e7h,067h,076h,000h,000h,000h,07bh,07bh	; bbd5  .........gv...{{
+	defb 0b1h,0f1h,0f1h,000h,000h,000h,0f9h,0f9h,098h,080h,0e0h,000h,000h,080h,09eh,03fh	; bbe5  ...............?
+	defb 033h,030h,03eh,008h,000h,000h	; bbf5
+
+; ----------------------------------------------------------------------
+; DATOS graficos_rle_tiles_v2b: Bloque RLE: 112 bytes a la VRAM 0x1050, y
+;   cierra EXACTO contra el inicializador de 0xBC61. Lo carga 0xB8E5
 ;   0xbbfb..0xbc61  (102 bytes)
+DATA_graficos_rle_tiles_v2b:
+	defb 050h,010h,008h,000h,078h,066h,066h,06eh,0fch,0f8h,000h,000h,000h,063h,07fh,07fh	; bbfb  P...xffn.....c..
+	defb 0e3h,0f7h,000h,000h,000h,03ch,03ch,03ch,098h,098h,000h,000h,000h,031h,031h,031h	; bc0b  .....<<<.....111
+	defb 07bh,07bh,000h,000h,000h,098h,098h,0b8h,0f0h,0e0h,000h,000h,000h,018h,018h,01ch	; bc1b  {{..............
+	defb 00fh,007h,000h,000h,000h,00dh,00dh,0cch,0deh,09eh,000h,000h,000h,065h,086h,0c7h	; bc2b  .............e..
+	defb 0c7h,0eeh,0efh,000h,000h,000h,036h,0f6h,0f6h,03fh,07fh,000h,000h,000h,071h,031h	; bc3b  ......6..?....q1
+	defb 031h,07bh,07bh,000h,000h,000h,0e0h,080h,098h,0f8h,0f8h,000h,000h,000h,01fh,003h	; bc4b  1{{.............
+	defb 033h,03fh,01eh,00bh,000h,000h	; bc5b
+
+; ----------------------------------------------------------------------
 ; DATOS inicializador_e26a_b: Doce bytes que 0xB73E copia a 0xE26A
 ;   0xbc61..0xbc6d  (12 bytes)
-; DATOS relleno: Los 915 bytes finales del cartucho, TODOS a 0x00 (comprobado byte a byte): relleno hasta completar los 16 KB
-;   0xbc6d..0xc000  (915 bytes)
+DATA_inicializador_e26a_b:
+	defb 03ch,0ffh,000h,000h,03ch,0ffh,004h,000h,03ch,0ffh,008h,000h	; bc61  <...<...<...
+
 ; ----------------------------------------------------------------------
-	defb 048h,000h,03ah,008h,020h,018h,0bah,000h,010h,002h,040h,008h,0ffh,000h,0ffh,000h	; b9e4  H.:. .....@.....
-	defb 0ffh,000h,001h,002h,003h,004h,005h,006h,007h,008h,000h,000h,000h,000h,000h,000h	; b9f4  ................
-	defb 000h,000h,00ah,00bh,00ch,00dh,00eh,00fh,010h,011h,012h,013h,014h,015h,016h,017h	; ba04  ................
-	defb 00ah,00bh,00ch,00dh,00eh,00fh,010h,011h,012h,013h,014h,015h,016h,017h,02ch,02ch	; ba14  ..............,,
-	defb 02ch,02ch,02ch,02ch,02ch,02ch,02ch,02ch,02dh,022h,023h,024h,025h,026h,027h,028h	; ba24  ,,,,,,,,-"#$%&'(
-	defb 029h,02ah,02bh,02ch,02dh,02eh,02fh,030h,031h,032h,033h,034h,035h,036h,037h,038h	; ba34  )*+,-./012345678
-	defb 039h,03ah,02fh,000h,0f8h,000h,0feh,0fch,0f8h,0f0h,0e0h,0c0h,080h,000h,0c7h,0c0h	; ba44  9:/.............
-	defb 0cfh,0cch,0cch,0cch,0cch,0cfh,0ffh,018h,099h,019h,019h,019h,019h,099h,0f8h,018h	; ba54  ................
-	defb 098h,099h,09bh,09eh,09ch,098h,03fh,060h,0c0h,08ch,00ch,00ch,00ch,00ch,0ffh,000h	; ba64  ......?`........
-	defb 0fch,0c0h,0fch,00ch,00ch,0fch,080h,000h,0cfh,0cch,0cch,0cch,0cch,0cfh,000h,000h	; ba74  ................
-	defb 0cch,0ceh,0cfh,0cdh,0cch,0cch,000h,000h,060h,060h,060h,0e0h,0e0h,060h,000h,000h	; ba84  ........```..`..
-	defb 000h,000h,000h,000h,000h,000h,060h,090h,0b0h,0a0h,0c0h,030h,050h,040h,061h,091h	; ba94  ......`....0P@a.
-	defb 0b1h,0a1h,0c1h,031h,051h,041h,016h,019h,01bh,01ah,01ch,013h,015h,014h,0c0h,03fh	; baa4  ...1QA.........?
-	defb 048h,001h,003h,006h,00ch,01fh,030h,060h,0c0h,008h,000h,043h,0c7h,0c0h,0cfh,004h	; bab4  H.....0`...C....
-	defb 0cch,041h,0cfh,008h,000h,000h,000h,038h,047h,000h,07dh,04dh,07dh,061h,061h,061h	; bac4  .A.....8G.}M}aaa
-	defb 00ah,000h,046h,0f7h,036h,0f7h,0e6h,0b6h,0b7h,00ah,000h,046h,0bdh,031h,03dh,00dh	; bad4  ..F.6......F.1=.
-	defb 00dh,0bdh,00ah,000h,046h,0ech,08eh,0cfh,08fh,08dh,0ech,00ah,000h,041h,0dfh,005h	; bae4  ....F........A..
-	defb 0c6h,00ah,000h,046h,0bch,030h,03ch,00ch,00ch,03ch,009h,000h,000h,050h,008h,010h	; baf4  ...F.0<..<...P..
-	defb 000h,003h,07fh,005h,03fh,044h,0f8h,0fch,0feh,03fh,004h,01fh,044h,0fdh,0fdh,079h	; bb04  ....?D...?..D..y
-	defb 079h,004h,078h,043h,0ffh,0ffh,0bdh,005h,03ch,05ah,0ffh,0ffh,0beh,0beh,03eh,03eh	; bb14  y.xC....<Z....>>
-	defb 03fh,03fh,0f8h,0f9h,039h,01bh,003h,076h,0f6h,0ffh,0f3h,0fbh,0f9h,07dh,07dh,03dh	; bb24  ??..9..v.....}}=
-	defb 03dh,0ffh,0f1h,0f1h,006h,0e0h,042h,0f8h,0f8h,006h,0f0h,041h,07dh,007h,07ch,043h	; bb34  =.....B....A}.|C
-	defb 0dfh,095h,091h,00dh,000h,000h,050h,010h,010h,000h,006h,03fh,05bh,07fh,07fh,03fh	; bb44  ......P....?[..?
-	defb 0feh,0fch,0f8h,000h,000h,080h,080h,078h,078h,0fch,0fch,0fch,000h,000h,000h,03ch	; bb54  .......xx......<
-	defb 03ch,07eh,07eh,07eh,000h,000h,000h,03fh,005h,03eh,046h,07fh,07fh,0ffh,07fh,07ch	; bb64  <~~~...?.>F....|
-	defb 03eh,004h,000h,044h,0ffh,0ffh,01fh,03fh,004h,000h,044h,0e0h,0e2h,0e7h,0ffh,004h	; bb74  >..D...?..D.....
-	defb 000h,044h,0f0h,0f1h,0f3h,0ffh,004h,000h,005h,07ch,043h,000h,07ch,07ch,010h,000h	; bb84  .D.......|C.||..
-	defb 000h,050h,008h,00bh,000h,065h,0f8h,0fch,06eh,066h,066h,000h,000h,000h,01ch,03eh	; bb94  .P...e..nff....>
-	defb 03eh,036h,077h,000h,000h,000h,0e7h,0e7h,066h,066h,07eh,000h,000h,000h,07bh,07bh	; bba4  >6w.....ff~...{{
-	defb 031h,031h,031h,000h,000h,000h,0e0h,0f0h,0b8h,098h,098h,078h,000h,000h,000h,007h	; bbb4  111........x....
-	defb 00fh,01ch,018h,018h,000h,000h,000h,09fh,0dfh,0cch,00ch,00fh,000h,000h,000h,0c1h	; bbc4  ................
-	defb 0e3h,0e3h,0e3h,0c7h,000h,000h,000h,0ceh,0efh,0e7h,067h,076h,000h,000h,000h,07bh	; bbd4  ..........gv...{
-	defb 07bh,0b1h,0f1h,0f1h,000h,000h,000h,0f9h,0f9h,098h,080h,0e0h,000h,000h,080h,09eh	; bbe4  {...............
-	defb 03fh,033h,030h,03eh,008h,000h,000h,050h,010h,008h,000h,078h,066h,066h,06eh,0fch	; bbf4  ?30>...P...xffn.
-	defb 0f8h,000h,000h,000h,063h,07fh,07fh,0e3h,0f7h,000h,000h,000h,03ch,03ch,03ch,098h	; bc04  ....c.......<<<.
-	defb 098h,000h,000h,000h,031h,031h,031h,07bh,07bh,000h,000h,000h,098h,098h,0b8h,0f0h	; bc14  ....111{{.......
-	defb 0e0h,000h,000h,000h,018h,018h,01ch,00fh,007h,000h,000h,000h,00dh,00dh,0cch,0deh	; bc24  ................
-	defb 09eh,000h,000h,000h,065h,086h,0c7h,0c7h,0eeh,0efh,000h,000h,000h,036h,0f6h,0f6h	; bc34  ....e........6..
-	defb 03fh,07fh,000h,000h,000h,071h,031h,031h,07bh,07bh,000h,000h,000h,0e0h,080h,098h	; bc44  ?....q11{{......
-	defb 0f8h,0f8h,000h,000h,000h,01fh,003h,033h,03fh,01eh,00bh,000h,000h,03ch,0ffh,000h	; bc54  .......3?....<..
-	defb 000h,03ch,0ffh,004h,000h,03ch,0ffh,008h,000h,000h,000h,000h,000h,000h,000h,000h	; bc64  .<...<..........
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bc74  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bc84  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bc94  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bca4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcb4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcc4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcd4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bce4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcf4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd04  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd14  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd24  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd34  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd44  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd54  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd64  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd74  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd84  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd94  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bda4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdb4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdc4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdd4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bde4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdf4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be04  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be14  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be24  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be34  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be44  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be54  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be64  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be74  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be84  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be94  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bea4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; beb4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bec4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bed4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bee4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bef4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf04  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf14  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf24  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf34  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf44  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf54  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf64  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf74  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf84  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf94  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfa4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfb4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfc4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfd4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfe4  ................
-	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bff4  ............
+; DATOS relleno: Los 915 bytes finales del cartucho, TODOS a 0x00 (comprobado
+;   byte a byte): relleno hasta completar los 16 KB
+;   0xbc6d..0xc000  (915 bytes)
+DATA_relleno:
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bc6d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bc7d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bc8d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bc9d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcad  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcbd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bccd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcdd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bced  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bcfd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd0d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd1d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd2d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd3d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd4d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd5d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd6d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd7d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd8d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bd9d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdad  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdbd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdcd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bddd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bded  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bdfd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be0d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be1d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be2d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be3d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be4d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be5d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be6d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be7d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be8d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; be9d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bead  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bebd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; becd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bedd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; beed  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; befd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf0d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf1d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf2d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf3d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf4d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf5d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf6d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf7d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf8d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bf9d  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfad  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfbd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfcd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfdd  ................
+	defb 000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h,000h	; bfed  ................
+	defb 000h,000h,000h	; bffd

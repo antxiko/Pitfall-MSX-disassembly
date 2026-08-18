@@ -51,7 +51,7 @@ reparto:
 
 ## Sin el cartucho
 
-El trabajo está en `src/pitfall.asm` y en las notas: 5711 líneas con 337
+El trabajo está en `src/pitfall.asm` y en las notas: 6534 líneas con 337
 rutinas y tablas bautizadas, 305 comentarios anclados a su dirección y 130
 rangos de datos con su explicación al lado. Los 17 tests corren sin el binario.
 
@@ -74,6 +74,16 @@ trazador estático no puede seguir: el gancho de interrupción (0x80F7), los
 manejadores que viajan dentro de plantillas copiadas a RAM, las cuatro tablas
 de despacho y los vectores de sonido, declarados uno a uno con la instrucción
 que los escribe apuntada al lado.
+
+### Como salen los bloques de datos
+
+Cada rango de datos declarado en el `.notes` sale como un bloque aparte: su
+cabecera diciendo para que sirve, su etiqueta y el volcado alineado a su primer
+byte, de modo que se ve de un golpe donde acaba una tabla y empieza la
+siguiente. Una linea opcional le da al bloque la anchura de fila de su
+estructura real -un patron de ocho bytes por fila, cuatro bytes por registro de
+animacion, `defw` si es una tabla de punteros- y cuando un puntero cae en un
+bloque que tiene nombre, ese nombre se escribe al lado.
 
 ## Las herramientas
 
