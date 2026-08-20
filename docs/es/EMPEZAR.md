@@ -52,7 +52,7 @@ reparto:
 ## Sin el cartucho
 
 El trabajo está en `src/pitfall.asm` y en las notas: 6.541 líneas con 337
-rutinas y tablas bautizadas, 583 comentarios anclados a su dirección y 130
+rutinas y tablas bautizadas, 913 comentarios anclados a su dirección y 130
 rangos de datos con su explicación al lado. Los 17 tests corren sin el binario.
 
 ## Cómo está organizado

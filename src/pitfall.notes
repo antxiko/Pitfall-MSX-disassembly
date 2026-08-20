@@ -73,7 +73,11 @@ B 0x9A6F estructuras. De cada uno se decrementa su contador (+0x11) y
 B 0x9A6F solo cuando llega a cero se recarga con su periodo (+0x10) y
 B 0x9A6F se le llama: asi cada objeto corre a su propio ritmo sin que
 B 0x9A6F haya un temporizador por objeto.
+C 0x9A6F lo primero el reloj, que corre aunque no haya partida
+C 0x9A72 y lo segundo, mirar si el jugador ha llegado a un borde
+C 0x9A75 si ha cambiado de pantalla, este cuadro ya no hace nada mas
 C 0x9A78 si 0xE221 no es cero corre la DEMO, y la entrada no se lee: se le mete la grabada de 0xE259
+C 0x9A84 y el mando 2 a cero, aunque no vaya a leerlo nadie
 C 0x9A88 0xE247: cuantos objetos vivos hay, y detras sus punteros
 C 0x9A99 el contador propio del objeto; solo actua cuando llega a cero
 L 0x9CBE cambia_de_pantalla_a_la_derecha
@@ -87,13 +91,24 @@ B 0x9CBE el bit 0 de 0xE2EB dice subterraneo. Por abajo el mundo
 B 0x9CBE se recorre al triple. Al final salta a 0x9EE6, la unica
 B 0x9CBE via por la que se monta una escena: cambiar 0xE222 a
 B 0x9CBE pelo no repinta nada
+C 0x9CBE los cuatro bytes de sprite del jugador; IY+1 es su X
 C 0x9CC2 0xE7 es la X del borde derecho
 C 0x9CC9 y 0x19 la del izquierdo, por donde reaparece
+C 0x9CCD una escena por defecto...
 C 0x9CD2 el bit que decide si se avanza una escena o tres
+C 0x9CD6 ...y tres si esta en el subterraneo
+C 0x9CD8 el registro se gira B veces, una por escena saltada
+C 0x9CDF montar la escena devuelve 1 en A, que es lo que corta el cuadro en 0x9A75
+C 0x9CE7 el ld a,0 va entre el cp y el ret nz porque no toca banderas: A a cero avisa de que no se ha cambiado de pantalla
 L 0x9CF9 cambia_de_pantalla_a_la_izquierda
 C 0x9CFA el mismo mecanismo al reves, con la rutina inversa del registro
 L 0x9F91 escoge_decorado_de_la_escena
 C 0x9F91 Los BITS 6-7 del LFSR de pantalla, doblados, son el indice de las dos tablas del decorado: 0xA086 (el juego de 16 tiles) y 0xA08E (el layout). O sea que de los ocho bits del mundo, dos eligen el paisaje, tres el tipo de escena y tres la variante
+C 0x9F96 los bits 7 y 6 se sacan uno a uno a B con dos rotaciones dobles
+C 0x9FA0 y B se dobla: la tabla es de punteros
+C 0x9FA2 DE se coge ANTES del inc b de 0x9FAC: el indice de las dos tablas es solo el paisaje doblado
+C 0x9FA8 y el bit 2 de la variante suma uno, pero solo para 0xE223
+C 0x9FB1 el indice se apila dos veces: hace falta para las dos tablas
 B 0xB68F ############################################################
 B 0xB68F EL MUNDO NO ESTA GUARDADO: SE CALCULA
 B 0xB68F ############################################################
@@ -110,8 +125,13 @@ B 0xB68F tools/mapa_escenas.py lo reproduce y las 255 capturas del
 B 0xB68F emulador salen en ese mismo orden, 255 de 255.
 L 0xB68F avanza_pantalla_lfsr
 C 0xB68F El paso ADELANTE: desplaza 0xE222 a la izquierda metiendo el bit de realimentacion
+C 0xB692 el truco: cada `rla` empuja al acarreo el bit 7 de A, y cada `xor (hl)` vuelve a meter el registro entero para que lo que suba sea la xor de varios bits
+C 0xB69B tras los cinco giros el acarreo lleva b7^b5^b4^b3; se recarga A con el registro...
+C 0xB69C ...y este ultimo `rla` lo corre a la izquierda metiendo esa realimentacion por el bit 0
 L 0xB69F retrocede_pantalla_lfsr
 C 0xB69F El paso ATRAS: la funcion inversa exacta de 0xB68F, desplazando a la derecha. Salir de una pantalla por la izquierda deshace lo que la derecha hizo
+C 0xB6A2 el mismo montaje para calcular el bit, pero al final se gira a la DERECHA
+C 0xB6AC comprobado sobre los 256 valores: 0xB69F deshace exactamente lo que hace 0xB68F, en los dos sentidos
 
 D 0xAE94 0xAEA4 tabla_de_submodos_1 Ocho punteros de palabra para el despachador parametrico de 0xA99F, indexados por el submodo (0xE224)=(0xE222)&7. La base la carga el llamante de 0xADE4. Solo dos rutinas distintas, alternadas de dos en dos: 0xACB5 y 0xAE38
 F 0xAE94 w1
@@ -526,14 +546,23 @@ F 0xAE90 2
 # ---- Tramo 0x9A00-0x9FFF: el cuadro, los objetos, el marcador y el reloj ----
 
 L 0x9A88 recorre_objetos 0xE247 = cuantos hay; detras, un puntero por objeto
+C 0x9A8B B = cuantos objetos hay
+C 0x9A8D con la lista vacia no hay nada que recorrer: el titulo y la pausa se quedan asi
 L 0x9A90 recorre_objetos_bucle
+C 0x9A92 el puntero a la estructura, dos bytes
 C 0x9A97 IX = la estructura del objeto
+C 0x9AA4 IX+0x14/15: donde tiene este objeto sus cuatro bytes de sprite
+C 0x9AAA DE se apila dos veces: una se saca ya en IY y la otra espera al pop iy de 0x9AD7, que lo repone por si el manejador lo ha cambiado
 C 0x9AAE anima
-C 0x9AB3 mueve el eje X, y con IX+6 el Y
+C 0x9AB3 mueve el eje Y (IX+0 con IY+0), y la segunda llamada, con IX+6 e IY+1, el eje X: la X del jugador es IY+0x01 y su fraccion IX+0x0B, la misma pareja que tocan 0x8621 y 0x88CD
+C 0x9AB6 seis bytes mas alla estan los MISMOS campos para el otro eje...
+C 0x9ABB ...e IY+1, que es la X en la tabla de sprites
 C 0x9AC2 bit 6 = tiene manejador propio
+C 0x9AC8 push ix y pop ix seguidos no hacen nada: IX ya vale eso
 C 0x9AD2 la vuelta se apila a mano: el manejador se llama con jp (hl)
 L 0x9AD7 vuelve_del_manejador
 L 0x9AD9 siguiente_objeto
+C 0x9AD9 y al objeto siguiente
 L 0x9AE0 fin_del_cuadro
 B 0x9AE0 0xC7 es `rst 0`, y 0x9AE0 es esta misma linea: el
 B 0x9AE0 codigo intenta machacarse con un reset. Esta en ROM,
@@ -542,20 +571,37 @@ B 0x9AE0 el cartucho a RAM (?)
 C 0x9AE0 se escribe encima de si mismo, pero es ROM: no tiene efecto
 
 L 0x9AEC anima_objeto Bit 5 = animado. IX+0x0E cuenta, IX+0x0F es el fotograma
+C 0x9AEC sin el bit 5 el objeto no cambia de patron
 C 0x9AF1 el contador propio de la animacion
+C 0x9AF5 el fotograma de ahora, y se pasa al siguiente
 C 0x9AF9 IX+0x0C/0D = guion de fotogramas, pares (espera, patron)
+C 0x9AFF se guarda el principio del guion: hace falta para volver a empezar
+C 0x9B00 con el fotograma 0 no hay que avanzar nada, y ademas un djnz con B a cero daria 256 vueltas
 L 0x9B05 anima_objeto_busca
+C 0x9B05 dos bytes por fotograma
 L 0x9B09 anima_objeto_lee
+C 0x9B09 B se queda con el numero de fotograma
+C 0x9B0A el primer byte del par: cuantos cuadros aguanta
+C 0x9B0C un 0 ahi cierra el guion...
+C 0x9B0F ...y se vuelve al primer par, fotograma 0
 L 0x9B13 anima_objeto_guarda
+C 0x9B13 la espera nueva a IX+0x0E y el fotograma a IX+0x0F
 C 0x9B1B el patron nuevo, ya en la tabla de sprites (IY)
 
 L 0x9B1F mueve_objeto Bit 0 = movil. Suma IX+1/2 a la posicion
+C 0x9B1F sin el bit 0 el objeto no se mueve solo
 C 0x9B24 la parte entera vive en el sprite; IX+5 es la fraccion
+C 0x9B2A IX+1/2 es la velocidad, en 1/256 de pixel por cuadro
+C 0x9B30 la suma es de 16 bits: arriba el pixel y abajo lo que sobra
 C 0x9B37 bit 2 = tiene topes
+C 0x9B3C los bits 3 y 4 se encienden y luego se apaga el del tope que NO se haya pasado: quedan diciendo contra cual se ha chocado
 C 0x9B45 IX+3 y IX+4, los dos topes
+C 0x9B48 por debajo de IX+3, rebote
+C 0x9B52 y por encima de IX+4, tambien
 L 0x9B5A mueve_objeto_rebota
 C 0x9B5A bit 1 = rebota en vez de pararse
 C 0x9B60 complemento a dos: la velocidad cambia de signo
+C 0x9B65 los dos cpl mas este inc de: complemento a dos de 16 bits
 
 L 0x9B6D reloj_de_inactividad
 B 0x9B6D APAGAR LA PANTALLA SI NADIE TOCA NADA
@@ -563,11 +609,17 @@ B 0x9B6D Tres bytes en cascada (0xE25A/B/C), cada uno de 60. Si
 B 0x9B6D no llega entrada se van gastando; al agotarse los tres
 B 0x9B6D se apaga la pantalla y se espera a RETURN, STOP o ESC.
 C 0x9B6D bits 0-3 de 0xE05F: si hay entrada, se recarga la cuenta
+C 0x9B74 con entrada se recargan el segundo y el tercero, pero NO el primero: los 60 cuadros de 0xE25A siguen corriendo, y eso solo desajusta la cuenta en menos de un segundo
 L 0x9B7D reloj_de_inactividad_cuenta
+C 0x9B7D 0xE25A gasta uno por cuadro, y solo al agotarse toca el segundo
+C 0x9B82 cada uno vuelve a 60 al pasar el testigo: 60x60x60 cuadros, o sea una hora larga sin tocar nada
+C 0x9B8C con la pantalla apagada ya no hace falta la interrupcion
 C 0x9B8D registro 1 del VDP = 0x82: pantalla apagada
 L 0x9B93 espera_tecla_apagado
+C 0x9B93 aqui dentro los mandos se leen a mano: el bucle principal esta parado
 C 0x9B99 0xE05F es la ENTRADA, no un contador: los seis bits bajos son las cuatro direcciones y los dos botones
 C 0x9BA9 fila 7, mascara 0x94 = RETURN, STOP o ESC
+C 0x9BAD y a esperar otra vez
 L 0x9BAF vuelve_a_encender
 C 0x9BAF registro 1 = 0xE2: pantalla e interrupcion otra vez
 L 0x9BB5 espera_a_que_suelten
@@ -576,38 +628,65 @@ C 0x9BBE mascara 0x94, los bits 7, 4 y 2 de esa fila: mientras siga pulsado algu
 C 0x9BC2 y los tres bytes del reloj de inactividad vuelven a 60
 
 L 0x9BCF empieza_el_final Deja un solo objeto y le mete el manejador de la despedida
+C 0x9BCF de todos los objetos solo queda el jugador
 C 0x9BD1 solo queda un objeto vivo
 C 0x9BD8 el manejador de la secuencia final
+C 0x9BE1 se le apagan el bit de animado, el de movil de la X y el de movil de la Y: en la despedida no se mueve
 C 0x9BEF 0xE21C = 3: el cuadro ya no corre normal
 
 L 0x9BF3 lee_teclas_de_sistema
 C 0x9BF3 en demo no se lee nada
+C 0x9BFA fila 7 del teclado, la de RETURN, STOP y ESC
 C 0x9C0A RETURN, y solo si 0xE269 lo permite
 L 0x9C0F mira_stop_y_esc
 C 0x9C0F STOP arranca de cero por INIT
 C 0x9C18 0xE267 = por donde va el pulsar-soltar de la pausa
+C 0x9C1B ESC, el bit 2 de esa fila
+C 0x9C20 se para el juego...
+C 0x9C25 ...y 0xE267 pasa a 1, que es esperar a que la suelten
 L 0x9C2B pausa_espera_soltar
+C 0x9C2B estado 1: mientras siga pulsada, nada
+C 0x9C35 soltada, estado 2: esperando la segunda pulsacion
 L 0x9C3D pausa_segunda_pulsacion
+C 0x9C3D estado 2
+C 0x9C42 y en cuanto la vuelvan a pulsar...
+C 0x9C47 ...se reanuda, y estado 3
 L 0x9C52 pausa_ultimo_soltar
+C 0x9C52 estado 3: esperar a que la suelten otra vez
+C 0x9C5C y vuelta al 0, listo para otra pausa
 L 0x9C60 vuelve_sin_hacer_nada
 L 0x9C61 vuelve_al_titulo
+C 0x9C61 0xE34A solo esta a cero desde que 0x8143 lo borra al llegar el final: en mitad de una partida, RETURN no devuelve al titulo
 C 0x9C66 borra 0x17C bytes de estado de un golpe
 C 0x9C7C tabla de sprites a cero: se van todos de la pantalla
+C 0x9C7F y se marca que ya se ha vuelto, para que no se repita
+C 0x9C84 sonido 1, el mismo que suena al entrar en cada pantalla
+C 0x9C8B 0xE1E3 = 1: el sonido de los pasos suena en el cuadro siguiente
+C 0x9C8E los patrones de sprite, otra vez a la VRAM
+C 0x9C91 y a empezar partida: de aqui no se vuelve
 
 L 0x9C94 pausa_activa Guarda cuantos objetos habia y pone cero: nada se mueve
+C 0x9C94 si el cuadro ya esta parado por otra cosa, no se toca nada
 C 0x9C9C con un solo objeto no se puede pausar (es el final)
+C 0x9C9F se apuntan en 0xE189, igual que al morirse...
+C 0x9CA3 ...y la lista se deja a CERO: aqui no queda ni el jugador
+C 0x9CA6 0xE21C = 2, la marca de pausa que mira el reloj de 0x9DB8
 L 0x9CAC pausa_reanuda
+C 0x9CAC solo se reanuda la pausa del 2: el 3 del final no se toca
+C 0x9CB2 y los objetos vuelven de 0xE189
 L 0x9CD8 avanza_una_o_tres_escenas
 L 0x9CE2 mira_el_borde_izquierdo
 C 0x9CE2 0x16, y reaparece en 0xE3
 
 L 0x9D03 sprites_del_jugador Dos sprites mas, 16 pixeles por encima y con otro patron
 C 0x9D03 0xE2A2 es la mitad de abajo del muneco; 0xE2A6 y 0xE2AA, las dos de arriba
+C 0x9D06 las dos entradas de arriba se dibujan una encima de otra: dos capas de color en el mismo sitio
 C 0x9D10 misma X, Y menos 16: la mitad de arriba
 C 0x9D21 el patron de abajo menos 0x20, y de ahi +0x68 y +0xB0: las dos capas de la mitad de arriba
 C 0x9D24 los patrones de las dos capas de color
 L 0x9D30 anade_objeto Mete DE al final de la lista de 0xE247
 C 0x9D33 0xE247 es el contador, y sube uno
+C 0x9D36 con la lista vacia se escribe directo en la primera casilla
 L 0x9D3A anade_objeto_busca_el_final
 C 0x9D3A dos bytes por puntero: se salta los que ya hay
 L 0x9D3E anade_objeto_escribe
@@ -616,6 +695,8 @@ L 0x9D42 rellena_vram_directo Escribe A en DE bytes de VRAM desde HL
 C 0x9D42 no pasa por 0xB185: se direcciona aqui mismo
 C 0x9D47 el 0x40 marca escritura
 L 0x9D4B rellena_vram_directo_bucle
+C 0x9D4B ni se relee la direccion ni se redirecciona: el VDP autoincrementa el solo
+C 0x9D4E DE cuenta atras, y el or de sus dos mitades caza el cero
 
 L 0x9D54 pinta_marcador
 B 0x9D54 EL MARCADOR Y EL RELOJ
@@ -623,45 +704,73 @@ B 0x9D54 Seis digitos sueltos en 0xE1D6-0xE1DB (0-9 en binario),
 B 0x9D54 que aqui se pasan a tiles en 0xE1DC y se vuelcan a la
 B 0x9D54 VRAM. El reloj de 0xE1D0 es distinto: ya esta guardado
 B 0x9D54 en tiles, y se cuenta atras sobre ellos.
+C 0x9D54 cinco digitos que pueden salir en blanco; el sexto va aparte
+C 0x9D56 0xE1D6-0xE1DB, los seis digitos en binario
+C 0x9D59 0xE1DC-0xE1E1, los mismos ya convertidos en tiles
 C 0x9D5C 0xC3 = blanco, para los ceros de delante
 C 0x9D62 en cuanto sale un digito no nulo se pasa a 0xB8 = '0'
 C 0x9D72 fila 1, columna 6 de la pantalla
 L 0x9D5E pinta_marcador_bucle
+C 0x9D5F mientras el digito sea cero se sigue tirando del blanco
 L 0x9D64 pinta_marcador_digito
 C 0x9D65 el digito se suma a la casilla base: 0xC3 es el blanco y 0xB8 el cero
+C 0x9D69 y al digito siguiente
 C 0x9D6B el ultimo digito siempre sale como numero, aunque sea cero
+C 0x9D6F los seis tiles, de un golpe, a la VRAM
 L 0x9D7C resta_al_marcador A = que digito. Los llamantes usan 5 (una unidad) y 3 (cien)
+C 0x9D7F el digito por el que se empieza, contando desde el de mas peso
+C 0x9D83 y cuantos digitos puede arrastrar el prestamo: los que le quedan a la izquierda mas el
 C 0x9D85 0xFF = se paso de cero, hay que llevarse una
 L 0x9D87 resta_al_marcador_bucle
 C 0x9D88 si el digito se ha pasado de cero (0xFF) se pone a 9 y se sigue por el de la izquierda
-C 0x9D90 si la resta se lo come todo, el marcador se queda a cero
+C 0x9D8B se pone a 9 y se sigue por el de la izquierda
+C 0x9D90 si el prestamo se come los seis digitos, el marcador se deja a cero en vez de darse la vuelta
+C 0x9D9D y a repintar, que la rutina esta justo encima
 L 0x9D9F suma_miles Suma A veces uno en el digito de los miles: los tesoros
+C 0x9D9F A veces de uno en uno: no hay suma, hay incrementos
+C 0x9DA0 el 10 con que se compara cada digito
 L 0x9DA2 suma_miles_bucle
 C 0x9DA2 0xE1D8 son los miles; al llegar a 10 se pone a cero y se lleva una a 0xE1D7
 C 0x9DB0 y de ahi a 0xE1D6, las centenas de mil: mas alla no hay acarreo
 L 0x9DB4 suma_miles_sigue
+C 0x9DB4 y otra de las unidades que pedia A
 
 L 0x9DB8 reloj_de_partida Cuenta atras desde 20:00, un tick cada 60 cuadros
 C 0x9DB8 en pausa (0xE21C) no corre
+C 0x9DBD sin objetos vivos no hay partida: en el titulo y en la pausa el reloj se queda quieto
 C 0x9DC2 0xE1D5 = cuantos cuadros faltan para el tick
+C 0x9DC5 un cuadro menos
+C 0x9DC7 y otros sesenta
 C 0x9DC9 0xB7 es el tile de antes del '0': asi se ve el prestamo
-C 0x9DD7 los segundos vuelven a 5 y 9
+C 0x9DCB 0xE1D4, las unidades de segundo
+C 0x9DD0 se pasaron de cero: vuelven a 9 y toca la decena
+C 0x9DD7 la decena de segundos vuelve a 5
 C 0x9DD9 dos veces, porque en medio esta el ':'
-C 0x9DE8 al llegar la decena de minutos a '0' se pone 0xC4 (?)
+C 0x9DDF las unidades de minuto vuelven a 9
+C 0x9DE1 y por fin la decena de minutos
+C 0x9DE8 el tile 0xC4 es tan blanco como el 0xC3 -descomprimido el bloque de 0x915B, sus ocho bytes son cero-, y esta aqui porque le queda UN decremento antes de llegar al 0xC3, que es la marca de tiempo agotado que mira 0x9DEA. O sea: de 09:59 en adelante el cero de la izquierda se borra, y ese mismo hueco es el que avisa del final
 L 0x9DEA mira_si_se_acabo
 C 0x9DEA 0xC3 en la decena de minutos = se acabo el tiempo
 L 0x9DF1 pinta_reloj
 C 0x9DF4 fila 3, columna 7
 L 0x9DFE se_acabo_el_tiempo
+C 0x9DFE se acabo: la despedida se monta desde aqui
 C 0x9E01 el reloj se deja clavado en 00:00
 
 L 0x9E0E anima_el_final
+C 0x9E0E los tres bytes de 0xE346: cuenta, recarga y fotograma
 C 0x9E12 0xE346 cuenta, 0xE347 recarga, 0xE348 es el fotograma
+C 0x9E16 se recarga con 0xE347...
+C 0x9E1C ...y se recolocan los cuatro sprites que van saliendo
+C 0x9E23 el fotograma es el desplazamiento dentro de la tabla
+C 0x9E28 la recarga queda en nueve cuadros por fotograma
+C 0x9E32 pero el fotograma 0 se queda 0x60 cuadros en pantalla
 L 0x9E36 anima_el_final_vram
 C 0x9E36 14 tiras de 8 bytes desde 0xA33E; el paso de 0x12 es dentro de la tabla, y en la VRAM se avanza de 8 en 8
 L 0x9E3F anima_el_final_bucle
 C 0x9E44 ocho bytes por tira
 C 0x9E4D en la tabla se avanza 0x12 por tira y en la VRAM solo 8
+C 0x9E62 fotograma siguiente
 C 0x9E67 diez fotogramas y vuelta a empezar
 C 0x9E6B al dar la vuelta se esperan 0x3C cuadros
 L 0x9E74 sprites_del_final Cuatro sprites que van saliendo segun avanza 0xE348
@@ -669,15 +778,19 @@ C 0x9E74 hasta el fotograma 3 los cuatro estan a color 0: no se ven
 C 0x9E7B 0xE2B1, 0xE2B5, 0xE2B9 y 0xE2BD son los cuatro colores
 L 0x9E8F sprites_del_final_coloca
 C 0x9E8F Y = 0xBC menos el fotograma: suben poco a poco
-C 0x9E9C el color de cada uno
+C 0x9E91 cpl e inc a: complemento a dos, o sea cambiarle el signo a la resta de arriba
+C 0x9E9C y el color de cada uno: 6, 0x0A, 0x0C y 4
 C 0x9EA0 el segundo no sale hasta el fotograma 6
 C 0x9EA6 la misma cuenta para el segundo
 
 L 0x9EE6 monta_la_escena
 C 0x9EE6 se guarda el tipo anterior en 0xE226
+C 0x9EE9 hay que saber de que tipo se venia para decidir si toca repintar el subsuelo
 C 0x9EEF bits 0-2 del registro de pantalla = la variante
+C 0x9EF7 tres desplazamientos: los bits 3-5 bajan a los 0-2
 C 0x9EFB bits 3-5 = el tipo de escena, 0..7
-C 0x9F2F tres objetos vivos al montar la escena
+C 0x9F02 los tipos 0 y 1 son de superficie...
+C 0x9F06 ...y ahi solo se repinta el subsuelo si se venia de una escena subterranea
 C 0x9F31 0xE2A6-0xE2AD a cero: las dos entradas de sprite que van encima del jugador
 C 0x9F3E 0xE26A-0xE299 a cero: las doce primeras entradas de la tabla
 C 0x9F62 la tabla de sprites entera a la VRAM
@@ -688,7 +801,13 @@ L 0x9F10 monta_la_escena_repinta
 L 0x9F13 monta_la_escena_sigue
 C 0x9F13 sonido 1 al entrar en cada pantalla
 C 0x9F18 las diez cajas se borran, y cada tipo de escena rehace las suyas
+C 0x9F1C 0xE1CE a cero, y a 1 en 0xAE48. Las dos unicas veces que aparece en el cartucho son escrituras: ni un ld a,(0E1CEh) ni un indexado que llegue -el desplazamiento mayor de toda la ROM es 0x17-. Bandera que se escribe y no se lee (?)
 C 0x9F1F al objeto comodin se le pone el manejador del hoyo, 0xA962
+C 0x9F2F tres objetos vivos al montar la escena: el jugador, la liana y el comodin
+C 0x9F53 0x0C, 6 y 0x0F: los colores de las tres entradas del muneco (0xE2A2, 0xE2A6 y 0xE2AA)
+C 0x9F55 este ld hl,0E2ADh no sirve para nada: la linea de al lado machaca HL antes de que se escriba. Sobra
+C 0x9F73 del tipo 2 en adelante hace falta un objeto mas
+C 0x9F7C doblado, que la tabla es de punteros
 
 # ---- Tramo 0xA400-0xAEFF: la liana, los troncos, los cocodrilos y el hoyo ----
 
@@ -1350,31 +1469,54 @@ B 0xB113 Puerto 0x98 datos, 0x99 direccion y registros. Fuera de este
 B 0xB113 bloque solo tocan el VDP 0x811A y 0x9D44.
 
 L 0xB113 borra_la_vram   Los 16 KB de VRAM a cero. La llama INIT dos veces
+C 0xB113 el valor con que se rellena: cero
+C 0xB117 0x4000 = los 16 KB enteros, sin respetar nada de lo que hubiera
 
 B 0xB11E El mismo descompresor que 0xB142 pero escribiendo en RAM.
 B 0xB11E NADIE lo llama: ni un call, ni un salto, ni un puntero.
 L 0xB11E descomprime_rle_a_ram   Gemelo de 0xB142 que escribe en RAM; sin uso
+C 0xB11E gemelo instruccion a instruccion de 0xB14F, con `ld (de),a` donde el otro saca por el puerto 0x98
+C 0xB11F el contador va en los seis bits bajos del token
+C 0xB121 un token 0x00 cierra el bloque
+C 0xB123 bit 7: saltar N posiciones sin escribir nada
+C 0xB127 bit 6: N literales seguidos; sin ninguno de los dos, un byte repetido N veces
 L 0xB12D descomprime_rle_a_ram_repite
+C 0xB12D repetir: el mismo byte en N posiciones consecutivas
 L 0xB133 descomprime_rle_a_ram_literales
+C 0xB133 literales: cada vuelta trae un byte nuevo del cartucho
 L 0xB13B descomprime_rle_a_ram_salta
+C 0xB13B el salto deja el destino nuevo en A, pero mirar lo que pasa despues
+C 0xB13C sin acarreo cae en 0xB174, que es la rama de VRAM: sacaria la direccion por el puerto 0x99
+C 0xB13E y con acarreo sube D pero deja E como estaba, o sea que no mueve el destino. Rota por los dos lados, lo que encaja con que no la llame nadie
 L 0xB13F descomprime_rle_a_ram_sigue
 
 L 0xB142 descomprime_rle_a_vram   Vuelca a la VRAM el bloque RLE apuntado por HL
 C 0xB142 los dos primeros bytes del bloque: la direccion de VRAM
+C 0xB145 la direccion al VDP, byte bajo primero
 C 0xB149 +0x40 = marcar escritura; D se guarda ya con el bit puesto
 L 0xB14E descomprime_rle_siguiente_token
+C 0xB14E el token siguiente va pegado detras del dato que acaba de gastarse
 L 0xB14F descomprime_rle_token
 C 0xB150 contador en los 6 bits bajos; 0 termina
+C 0xB153 B es lo que va a contar el djnz
 C 0xB154 bit 7 salta N, bit 6 N literales, ninguno repite N veces
 L 0xB15E descomprime_rle_repite
+C 0xB15E repetir: como el VDP autoincrementa solo, basta con repetir el out sin volver a direccionar
+C 0xB160 el VDP no usa DE, pero hay que llevarlo al dia para cuando venga un token de salto
 C 0xB161 los dos nop son el retardo que pide el VDP entre escrituras
 L 0xB167 descomprime_rle_literales
+C 0xB167 literales: aqui el `inc hl` y el `ld a,(hl)` ya dan el respiro que en 0xB161 hacen los dos nop
 L 0xB170 descomprime_rle_salta
+C 0xB170 salto: el contador se suma al destino, y como el VDP se queda donde estaba hay que redireccionarlo
 L 0xB174 descomprime_rle_redirecciona
+C 0xB174 la direccion nueva, baja y alta; D ya lleva puesto el 0x40 desde 0xB149
 
 L 0xB17C escribe_registro_vdp   B = valor, C = numero de registro
+C 0xB17C primero el valor...
+C 0xB17F ...y despues el numero: el VDP quiere los dos bytes en ese orden
 C 0xB180 el 0x80 convierte el numero en el comando del VDP
 L 0xB185 direcciona_vram_escritura
+C 0xB185 byte bajo de la direccion y luego el alto, como en todo el VDP
 C 0xB189 bit 14 a 1: escritura
 C 0xB18D push/pop af: retardo obligado antes de tocar el puerto de datos
 L 0xB190 direcciona_vram_lectura
@@ -1382,8 +1524,11 @@ C 0xB190 primero el byte bajo de la direccion
 C 0xB193 y el alto SIN el 0x40 que pone 0xB189: eso deja el VDP en lectura
 C 0xB196 push af y pop af no cambian nada: son 21 ciclos de espera
 L 0xB199 escribe_byte_en_vram   Sin uso: nadie la llama
+C 0xB199 el push guarda el dato porque 0xB185 se lleva A por delante
 L 0xB1A1 lee_byte_de_vram   Sin uso: nadie la llama
+C 0xB1A1 sin uso: el juego lee la VRAM siempre por bloques, con 0xB1B6
 L 0xB1A7 rellena_vram   HL destino, BC cuantos, A valor
+C 0xB1A8 el valor se aparca en D porque A hace falta para direccionar
 L 0xB1AC rellena_vram_bucle
 C 0xB1AD el puerto 0x98 autoincrementa: se direcciona una vez y se escribe de corrido
 C 0xB1AF BC cuenta hacia atras hasta cero
@@ -1391,17 +1536,23 @@ L 0xB1B6 lee_bloque_de_vram   VRAM HL -> RAM DE, BC bytes
 L 0xB1B9 lee_bloque_de_vram_bucle
 C 0xB1B9 de la VRAM a la RAM, byte a byte
 L 0xB1C3 copia_bloque_a_vram   RAM HL -> VRAM DE, BC bytes
+C 0xB1C3 la rutina recibe origen en HL y destino en DE, y 0xB185 direcciona con HL: hay que cruzarlos
 L 0xB1C7 copia_bloque_a_vram_bucle
 C 0xB1C7 y de la RAM a la VRAM
 
 B 0xB1D1 Invierte cada byte bit a bit: la fila queda del reves, o sea
 B 0xB1D1 el dibujo en ESPEJO. Asi el cartucho guarda media pareja.
 L 0xB1D1 copia_patrones_en_espejo   BC patrones de VRAM HL a VRAM DE
+C 0xB1D1 los tres push guardan cuenta, origen y destino: el `jp nz` de 0xB207 vuelve aqui y la pila tiene que quedar cuadrada
 C 0xB1D4 la fila baja a 0xE072, ocho bytes de RAM que hacen de banco de paso
+C 0xB1DA hay que bajarla: el Z80 no sabe rotar un byte que esta en la VRAM
 C 0xB1E0 ocho filas por patron
 C 0xB1E4 rr saca el bit 0 y rl a lo mete por el bit 0: A acaba invertido
 L 0xB1E2 copia_patrones_en_espejo_fila
+C 0xB1E2 ocho bits por fila
 L 0xB1E4 copia_patrones_en_espejo_bits
+C 0xB1EA la fila, ya del reves, encima de la original en el banco de paso
+C 0xB1EF se saca el destino y se vuelve a apilar: hace falta otra vez en 0xB1FA
 C 0xB1F7 la fila invertida vuelve a la VRAM, ya en el patron destino
 C 0xB1FC ocho bytes adelante en origen y en destino: el patron siguiente
 C 0xB204 y otra vuelta, hasta agotar BC
@@ -1409,11 +1560,15 @@ C 0xB204 y otra vuelta, hasta agotar BC
 B 0xB20B Igual que 0xB1D1 pero cambiando el orden de los ocho bytes:
 B 0xB20B el patron queda volteado en VERTICAL.
 L 0xB20B copia_patrones_volteados   BC patrones de VRAM HL a VRAM DE
+C 0xB20E el patron entero baja a 0xE072: aqui no se rota nada, se reordenan las ocho filas
 C 0xB21A el primero contra el ultimo, cuatro intercambios
+C 0xB21E cuatro intercambios: 0 con 7, 1 con 6, 2 con 5 y 3 con 4
 L 0xB220 copia_patrones_volteados_bucle
 C 0xB220 el de arriba por el de abajo: cuatro intercambios y el patron queda del reves
+C 0xB229 HL sube desde el primero e IX baja desde el ultimo: se cruzan en el centro
 C 0xB235 los ocho bytes ya volteados, de vuelta a la VRAM
 C 0xB23A y al patron siguiente
+C 0xB242 una vuelta por patron, hasta agotar BC
 
 # =============================================================================
 # LA ENTRADA (0xB249-0xB2F9)
@@ -1422,38 +1577,68 @@ C 0xB23A y al patron siguiente
 L 0xB249 lee_joysticks   Los dos puertos, a 0xE05F y 0xE061
 C 0xB249 registro 15 del PSG: seleccion del puerto de mando
 C 0xB24D 0xAF: bit 6 a 0, puerto 1
+C 0xB251 registro 14 del PSG: por ahi entra el mando ya seleccionado
 C 0xB257 el PSG los entrega al reves; cpl deja 1 = pulsado
+C 0xB258 el puerto 1 se guarda en 0xE05F, que es la entrada que mira todo el juego
 C 0xB25F 0xDF: bit 6 a 1, puerto 2
+C 0xB26A y el puerto 2 en 0xE061, que NADIE lee: ni un `ld a,(0E061h)` fuera del 0xB29C de aqui al lado, que solo lo mezcla consigo mismo. El segundo mando no vale para jugar
 
 B 0xB26E La fila 8 del teclado -espacio y cursores- se recoloca bit a
 B 0xB26E bit hasta quedar en formato de joystick, y se mezcla con los
 B 0xB26E dos mandos: teclado y palanca son la misma cosa.
 L 0xB26E lee_teclado_como_joystick
 C 0xB26E fila 8 por el PPI: 0xAA selecciona, 0xA9 lee
+C 0xB270 los cuatro bits altos del puerto C llevan otras senales: el 0xF0 los deja como estan
+C 0xB274 la fila entra por el puerto 0xA9, un bit por tecla
+C 0xB276 tambien llega al reves: cpl deja 1 = pulsada
+C 0xB277 el bit 1 de la fila 8 es una tecla que aqui no pinta nada; se borra para dejar el sitio libre
 C 0xB279 bit 0, espacio -> disparo (bit 1)
+C 0xB27D y ahi va el espacio, convertido en boton de disparo
 C 0xB281 bit 7, derecha -> bit 0
 C 0xB289 bit 4, izquierda -> bit 7
 C 0xB28F tres rotaciones y 0x1F: 0 arriba 1 abajo 2 izq 3 der 4 disparo
 L 0xB27F lee_teclado_como_joystick_derecha
+C 0xB27F la fila 8 trae bit 0 espacio, bit 4 izquierda, bit 5 arriba, bit 6 abajo y bit 7 derecha
+C 0xB285 la derecha, al bit 0
 L 0xB287 lee_teclado_como_joystick_izquierda
+C 0xB28D y la izquierda al bit 7
 L 0xB28F lee_teclado_como_joystick_monta
+C 0xB292 arriba y abajo (bits 5 y 6) no hay que tocarlos: el giro los deja en 0 y 1 el solo
 C 0xB294 en B quedan los cinco bits ya colocados
 C 0xB295 se mezclan con el puerto 1, y luego con el 2: teclado y palanca dan lo mismo
+C 0xB299 se mezcla con OR: una direccion vale si viene del mando O del teclado
+C 0xB29C y lo mismo con el puerto 2, aunque de 0xE061 no vuelva a leer nadie
 
 B 0xB2A4 Ni a 0xB2A4 ni a 0xB2F4 los apunta NADIE: barrido de las 16384
 B 0xB2A4 palabras del cartucho. Y a 0xB2E8 solo la llama 0xB2F4, que ya
 B 0xB2A4 es codigo muerto. Las tres son INALCANZABLES: biblioteca de
 B 0xB2A4 teclado que se quedo dentro sin que nada la use.
 L 0xB2A4 explora_el_teclado   Nueve filas; la tecla nueva a 0xE266. Sin uso
+C 0xB2A4 las nueve filas del teclado, de la 0 a la 8
 C 0xB2A6 0xE25D-0xE265: como estaba cada fila la vuelta anterior
 C 0xB2C7 codigo = fila*8 + columna
 C 0xB2CF bit 7 = hay tecla nueva
 L 0xB2A9 explora_el_teclado_fila
+C 0xB2A9 ocho teclas por fila
+C 0xB2AB E es la mascara de un bit que va recorriendo la fila
+C 0xB2AD 9 menos C da el numero de fila: el bucle cuenta al reves
+C 0xB2B6 1 = pulsada, como en todas partes
 L 0xB2B8 explora_el_teclado_tecla
+C 0xB2B8 se compara la fila de ahora con la de la vuelta anterior
+C 0xB2BC pulsada, pero ya lo estaba: no es tecla nueva
+C 0xB2C0 pulsada y antes no: se apunta en el espejo y se saca el codigo
+C 0xB2CB 8 menos B da la columna
 L 0xB2D7 explora_el_teclado_suelta
+C 0xB2D7 y al reves: si se ha soltado, se apaga su bit en el espejo
 L 0xB2DF explora_el_teclado_sigue
+C 0xB2DF la mascara pasa a la tecla siguiente
+C 0xB2E3 un byte mas alla en el espejo, que es la fila siguiente
 L 0xB2E8 coge_la_tecla   Z si no hay ninguna. Solo la llama 0xB2F4, que ya es codigo muerto
+C 0xB2E8 entrega la tecla que apunto 0xB2D1
+C 0xB2EB sin el bit 7 no hay tecla nueva y vuelve con Z
+C 0xB2EE se apaga al leerla: cada pulsacion se entrega una sola vez
 L 0xB2F4 espera_una_tecla   Sin uso
+C 0xB2F4 y esta se queda dando vueltas para siempre: nadie llama a 0xB2A4, asi que 0xE266 no cambia nunca
 
 # =============================================================================
 # EL SONIDO
@@ -1468,8 +1653,14 @@ B 0xB2FA el registro 15.
 L 0xB2FA reinicia_el_sonido   Vectores al RET vacio y PSG callado
 C 0xB2FA 0xB392 es un RET solo: el vector que no hace nada
 C 0xB2FF 0xE1EE a 0 mientras se tocan los vectores; 0xB35B no los recorre
+C 0xB302 las cuatro ranuras apuntando al ret vacio: ningun canal tiene nada que hacer
+C 0xB310 y 0xE1EE otra vez a 1: 0xB35B ya puede recorrerlas
+C 0xB313 0xE20E-0xE21B, la copia en RAM de los catorce registros del PSG
+C 0xB31B el primer byte a mano y el ldir lo va arrastrando: rellenar copiandose a si mismo
+C 0xB31F 13 copias, que el primer byte ya esta puesto
 C 0xB326 0xBF en el mezclador: tono y ruido apagados en los tres canales
 L 0xB32B reinicia_el_sonido_vuelca
+C 0xB32B y el volcado se hace ya, sin esperar al final del cuadro: el PSG se calla en el acto
 
 B 0xB32E A = numero de sonido, y la tabla de 0xB393 dice en que ranura
 B 0xB32E se instala y con que rutina. La ranura fija el canal: 0 = A,
@@ -1480,31 +1671,45 @@ B 0xB32E   2 B3CE  3 B52E  4 B475  5 B3B4  6 B5E4
 B 0xB32E   7 B5BE  8 B564  9 B49F  10 B4E6
 L 0xB32E arranca_un_sonido   A = numero de sonido (0..10)
 C 0xB32E del 11 en adelante no hay sonido: se sale sin tocar nada
+C 0xB331 los tres push: la llaman desde cualquier parte del juego y no puede tocar nada
 C 0xB334 0xE1EE a cero mientras se cambian los vectores: 0xB35B no los recorre
+C 0xB339 A se guarda en B porque hace falta entero para el A*3
 C 0xB33A A*3: registros de tres bytes
+C 0xB33C BC = el desplazamiento dentro de la tabla
 C 0xB33F la fila de la tabla de 0xB393
 C 0xB343 el primer byte de la fila es la ranura
 C 0xB344 la ranura, doblada, es el desplazamiento dentro de 0xE1E6
+C 0xB345 la base de las cuatro ranuras
 C 0xB349 HL pasa a la ranura de 0xE1E6 y DE a la fila
 C 0xB34C los otros dos bytes son la direccion de la rutina
+C 0xB34D el byte bajo de la rutina...
+C 0xB351 ...y el alto: el vector ya esta instalado
 C 0xB352 y 0xE1EE vuelve a 1: 0xB35B ya puede recorrerlos
 
 B 0xB35B Los tres vectores y el volcado, cada cuadro. La cuarta
 B 0xB35B ranura, 0xE1EC, se inicializa pero no se ejecuta nunca.
 L 0xB35B atiende_el_sonido
 C 0xB35B si 0xE1EE esta a cero no hay nada instalado
+C 0xB360 la ranura 0, el canal A
+C 0xB363 el Z80 no tiene `call (hl)`: se llama a un `jp (hl)` de una linea para que el vector pueda volver
 L 0xB368 salta_al_vector_a
 L 0xB369 atiende_el_sonido_canal_b
+C 0xB369 la ranura 1, el canal B
 L 0xB371 salta_al_vector_b
 L 0xB372 atiende_el_sonido_canal_c
+C 0xB372 la ranura 2, el ruido del canal C
+C 0xB378 y aqui se acaban: la ranura 3 (0xE1EC) se instala en 0xB30B y no la ejecuta nadie
 L 0xB37A salta_al_vector_c
 L 0xB37B vuelca_registros_psg   0xE20E-0xE21B a los registros 0-13
+C 0xB37B se empieza por el final: 0xE21B es el registro 13
 C 0xB37E outd escribe y decrementa a la vez el registro y el puntero
 L 0xB380 vuelca_registros_psg_bucle
 C 0xB380 el puerto 0xA0 elige el registro y el 0xA1 recibe el dato
 C 0xB386 outd escribe (HL) y decrementa a la vez HL y B: del registro 13 hacia abajo
 C 0xB38A con B ya a cero el bucle ha salido, y el registro 0 se escribe aparte
+C 0xB38C el registro 0 se escribe aparte, y B vale ya cero, que es justo su numero
 L 0xB392 vector_de_sonido_vacio
+C 0xB392 un ret y nada mas: ahi apuntan las ranuras que no suenan
 
 # =============================================================================
 # LOS DIEZ SONIDOS
@@ -1516,7 +1721,9 @@ L 0xB392 vector_de_sonido_vacio
 # esta escrito en el codigo.
 
 L 0xB3B4 sonido_5   Canal B, guion de 0xB3BD
+C 0xB3B4 0xE1F5 = por donde va el guion del canal B
 L 0xB3CE sonido_2   Canal B, guion de 0xB3D7
+C 0xB3CE mismo motor, otro guion
 
 B 0xB3F0 Guion de OCHO bytes por nota, medido por donde va a parar
 B 0xB3F0 cada uno: [cuadros][volumen][periodo alto][periodo bajo]
@@ -1524,14 +1731,29 @@ B 0xB3F0 [paso del periodo][paso del volumen], los dos pasos de 16
 B 0xB3F0 bits con signo y el alto delante. El volumen lleva parte
 B 0xB3F0 fraccionaria en 0xE1FC/FD y solo sale el byte alto.
 L 0xB3F0 arranca_barrido_canal_b   Se instala en la ranura 1
+C 0xB3F0 desde el cuadro siguiente manda 0xB403; esta cabecera solo corre una vez
 C 0xB3F9 bit 1 del mezclador a 0: tono del canal B encendido
+C 0xB3FE 0xE1F7 = cuadros que le quedan a la nota. Con 1, la primera entra ya en el cuadro siguiente
 L 0xB403 barrido_canal_b   Un cuadro: nota nueva o seguir barriendo
+C 0xB403 un cuadro menos
+C 0xB40B mientras no se pase de cero, seguir barriendo sin tocar la nota
 C 0xB411 un 0 en el guion es el final
+C 0xB415 guion agotado: la ranura vuelve al ret vacio
+C 0xB41B y el volumen del canal B a cero, que apagar el mezclador no basta para callarlo del todo
 C 0xB423 bit 1 del mezclador a 1: canal B apagado
 L 0xB429 barrido_canal_b_nota
+C 0xB429 primer byte del registro: cuantos cuadros dura la nota
+C 0xB42D segundo byte: el volumen, que entra por el byte ALTO del acumulador de 0xE1FC
+C 0xB431 y la parte fraccionaria arranca a cero en cada nota
 C 0xB438 0xE211/0xE210: periodo del canal B
+C 0xB43C el periodo, el byte alto delante
+C 0xB441 el paso del periodo, en 0xE1F8/F9...
+C 0xB44B ...y el del volumen, en 0xE1FA/FB; los dos de 16 bits con signo
+C 0xB455 el puntero queda apuntando al registro siguiente
 L 0xB458 barrido_canal_b_avanza
+C 0xB458 esto corre TODOS los cuadros, haya nota nueva o no: eso es el barrido
 C 0xB45F periodo += paso, cada cuadro
+C 0xB46B el volumen barre igual que el tono, pero con `adc` y sin limpiar el acarreo: el que deje la suma del periodo de 0xB45F se cuela aqui, porque entre las dos no hay nada que toque las banderas
 C 0xB471 el byte alto del acumulador es el volumen que ve el PSG
 
 L 0xB475 sonido_4   Canal A, guion de 0xB47E
@@ -1539,45 +1761,82 @@ L 0xB475 sonido_4   Canal A, guion de 0xB47E
 B 0xB49F Barrido sin guion: 19 cuadros con el periodo del canal A
 B 0xB49F subiendo de 0x00F9 de 0x14 en 0x14, o sea el tono cayendo.
 L 0xB49F sonido_9   Canal A, barrido descendente escrito en el codigo
+C 0xB49F la tabla instala ESTA direccion: el primer cuadro monta el sonido, cambia el vector a 0xB4BD y sigue de largo hasta el
 C 0xB4A8 bit 0 del mezclador a 0: tono del canal A encendido
 C 0xB4AD volumen del canal A
+C 0xB4B2 0xE1F2 = diecinueve cuadros de barrido
+C 0xB4B7 periodo de salida del canal A
 L 0xB4BD sonido_9_paso
+C 0xB4BD un cuadro menos
+C 0xB4C4 mientras no pase de cero, a seguir bajando
+C 0xB4C7 gastado: ranura al ret vacio...
+C 0xB4D0 ...bit 0 del mezclador a 1, o sea tono de A apagado...
+C 0xB4D5 ...y volumen de A a cero
 L 0xB4DB sonido_9_avanza
 C 0xB4DB mas periodo es menos tono: el sonido cae
+C 0xB4E1 el periodo sube 0x14 por cuadro, y mas periodo es menos tono
 
 B 0xB4E6 Tres cuadros con el periodo del canal B bajando de 0x0382 de
 B 0xB4E6 0x7F en 0x7F -o en 0x80: el sbc de 0xB528 se lleva el
 B 0xB4E6 acarreo y nadie lo limpia antes-: un chasquido que sube.
 L 0xB4E6 sonido_10   Canal B, chasquido ascendente de tres cuadros
+C 0xB4E6 igual que 0xB49F: el primer cuadro monta y cae en 0xB504
+C 0xB4EF bit 1 del mezclador a 0: tono del canal B encendido
 C 0xB4F4 volumen del canal B
+C 0xB4F9 periodo de salida 0x0382, bien grave
+C 0xB4FF 0xE1F3 = tres cuadros y fuera
 L 0xB504 sonido_10_paso
+C 0xB504 un cuadro menos
+C 0xB50B mientras no pase de cero, a seguir subiendo
+C 0xB517 bit 1 a 1 y volumen a cero: el canal B se apaga
 L 0xB522 sonido_10_avanza
+C 0xB528 `sbc` y no `sub`: se lleva el acarreo que quedara de antes, y por eso el paso es 0x7F o 0x80
 
 B 0xB52E El unico sonido de RUIDO: apaga el tono del canal C y pone
 B 0xB52E el ruido en su sitio, un solo cuadro.
 L 0xB52E sonido_3   Un cuadro de ruido en el canal C
+C 0xB52E la ranura 2, que es la del canal C
 C 0xB537 bit 5 a 0 enciende el ruido en C, bit 2 a 1 apaga su tono
 C 0xB53E periodo del ruido
 C 0xB543 volumen del canal C
+C 0xB548 0xE1F4 = un solo cuadro
 L 0xB54D sonido_3_paso
+C 0xB54D un cuadro menos
+C 0xB554 `ret p`: aqui no hay nada que barrer, solo esperar a que pase el cuadro
+C 0xB558 bit 5 a 1: se apaga el ruido de C. El tono se queda apagado, que es como estaba
+C 0xB55D y la ranura, al ret vacio. Este sonido NO pone su volumen a cero al acabar, al reves que 0xB4D5 y 0xB51C: 0xE218 se queda en 9 hasta que lo borre 0xB2FA. No se oye porque el mezclador deja tono y ruido de C apagados
 
 L 0xB564 sonido_8   Canal A, guion de 0xB56D: el de recoger el tesoro
+C 0xB564 0xE1EF = por donde va el guion del canal A
 L 0xB5BE sonido_7   Canal A, guion de 0xB5C7
+C 0xB5BE mismo motor, otro guion
 L 0xB5E4 sonido_6   Canal A, guion de 0xB632
+C 0xB5E4 y este ni salta: cae directamente en el motor, que empieza en la linea de al lado
 
 B 0xB5EA Guion de CUATRO bytes por nota, leidos por 0xB683:
 B 0xB5EA [cuadros][periodo alto][periodo bajo][volumen]. Aqui el tono
 B 0xB5EA no barre: cada nota se queda quieta hasta la siguiente.
 L 0xB5EA arranca_guion_canal_a   Se instala en la ranura 0
+C 0xB5EA desde el cuadro siguiente manda 0xB5FD
+C 0xB5F0 0xE1F1 = cuadros que le quedan a la nota; con 1, la primera entra en el cuadro siguiente
 C 0xB5F8 bit 0 del mezclador a 0: tono del canal A encendido
 L 0xB5FD guion_canal_a_paso
+C 0xB5FD un cuadro menos
+C 0xB604 `ret p`: mientras queden cuadros la nota no se toca. Aqui el tono no barre
+C 0xB605 por donde iba el guion
 C 0xB60B si 0xB683 no devuelve nada es que el guion acabo
+C 0xB60E guion agotado: tono apagado, ranura al ret vacio...
+C 0xB61C ...y volumen de A a cero
 L 0xB622 guion_canal_a_nota
+C 0xB622 los cuadros que dura la nota nueva
 C 0xB626 DE al periodo del canal A
 C 0xB62B C al volumen del canal A
+C 0xB62E y el puntero, ya avanzado por 0xB683
 L 0xB683 lee_registro_de_guion   B cuadros, DE periodo, C volumen; A=0 si acabo
 C 0xB683 un 0 en el primer byte cierra el guion
+C 0xB686 el primer byte son los cuadros
 C 0xB688 los otros tres bytes: periodo en DE y volumen en C
+C 0xB68D HL sale apuntando al registro siguiente: el llamante solo tiene que guardarlo
 
 # =============================================================================
 # LA PRESENTACION Y LA DEMO (0xB6B1-0xB9E3)
@@ -1596,51 +1855,105 @@ C 0xB6B2 registro 0 = 0x02: modo grafico 2
 C 0xB6B8 registro 1 = 0xE2: 16K, pantalla e interrupcion activas, sprites 16x16
 C 0xB6BE registro 4 = 0x03: patrones en 0x0000
 C 0xB6C4 registro 3 = 0xFF: colores en 0x2000, los tres bancos
+C 0xB6CA los patrones de sprite, los mismos que usa el juego
+C 0xB6CD la tabla de nombres entera al tile 0
+C 0xB6D7 el PRIMER banco de color (0x2000-0x27FF) a 0xF1: blanco sobre negro
+C 0xB6E2 veinticinco tiles seguidos en la fila 6: el rotulo de Activision, que no es texto sino dibujo troceado
+C 0xB6EE y los otros dos bancos (0x2800-0x37FF) a 0x61; 0xB99F los repinta a 0xA1 al cerrarse la franja
+C 0xB6F9 la lista de objetos se vacia: la presentacion monta los suyos
+C 0xB6FE el jugador (0xE2D5), el de la liana (0xE32F) y el comodin (0xE2BF)
+C 0xB710 y al comodin se le reprograma todo a mano, sin plantilla
 C 0xB714 se le calza a mano el manejador de 0xB7F1 al objeto 0xE2BF
+C 0xB718 periodo 1: a partir de la primera vez corre cada cuadro
+C 0xB71C pero la primera tarda nueve
+C 0xB729 el ultimo patron de sprite de la tabla...
+C 0xB72F ...y los tres primeros
+C 0xB735 los atributos de los tres sprites que baja 0xB897
+C 0xB740 y los del sprite 9, el que echa a andar en 0xB853
 C 0xB74D 0xE221 = 1: modo DEMO, la entrada sale de 0xE259
+C 0xB750 `ei`: de aqui en adelante la presentacion la mueve la interrupcion, y esta rutina solo mira el contador
 L 0xB751 secuencia_de_presentacion_espera
 C 0xB751 +0x0B lo sube 0xB9C8: a la septima entrada del guion se sale
+C 0xB75C 0xE132 y los 0x17C siguientes a cero. Ahi dentro caen la marca de demo (0xE221), la lista de objetos (0xE247) y la tabla de sprites: la presentacion se apaga de un borron
+C 0xB769 y la tabla ya en blanco a la VRAM, 0x44 bytes -diecisiete sprites-, que el bucle del juego manda 0x54
+C 0xB775 `halt`: apagar la pantalla a media imagen se ve, asi que se espera al retrazado
 C 0xB776 registro 1 = 0xA2: pantalla apagada
+C 0xB77C la tabla de colores de SCREEN 2 entera, 0x1800 bytes
 C 0xB782 0x11 en toda la tabla de colores: todo a negro
+C 0xB787 y otro `halt` antes de cambiar de modo
 C 0xB788 registro 0 = 0x00: de vuelta a modo grafico 1, el del juego
+C 0xB78E registro 1 = 0xE2 otra vez: pantalla encendida, ya en modo grafico 1
 C 0xB79A registro 3 = 0x80 y registro 4 = 0x00: las tablas del juego
+C 0xB7A0 `di`, y quien vuelve a permitir las interrupciones es 0x80F4, con el juego ya montado: de ahi en adelante todo corre dentro del gancho
 
 B 0xB7A2 Fin de la presentacion: se monta el jugador y se le pasa el
 B 0xB7A2 mando al guion grabado de 0xB9C8.
 L 0xB7A2 arranca_la_demo
+C 0xB7A2 el jugador
 C 0xB7A6 la demo se juega en la superficie
+C 0xB7AA IX+0x14/15 apunta a sus atributos de sprite, 0xE2A2
 C 0xB7B3 banderas 0xC0: el bit 0 apagado, o sea que no se mueve solo, y el 6 encendido, o sea manejador propio
+C 0xB7B7 periodo 1: el jugador se mueve todos los cuadros
 C 0xB7BB y el manejador es 0x8243, el mismo de reaparecer
+C 0xB7C4 calcado de lo que hace morirse (0x822D): se apunta en 0xE189 cuantos objetos hay...
+C 0xB7CC ...y se deja uno solo, el jugador, hasta que 0x82E7 devuelva la cuenta. Por eso el guion grabado no arranca hasta que el muneco termina de aparecer
 C 0xB7DB a partir de aqui el objeto 0xE2BF es el que lee el guion
+C 0xB7E4 la liana, que en la demo tambien se columpia
+C 0xB7E7 0xE345 es el +0x16 de la liana (0xE32F): puesto a 1, su bit 7 queda apagado y el columpio de la demo arranca hacia la derecha, que es lo que mira 0x81B9
+C 0xB7ED y la fase del balanceo a cero
 
 B 0xB7F1 El rotulo no se pinta: se revela. Cada cuadro desplaza un
 B 0xB7F1 pixel los diez patrones de 0xE132 y los vuelca a la tabla de
 B 0xB7F1 patrones; cada ocho cuadros recarga el dibujo y avanza una
 B 0xB7F1 columna, hasta la 0x18.
 L 0xB7F1 revela_el_dibujo   Saca el rotulo de entrada, un pixel por cuadro
+C 0xB7F1 el comodin de la presentacion; +0x09 cuenta cuadros y +0x0A columnas
 L 0xB85E revela_el_dibujo_sigue
 C 0xB7F8 uno de cada ocho cuadros toca columna nueva
 C 0xB810 columna 0x18: se acabo, y toma el relevo 0xB8C3
 L 0xB7FF revela_el_dibujo_columna
+C 0xB7FF columna nueva: el dibujo se recarga entero y sin desplazar
+C 0xB805 0x58 bytes, pero solo se corren los 0x50 primeros: diez patrones de ocho
+C 0xB80A una columna mas
+C 0xB815 se acabo el rotulo: el comodin pasa a mover la franja
+C 0xB822 +0x0B = 3, que es lo que cuenta las tres pasadas de la franja
+C 0xB826 anchura 1, periodo 1 y cinco cuadros para la primera
 L 0xB833 revela_el_dibujo_color
+C 0xB833 la columna, por 8: cada tile son ocho bytes de color
 C 0xB839 0x20B8 = tabla de colores, entrada del tile 0x17
+C 0xB83E los ocho colores del rotulo, uno por columna revelada
 L 0xB84B revela_el_dibujo_desplaza
+C 0xB84B por donde va la columna
 C 0xB84E a partir de la columna 12 aparece el sprite 9 y echa a andar
+C 0xB853 el sprite 9 se pone en el patron 0x0F y empieza a bajar
+C 0xB85E un cuadro mas
+C 0xB861 el banco de paso, con los diez patrones dentro
+C 0xB864 de patron a patron van ocho bytes: el bucle de dentro corre la misma columna en los diez
+C 0xB867 y el de fuera, las ocho columnas del patron
 C 0xB86E scf: por la izquierda entran unos, que es el fondo
 C 0xB86F diez patrones, uno cada 8 bytes: la fila se corre un pixel
 C 0xB883 0x00B0 = tabla de patrones, tile 0x16
 L 0xB869 revela_el_dibujo_columna_bits
 L 0xB86F revela_el_dibujo_bits
+C 0xB87B el destino sube un tile por columna: el dibujo se corre ocho pixeles y salta al tile siguiente
+C 0xB88B los 0x50 bytes desplazados, de vuelta a la tabla de patrones
 C 0xB891 los tres sprites de abajo no salen hasta la columna 5
 C 0xB897 0xE26B es la X del sprite 0: se mueve a la izquierda
+C 0xB89E por debajo de X=0x45 el sprite cambia de color...
+C 0xB8A2 ...al 5
 L 0xB8A7 revela_el_dibujo_sprite_2
+C 0xB8A7 el segundo va dieciseis pixeles detras del primero
 L 0xB8B5 revela_el_dibujo_sprite_3
+C 0xB8B5 y el tercero, otros dieciseis
 
 B 0xB8C3 La franja de las filas 15 y 16 se abre y se cierra desde la
 B 0xB8C3 columna 16 hacia los dos lados. El bit 0 de +0x0B alterna:
 B 0xB8C3 abre, cierra (y cambia el color), abre y arranca la demo.
 L 0xB8C3 anima_la_franja
+C 0xB8C3 el mismo comodin, ahora con la franja
+C 0xB8C7 periodo 6: la franja se abre de seis en seis cuadros
 C 0xB8CB el bit 1 elige cual de las dos parejas de tiles se carga
+C 0xB8D1 con +0x0B en 1 van los tiles de 0xBB01 y 0xBB4A...
 C 0xB8EF 0x19F0 = fila 15, columna 16: el centro desde donde se abre
 C 0xB8F2 IX+0x0F es la anchura y el paso a la vez
 C 0xB902 0xE2CE es el +0x0F del propio objeto: anchura y contador a la vez
@@ -1650,15 +1963,28 @@ C 0xB96D abriendo, la anchura sube hasta 7
 C 0xB97C 0x50 cuadros de pausa entre pasada y pasada
 C 0xB986 tercera pasada terminada: a la demo
 L 0xB8DF anima_la_franja_variante_b
+C 0xB8DF ...y con 3 o 2, los de 0xBB95 y 0xBBFB: las dos primeras pasadas salen con un dibujo y la tercera con el otro
 L 0xB8EB anima_la_franja_pinta
+C 0xB8FF la mitad izquierda arranca siempre en el tile 0x0A y crece hacia la derecha
+C 0xB90F y la derecha se lee de atras adelante, para acabar siempre en el 0x17: la franja se abre por el centro
+C 0xB94B lo mismo que 0xB90F, una fila mas abajo
+C 0xB970 y al llegar a 8 se para
+C 0xB976 la anchura se deja en 7 y +0x0B baja uno: se acaba la pasada
 L 0xB990 anima_la_franja_cierra
 C 0xB990 cerrando, la anchura baja hasta 1
+C 0xB994 al cerrar del todo vuelve a 1
+C 0xB99B 0x20 cuadros de pausa antes de la pasada siguiente
 C 0xB99F 0xA1 en los bancos de color de abajo: la franja cambia de tono
 
 B 0xB9AB Copia patrones sueltos leyendo de 0x10 en 0x10. NADIE la
 B 0xB9AB llama: ni un call ni un puntero apuntan aqui.
 L 0xB9AB copia_patrones_salteados   Sin uso: nadie la llama
+C 0xB9AE el destino no llega como direccion sino como NUMERO de patron...
+C 0xB9AF ...y se multiplica por ocho para dar la direccion en la VRAM
 C 0xB9B2 add hl,0: no hace nada, resto de otra version (?)
+C 0xB9B7 ocho bytes, o sea un patron
+C 0xB9BE en el origen se avanza 0x10, o sea DOS patrones: de ahi lo de salteados
+C 0xB9C3 y en el destino solo uno
 
 B 0xB9C8 LA DEMO ESTA GRABADA: la tabla de 0xB9E4 son parejas
 B 0xB9C8 [cuadros][entrada], y la entrada viene en el formato que
@@ -1667,8 +1993,12 @@ B 0xB9C8 0x3A a la derecha, 0x20 saltando a la derecha, 0xBA quieto,
 B 0xB9C8 0x10 agachado, 0x40 a la derecha, y tres esperas de 0xFF
 B 0xB9C8 cuadros. Lo que sigue (01 02 03 04...) parece relleno (?).
 L 0xB9C8 avanza_el_guion_de_la_demo
+C 0xB9C8 el comodin otra vez, ahora llevando la cuenta del guion
 C 0xB9CF +0x0B es la entrada del guion, doblada porque son parejas
+C 0xB9D3 la tabla de parejas
+C 0xB9D8 el primer byte del par: cuantos cuadros hasta la entrada siguiente
 C 0xB9DD la entrada que 0x9A7E le mete al jugador
+C 0xB9E0 y a la pareja siguiente, que es la que mira 0xB755 para salirse
 
 # ---- Sueltos de 0x9F00-0xAE00, y los seis RET huerfanos ----
 
