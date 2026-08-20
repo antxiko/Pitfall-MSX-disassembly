@@ -80,21 +80,21 @@ borra_la_ram_bucle:
 ; salta a esta direccion al pulsar RETURN en el final
 ; ----------------------------------------------------------------------
 arranca_la_partida:
-	ld sp,0e54bh		;8065
+	ld sp,0e54bh		;8065   ; la pila se recoloca en cada partida: el final salta aqui sin haberla vaciado
 	xor a			;8068
 	ld (0e267h),a		;8069
 	ld (0e269h),a		;806c
-	call reinicia_el_sonido		;806f
+	call reinicia_el_sonido		;806f   ; los vectores de sonido al RET vacio y el PSG callado
 	call prepara_la_partida		;8072
 	ld a,0c4h		;8075   ; la semilla del registro de pantalla: la primera escena
 	ld (0e222h),a		;8077
-	call coloca_al_jugador		;807a
-	ld de,0e32fh		;807d
+	call coloca_al_jugador		;807a   ; el jugador, 0xE2D5, es el primero de la lista de objetos
+	ld de,0e32fh		;807d   ; y 0xE32F, el de la liana, el segundo
 	call anade_objeto		;8080
 	ld a,001h		;8083
 	ld (0e132h),a		;8085
 	ld (0e133h),a		;8088
-	ld de,0e2bfh		;808b
+	ld de,0e2bfh		;808b   ; 0xE2BF es el tercero: el comodin que cada escena reprograma
 	ld hl,0b02ah		;808e   ; la plantilla de objeto de 0xB02A a 0xE2BF
 	ld bc,00016h		;8091
 	ldir		;8094
@@ -109,14 +109,14 @@ arranca_la_partida:
 	ld hl,0e345h		;80ae
 	ld (hl),001h		;80b1
 	ld a,00dh		;80b3
-	ld (0e1e5h),a		;80b5
+	ld (0e1e5h),a		;80b5   ; 0xE1E5 = 13: el sonido de los pasos se repite cada trece cuadros
 	ld (0e1e3h),a		;80b8
 	ld a,001h		;80bb
-	ld (0e21ch),a		;80bd
+	ld (0e21ch),a		;80bd   ; 0xE21C = 1: el reloj de partida (0x9DB8) no cuenta hasta que 0x8140 lo pone a cero
 	ld a,001h		;80c0
 	ld (0e132h),a		;80c2
 	ld (0e133h),a		;80c5
-	ld de,0e2aeh		;80c8
+	ld de,0e2aeh		;80c8   ; cuatro entradas de la tabla de sprites en RAM, de la 17 a la 20
 	ld hl,08a90h		;80cb
 	ld bc,00004h		;80ce
 	ldir		;80d1
@@ -151,15 +151,15 @@ espera_a_la_interrupcion:
 ; que es la tabla de atributos de sprites de un golpe
 ; ----------------------------------------------------------------------
 bucle_principal:
-	call lee_joysticks		;80f7
-	call lee_teclado_como_joystick		;80fa
-	call atiende_el_sonido		;80fd
-	call cuadro_del_juego		;8100
+	call lee_joysticks		;80f7   ; los dos mandos, por el PSG
+	call lee_teclado_como_joystick		;80fa   ; la fila 8 del teclado, mezclada encima de lo leido
+	call atiende_el_sonido		;80fd   ; los tres vectores de sonido, y de ahi al PSG
+	call cuadro_del_juego		;8100   ; el cuadro entero: escena, objetos y jugador
 	ld hl,0e26ah		;8103   ; los 0x54 bytes de atributos de sprite, de un golpe
 	ld de,01b00h		;8106
 	ld bc,00054h		;8109
 	call copia_bloque_a_vram		;810c
-	pop hl			;810f
+	pop hl			;810f   ; el primer pop se come la direccion de retorno al gancho: de aqui en adelante la interrupcion se cierra a mano
 	pop ix		;8110
 	pop iy		;8112
 	pop af			;8114
@@ -169,12 +169,12 @@ bucle_principal:
 	ex af,af'			;8118
 	exx			;8119
 	in a,(099h)		;811a   ; lee el estado del VDP: asi se reconoce la interrupcion
-	ld (0e036h),a		;811c
+	ld (0e036h),a		;811c   ; 0xE036 no lo lee nadie en todo el cartucho: lo que cuenta es el propio in
 	pop af			;811f
 	pop bc			;8120
 	pop de			;8121
 	pop hl			;8122
-	ei			;8123
+	ei			;8123   ; el ei y el ret de aqui son el final de la interrupcion
 	ret			;8124
 espera_a_que_arranques:		; Manejador de salida: la animacion corre hasta que se pulsa una direccion
 	call anima_el_final		;8125
@@ -243,29 +243,29 @@ columpia_hacia_la_izquierda:
 	set 7,(ix+006h)		;81cd
 	ld (iy+002h),05ch		;81d1
 columpia_arranca:
-	ld (ix+008h),d		;81d5
+	ld (ix+008h),d		;81d5   ; la velocidad elegida arriba, ya en IX+0x07/08
 	ld (ix+007h),e		;81d8
-	dec (iy+000h)		;81db
-	ld hl,suelta_la_liana		;81de
+	dec (iy+000h)		;81db   ; un pixel arriba para despegarse
+	ld hl,suelta_la_liana		;81de   ; y de aqui en adelante manda 0x81F9, o sea que al cuadro siguiente ya se ha soltado
 	ld (ix+012h),l		;81e1
 	ld (ix+013h),h		;81e4
 	res 7,(ix+016h)		;81e7
 	set 0,(ix+000h)		;81eb
 	set 0,(ix+006h)		;81ef
-	ld a,009h		;81f3
+	ld a,009h		;81f3   ; sonido 9, el del columpio
 	call arranca_un_sonido		;81f5
 	ret			;81f8
 suelta_la_liana:		; Cae al vacio con el manejador del aire
-	set 6,(ix+016h)		;81f9
+	set 6,(ix+016h)		;81f9   ; bit 6 de IX+0x16: el boton que ya venia pulsado no cuenta como salto nuevo
 	ld hl,en_el_aire		;81fd
 	ld (ix+012h),l		;8200
 	ld (ix+013h),h		;8203
-	res 5,(ix+000h)		;8206
+	res 5,(ix+000h)		;8206   ; se apagan la animacion y el "movil" del eje Y
 	res 0,(ix+000h)		;820a
-	set 0,(ix+006h)		;820e
+	set 0,(ix+006h)		;820e   ; en X si se mueve, y 0x8212 apaga el bit 6 de IX+0x06: cayendo de la liana no se miran las cajas del aire
 	res 6,(ix+006h)		;8212
 	ld (ix+010h),001h		;8216
-	ld a,(0e1e2h)		;821a
+	ld a,(0e1e2h)		;821a   ; el paso de la curva sale de 0xE1E2, el cuarto byte de la fase: soltandose solo se cae, nunca se sube
 	ld (ix+017h),a		;821d
 	ret			;8220
 
@@ -276,15 +276,15 @@ suelta_la_liana:		; Cae al vacio con el manejador del aire
 ; habia para devolverlos al final
 ; ----------------------------------------------------------------------
 muere:		; Clases 6 y 9
-	ld a,006h		;8221
+	ld a,006h		;8221   ; sonido 6, el de perder una vida
 	call arranca_un_sonido		;8223
 	call quita_una_vida		;8226
-	ld (ix+011h),05ah		;8229
+	ld (ix+011h),05ah		;8229   ; la cuenta a 0x5A: el manejador no vuelve a correr hasta noventa cuadros despues
 	ld hl,0e247h		;822d   ; guarda cuantos objetos habia y deja uno: nada mas se mueve
 	ld a,(hl)			;8230
 	ld (0e189h),a		;8231
 	ld (hl),001h		;8234
-	ld hl,muere_repinta_vidas		;8236
+	ld hl,muere_repinta_vidas		;8236   ; el manejador pasa a 0x8240, que repinta las vidas y arranca la reaparicion
 	ld (ix+012h),l		;8239
 	ld (ix+013h),h		;823c
 	ret			;823f
@@ -325,11 +325,11 @@ reaparece_arriba:
 	ld (0e1cfh),a		;829b
 	ret			;829e
 reaparece_cae:
-	set 0,(ix+000h)		;829f
+	set 0,(ix+000h)		;829f   ; bit 0 de IX+0x00: vuelve a moverse
 	res 0,(ix+006h)		;82a3
-	set 6,(ix+016h)		;82a7
+	set 6,(ix+016h)		;82a7   ; bit 6 de IX+0x16, que solo mira 0x87E9: con el boton todavia pulsado no se encadena otro salto
 	ld iy,0e2a2h		;82ab
-	inc (iy+000h)		;82af
+	inc (iy+000h)		;82af   ; un pixel abajo, y el resto de la caida lo lleva 0x8314
 	ld a,01bh		;82b2
 	ld (0e184h),a		;82b4
 	xor a			;82b7
@@ -350,7 +350,7 @@ reaparece_cuenta:
 	ld (hl),00fh		;82d7
 reaparece_cuenta_sigue:
 	call patron_reapareciendo		;82d9
-	ld hl,0e2a5h		;82dc
+	ld hl,0e2a5h		;82dc   ; 0xE2A5 y 0xE2A9 son los colores de los dos sprites del jugador
 	ld (hl),00ch		;82df
 	ld hl,0e2a9h		;82e1
 	ld (hl),006h		;82e4
@@ -359,11 +359,11 @@ reaparece_termina:
 	ld a,(0e189h)		;82e7   ; devuelve los objetos que se habian escondido
 	ld hl,0e247h		;82ea
 	ld (hl),a			;82ed
-	ld hl,reaparece_cae		;82ee
+	ld hl,reaparece_cae		;82ee   ; y a partir de aqui manda 0x829F, que arranca la caida
 	ld (ix+012h),l		;82f1
 	ld (ix+013h),h		;82f4
 	res 0,(ix+000h)		;82f7
-	ld hl,099efh		;82fb
+	ld hl,099efh		;82fb   ; los dos patrones enteros vuelven a la VRAM: se acabo el dibujo por trozos
 	ld de,03be0h		;82fe
 	ld bc,00020h		;8301
 	call copia_bloque_a_vram		;8304
@@ -377,12 +377,12 @@ cae_hasta_el_suelo:
 	ld a,(0e1cfh)		;8318
 	cp (iy+000h)		;831b   ; cae hasta llegar a la Y del suelo
 	ret nc			;831e
-	ld (ix+010h),001h		;831f
+	ld (ix+010h),001h		;831f   ; periodo 1: de aqui en adelante el jugador corre en cada cuadro
 	ld hl,jugador		;8323
 	ld (ix+012h),l		;8326
 	ld (ix+013h),h		;8329
 	res 0,(ix+000h)		;832c
-	ld hl,08ec0h		;8330
+	ld hl,08ec0h		;8330   ; y los cuatro trozos de mirar a la izquierda, otra vez sin morder
 	ld de,03d00h		;8333
 	ld bc,00010h		;8336
 	call copia_bloque_a_vram		;8339
@@ -400,7 +400,7 @@ cae_hasta_el_suelo:
 	call copia_bloque_a_vram		;835d
 	ret			;8360
 se_hunde:		; Clases 3 (charca) y 4 (cocodrilo)
-	ld hl,0e185h		;8361
+	ld hl,0e185h		;8361   ; el borrado empieza en el byte 0x1B del patron y va comiendo hacia arriba: 0xE185 baja y 0xE184 sube
 	ld (hl),01bh		;8364
 	ld hl,0e184h		;8366
 	ld (hl),001h		;8369
@@ -412,10 +412,10 @@ se_hunde:		; Clases 3 (charca) y 4 (cocodrilo)
 	ld (0e189h),a		;837b
 	ld (hl),001h		;837e
 	res 5,(ix+000h)		;8380
-	ld hl,se_hunde_paso		;8384
+	ld hl,se_hunde_paso		;8384   ; el manejador pasa a 0x8393: un paso de hundimiento por cuadro
 	ld (ix+012h),l		;8387
 	ld (ix+013h),h		;838a
-	ld a,006h		;838d
+	ld a,006h		;838d   ; sonido 6, el mismo de morir
 	call arranca_un_sonido		;838f
 	ret			;8392
 se_hunde_paso:
@@ -436,11 +436,11 @@ se_hunde_borra:
 	ld (iy+003h),000h		;83b4
 	ret			;83b8
 se_hunde_termina:
-	call quita_una_vida		;83b9
+	call quita_una_vida		;83b9   ; aqui si se pierde la vida: charca y cocodrilo son dos de los cuatro sitios que la quitan
 	ld (ix+011h),05ah		;83bc
-	ld hl,0e2a2h		;83c0
+	ld hl,0e2a2h		;83c0   ; la Y del sprite a 0
 	ld (hl),000h		;83c3
-	ld hl,0e2a9h		;83c5
+	ld hl,0e2a9h		;83c5   ; y el color del segundo a 0: invisible
 	ld (hl),000h		;83c8
 	ld hl,muere_repinta_vidas		;83ca
 	ld (ix+012h),l		;83cd
@@ -515,15 +515,15 @@ trepa_la_escalera:
 	set 5,(ix+000h)		;8467
 	ret			;846b
 trepa_la_escalera_baja:
-	bit 1,(hl)		;846c
+	bit 1,(hl)		;846c   ; sin el bit 1 (abajo) no se baja
 	ret z			;846e
-	ld a,(iy+000h)		;846f
+	ld a,(iy+000h)		;846f   ; cuatro pixeles por paso, hasta la Y 0xA3
 	cp 0a3h		;8472
 	jr z,trepa_llega_al_subsuelo		;8474
 	ld a,004h		;8476
 	add a,(iy+000h)		;8478
 	ld (iy+000h),a		;847b
-	set 5,(ix+000h)		;847e
+	set 5,(ix+000h)		;847e   ; bit 5: mientras se trepa la animacion corre
 	ret			;8482
 trepa_llega_al_subsuelo:
 	ld (ix+010h),001h		;8483
@@ -535,15 +535,15 @@ trepa_llega_al_subsuelo:
 	ld (ix+013h),h		;8496
 	ret			;8499
 sale_del_hoyo:
-	ld a,(hl)			;849a
+	ld a,(hl)			;849a   ; solo se sale con izquierda o derecha (bits 2 y 3)
 	and 00ch		;849b
 	jr z,trepa_la_escalera_baja		;849d
 	set 6,(ix+016h)		;849f
 	ld b,a			;84a3
-	ld a,002h		;84a4
+	ld a,002h		;84a4   ; sonido 2, el mismo del salto
 	call arranca_un_sonido		;84a6
 	ld a,b			;84a9
-	ld hl,en_el_aire		;84aa
+	ld hl,en_el_aire		;84aa   ; de aqui en adelante manda la curva del salto
 	ld (ix+012h),l		;84ad
 	ld (ix+013h),h		;84b0
 	res 5,(ix+000h)		;84b3
@@ -551,17 +551,17 @@ sale_del_hoyo:
 	set 0,(ix+006h)		;84bb
 	set 0,(ix+016h)		;84bf
 	ld (ix+010h),001h		;84c3
-	ld (iy+000h),06dh		;84c7
-	ld (ix+017h),01fh		;84cb
+	ld (iy+000h),06dh		;84c7   ; la Y de salida, 0x6D
+	ld (ix+017h),01fh		;84cb   ; paso 0x1F: el salto entero
 	bit 3,a		;84cf
 	jr nz,sale_del_hoyo_derecha		;84d1
-	ld hl,0ff38h		;84d3
+	ld hl,0ff38h		;84d3   ; a la izquierda 0xFF38, que son 0,78 pixeles por cuadro hacia atras
 	ld (ix+007h),l		;84d6
 	ld (ix+008h),h		;84d9
 	set 7,(ix+006h)		;84dc
 	ret			;84e0
 sale_del_hoyo_derecha:
-	ld hl,000c8h		;84e1
+	ld hl,000c8h		;84e1   ; y a la derecha 0x00C8, los mismos 0,78 hacia adelante
 	ld (ix+007h),l		;84e4
 	ld (ix+008h),h		;84e7
 	res 7,(ix+006h)		;84ea
@@ -617,20 +617,20 @@ mira_colisiones_tabla:
 	ld hl,0e241h		;8545
 	ld b,002h		;8548
 mira_colisiones_bucle:
-	ld c,(hl)			;854a
+	ld c,(hl)			;854a   ; el primer byte de la caja es la clase, y los otros dos la X izquierda y la derecha
 	inc hl			;854b
 	cp (hl)			;854c
 	inc hl			;854d
 	jr c,mira_colisiones_siguiente		;854e
 	cp (hl)			;8550
 	jr nc,mira_colisiones_siguiente		;8551
-	ld b,a			;8553
+	ld b,a			;8553   ; dentro de la caja: B se queda la X y A pasa a ser la clase
 	ld a,c			;8554
 	cp 005h		;8555   ; las clases 2, 3 y 4 empujan al jugador fuera de la caja
 	jr nc,mira_colisiones_devuelve_la_clase		;8557
 	cp 001h		;8559
 	jr z,mira_colisiones_devuelve_la_clase		;855b
-	dec hl			;855d
+	dec hl			;855d   ; entrando por la izquierda la X queda en (X izquierda)-5, o sea el centro justo en (X izquierda)+3
 	ld a,(hl)			;855e
 	add a,003h		;855f
 	sub b			;8561
@@ -639,7 +639,7 @@ mira_colisiones_bucle:
 	ld (iy+001h),a		;8567
 	jr mira_colisiones_devuelve_la_clase		;856a
 mira_colisiones_empuja_a_la_izquierda:
-	inc hl			;856c
+	inc hl			;856c   ; y por la derecha en (X derecha)-12, el centro en (X derecha)-4
 	ld a,b			;856d
 	add a,004h		;856e
 	sub (hl)			;8570
@@ -674,7 +674,7 @@ mira_colisiones_en_el_aire_tabla:
 	jr nz,mira_colisiones_en_el_aire_bucle		;85a3
 	ld hl,0e241h		;85a5
 mira_colisiones_en_el_aire_bucle:
-	ld c,(hl)			;85a8
+	ld c,(hl)			;85a8   ; la misma caja de tres bytes, pero solo sobre las de 0xE23B
 	inc hl			;85a9
 	cp (hl)			;85aa
 	inc hl			;85ab
@@ -682,7 +682,7 @@ mira_colisiones_en_el_aire_bucle:
 	cp (hl)			;85ae
 	jr nc,mira_colisiones_en_el_aire_siguiente		;85af
 	ld b,a			;85b1
-	ld a,005h		;85b2
+	ld a,005h		;85b2   ; en el aire solo cuentan la clase 5 (liana) y la 10 (rebote)
 	cp c			;85b4
 	jr z,alcanza_la_liana		;85b5
 	ld a,00ah		;85b7
@@ -693,7 +693,7 @@ mira_colisiones_en_el_aire_bucle:
 	sub (iy+000h)		;85c0
 	cp 002h		;85c3
 	jr nc,mira_colisiones_en_el_aire_nada		;85c5
-	ld a,(0e2a2h)		;85c7
+	ld a,(0e2a2h)		;85c7   ; pegado al suelo y por encima de la Y 0x6D, se le baja un pixel antes de devolver la clase
 	cp 06dh		;85ca
 	jr nc,mira_colisiones_en_el_aire_devuelve		;85cc
 	inc a			;85ce
@@ -729,7 +729,7 @@ rebota_y_retrocede:		; Clase 10: invierte la velocidad y retrocede tres pasos. N
 	ld a,00ah		;85fb
 	call arranca_un_sonido		;85fd
 rebota_y_retrocede_calcula:
-	ld (ix+011h),002h		;8600
+	ld (ix+011h),002h		;8600   ; IX+0x11 = 2: el manejador se salta el cuadro siguiente
 	ld ix,0e2d5h		;8604
 	ld iy,0e2a2h		;8608
 	set 2,(ix+016h)		;860c
@@ -742,7 +742,7 @@ rebota_y_retrocede_calcula:
 	inc de			;861a
 	ld (ix+008h),d		;861b
 	ld (ix+007h),e		;861e
-	ld h,(iy+001h)		;8621
+	ld h,(iy+001h)		;8621   ; la X va en IY+0x01 con su fraccion en IX+0x0B, la misma pareja que mueve 0x9B1F
 	ld l,(ix+00bh)		;8624
 	add hl,de			;8627
 	add hl,de			;8628
@@ -778,7 +778,7 @@ arrollado_por_el_tronco:		; Clase 1
 	call arranca_un_sonido		;865c
 	ret			;865f
 arrollado_pierde_puntos:
-	ld a,(0e268h)		;8660
+	ld a,(0e268h)		;8660   ; 0xE268 cuenta hasta 0x20 para volver a arrancar el sonido 4
 	dec a			;8663
 	ld (0e268h),a		;8664
 	jp nz,arrollado_resta		;8667
@@ -802,7 +802,7 @@ arrollado_mira_la_entrada:
 	ld a,(0e224h)		;8695   ; de la variante 4 en adelante todavia se puede mover de lado
 	cp 004h		;8698
 	jr c,arrollado_comprueba		;869a
-	ld a,(0e05fh)		;869c
+	ld a,(0e05fh)		;869c   ; bits 2 y 3 de 0xE05F: izquierda y derecha
 	and 00ch		;869f
 	jr z,arrollado_comprueba		;86a1
 	bit 2,a		;86a3
@@ -816,16 +816,16 @@ arrollado_mira_la_entrada:
 arrollado_hacia_la_derecha:
 	bit 3,a		;86ba
 	jr z,arrollado_comprueba		;86bc
-	ld de,000c0h		;86be
+	ld de,000c0h		;86be   ; 0x00C0 en IX+0x07/08: arrastrandose se avanza menos que andando (0x00C8)
 	ld (ix+008h),d		;86c1
 	ld (ix+007h),e		;86c4
 	res 7,(ix+006h)		;86c7
 	set 0,(ix+006h)		;86cb
 arrollado_comprueba:
-	call mira_colisiones		;86cf
+	call mira_colisiones		;86cf   ; mientras siga tocando la caja de clase 1 no se levanta
 	cp 001h		;86d2
 	ret z			;86d4
-	ld hl,jugador		;86d5
+	ld hl,jugador		;86d5   ; al soltarse vuelven el manejador normal y la Y 0x6D
 	ld (ix+012h),l		;86d8
 	ld (ix+013h),h		;86db
 	ld (iy+000h),06dh		;86de
@@ -835,16 +835,16 @@ cae_por_el_hoyo:
 	ld a,(iy+000h)		;86e7
 	cp 0a5h		;86ea   ; 0xA5 es el fondo, y alli se recupera el mando
 	jr c,cae_por_el_hoyo_medio		;86ec
-	res 0,(ix+000h)		;86ee
+	res 0,(ix+000h)		;86ee   ; se deja de caer y vuelve el manejador normal
 	set 6,(ix+016h)		;86f2
 	ld hl,jugador		;86f6
 	ld (ix+012h),l		;86f9
 	ld (ix+013h),h		;86fc
-	ld a,06dh		;86ff
+	ld a,06dh		;86ff   ; y la Y del suelo pasa a 0x6D
 	ld (0e1cfh),a		;8701
 	ret			;8704
 cae_por_el_hoyo_medio:
-	cp 090h		;8705
+	cp 090h		;8705   ; de la Y 0x90 para abajo el patron es el de caer, 0x5C o 0x38; mas arriba el de estar de pie, 0x58 o 0x34
 	jr c,cae_por_el_hoyo_arriba		;8707
 	bit 7,(ix+006h)		;8709
 	jr z,cae_por_el_hoyo_medio_derecha		;870d
@@ -884,9 +884,9 @@ jugador:
 ; 10 rebote 85EF
 ; ----------------------------------------------------------------------
 despacha_la_clase:
-	or a			;873b
+	or a			;873b   ; la clase 0 no salta a ningun sitio
 	ret z			;873c
-	sla a		;873d
+	sla a		;873d   ; doblada, es el indice en la tabla de 0x8AA0
 	ld e,a			;873f
 	ld d,000h		;8740
 	ld hl,08aa0h		;8742
@@ -895,7 +895,7 @@ despacha_la_clase:
 	inc hl			;8747
 	ld d,(hl)			;8748
 	ex de,hl			;8749
-	jp (hl)			;874a
+	jp (hl)			;874a   ; jp (hl): el manejador de la clase hereda el retorno de quien llamo aqui
 deja_un_solo_objeto:		; Clase 7: nadie la escribe
 	ld hl,0e247h		;874b
 	ld (hl),001h		;874e
@@ -971,14 +971,14 @@ empieza_el_salto:
 	bit 6,(ix+016h)		;87e9   ; con el boton mantenido no se vuelve a saltar
 	ret nz			;87ed
 	set 6,(ix+016h)		;87ee
-	ld hl,en_el_aire		;87f2
+	ld hl,en_el_aire		;87f2   ; el manejador pasa a 0x8820, con el paso del salto en 0x1F
 	ld (ix+012h),l		;87f5
 	ld (ix+013h),h		;87f8
 	res 5,(ix+000h)		;87fb
 	set 1,(ix+016h)		;87ff
-	set 6,(ix+006h)		;8803
+	set 6,(ix+006h)		;8803   ; bit 6 de IX+0x06: saltando SI se miran las cajas del aire; soltandose de la liana no, porque 0x8212 lo apaga
 	ld (ix+017h),01fh		;8807
-	ld a,002h		;880b
+	ld a,002h		;880b   ; sonido 2, el del salto
 	call arranca_un_sonido		;880d
 	bit 7,(ix+006h)		;8810
 	jr z,empieza_el_salto_derecha		;8814
@@ -1031,32 +1031,32 @@ en_el_aire_sigue:
 	call mira_colisiones_en_el_aire		;8859
 	jp despacha_la_clase		;885c
 en_el_aire_aterriza:
-	call mira_colisiones_en_el_aire		;885f
-	ld hl,jugador		;8862
+	call mira_colisiones_en_el_aire		;885f   ; una ultima mirada a las cajas antes de tocar suelo
+	ld hl,jugador		;8862   ; y de vuelta al manejador de andar
 	ld (ix+012h),l		;8865
 	ld (ix+013h),h		;8868
-	ld (ix+00fh),000h		;886b
+	ld (ix+00fh),000h		;886b   ; el fotograma vuelve al primero
 	ld (ix+00eh),001h		;886f
 	res 1,(ix+016h)		;8873
 	res 6,(ix+006h)		;8877
 	bit 0,(ix+016h)		;887b
 	ret z			;887f
-	ld a,06dh		;8880
+	ld a,06dh		;8880   ; solo arriba se fuerza la Y a 0x6D; en el subterraneo se queda donde cayo
 	ld (0e2a2h),a		;8882
 	ret			;8885
 en_el_aire_gira:
 	ld ix,0e2d5h		;8886
 	ld iy,0e2a2h		;888a
-	ld a,(ix+007h)		;888e
+	ld a,(ix+007h)		;888e   ; solo se gira si el salto empezo parado: con velocidad ya puesta se sale
 	or a			;8891
 	ret nz			;8892
 	ld a,(ix+017h)		;8893
 	cp 01dh		;8896   ; solo se gira en los tres primeros pasos del salto
 	ret c			;8898
-	ld a,(0e05fh)		;8899
+	ld a,(0e05fh)		;8899   ; y hace falta izquierda o derecha (bits 2 y 3)
 	and 00ch		;889c
 	ret z			;889e
-	ld de,000c8h		;889f
+	ld de,000c8h		;889f   ; 0x00C8 a la derecha y 0xFF38 a la izquierda, cada uno con su patron
 	res 7,(ix+006h)		;88a2
 	ld (iy+002h),038h		;88a6
 	bit 2,a		;88aa
@@ -1065,7 +1065,7 @@ en_el_aire_gira:
 	set 7,(ix+006h)		;88b1
 	ld (iy+002h),05ch		;88b5
 en_el_aire_gira_guarda:
-	ld (ix+007h),e		;88b9
+	ld (ix+007h),e		;88b9   ; la velocidad recien elegida, ya en IX+0x07/08
 	ld (ix+008h),d		;88bc
 	set 0,(ix+006h)		;88bf
 	ld a,01fh		;88c3   ; recupera el avance perdido al cambiar de sentido
@@ -1075,7 +1075,7 @@ en_el_aire_gira_guarda:
 	cp b			;88ca
 	inc b			;88cb
 	ret z			;88cc
-	ld iy,0e2a3h		;88cd
+	ld iy,0e2a3h		;88cd   ; IY+0x01 y IX+0x0B, la pareja de la X: se la mueve a mano una vez por cada paso ya gastado
 	ld ix,0e2dbh		;88d1
 en_el_aire_gira_recupera:
 	call mueve_objeto		;88d5
@@ -1093,22 +1093,22 @@ sonido_de_los_pasos:
 anda:
 	ld iy,0e2a2h		;88ed
 	ld hl,0e05fh		;88f1
-	bit 2,(hl)		;88f4
+	bit 2,(hl)		;88f4   ; bit 2 de 0xE05F: izquierda
 	jr z,anda_a_la_derecha		;88f6
-	res 2,(ix+016h)		;88f8
+	res 2,(ix+016h)		;88f8   ; andar apaga el bit 2 de IX+0x16, o sea el "ya he rebotado" que mira 0x85F5
 	call sonido_de_los_pasos		;88fc
 	set 7,(ix+006h)		;88ff
 	ld de,08aedh		;8903   ; el guion de andar a la izquierda
 	ld (ix+00ch),e		;8906
 	ld (ix+00dh),d		;8909
-	set 5,(ix+000h)		;890c
+	set 5,(ix+000h)		;890c   ; bit 5 animado y bit 0 movil: hacen falta los dos para que ande
 	set 0,(ix+006h)		;8910
 	ld de,0ff38h		;8914
 	ld (ix+008h),d		;8917
 	ld (ix+007h),e		;891a
 	ret			;891d
 anda_a_la_derecha:
-	bit 3,(hl)		;891e
+	bit 3,(hl)		;891e   ; bit 3: derecha; sin ninguno de los dos, se para
 	jr z,se_para		;8920
 	call sonido_de_los_pasos		;8922
 	res 2,(ix+016h)		;8925
@@ -1123,14 +1123,14 @@ anda_a_la_derecha:
 	ld (ix+007h),e		;8944
 	ret			;8947
 se_para:
-	res 5,(ix+000h)		;8948
+	res 5,(ix+000h)		;8948   ; se apagan la animacion y el movimiento
 	res 0,(ix+006h)		;894c
-	ld (ix+00fh),000h		;8950
+	ld (ix+00fh),000h		;8950   ; y el fotograma vuelve al primero
 	ld (ix+00eh),001h		;8954
-	ld de,00000h		;8958
+	ld de,00000h		;8958   ; velocidad cero
 	ld (ix+008h),d		;895b
 	ld (ix+007h),e		;895e
-	bit 7,(ix+006h)		;8961
+	bit 7,(ix+006h)		;8961   ; de pie: patron 0x58 mirando a la izquierda, 0x34 a la derecha
 	ld iy,0e2a2h		;8965
 	jr z,se_para_derecha		;8969
 	ld (iy+002h),058h		;896b
@@ -1182,12 +1182,12 @@ pinta_las_vidas:
 	ld iy,0e29eh		;89d2
 	ld (iy+003h),001h		;89d6
 pinta_las_vidas_vram:
-	ld de,01843h		;89da
+	ld de,01843h		;89da   ; tres tiles en la fila 2, columna 3
 	ld bc,00003h		;89dd
 	push hl			;89e0
 	call copia_bloque_a_vram		;89e1
 	pop hl			;89e4
-	ld de,00003h		;89e5
+	ld de,00003h		;89e5   ; y los tres siguientes justo debajo, en la fila 3
 	add hl,de			;89e8
 	ld de,01863h		;89e9
 	ld bc,00003h		;89ec
@@ -1216,7 +1216,7 @@ prepara_la_partida:
 	ld (0e1cfh),a		;8a14
 	call prepara_la_pantalla		;8a17
 	ld de,0e1d0h		;8a1a
-	ld hl,08a69h		;8a1d   ; 0xE1D0: los tiles BA B8 C2 B8 B8, o sea 20:00
+	ld hl,08a69h		;8a1d   ; 0xE1D0: los tiles BA B8 C2 B8 B8, o sea 20:00, y de propina el sexto byte, 0x3C, que cae en 0xE1D5 y es la cuenta de 60 cuadros del tick: el reloj y su temporizador se cargan con el mismo ldir
 	ld bc,00006h		;8a20
 	ldir		;8a23
 	ld de,0e1d6h		;8a25
@@ -1434,13 +1434,13 @@ carga_los_sprites:
 	ld hl,00044h		;8b66   ; nueve sprites del patron 0x20 al 0x44, que es el mismo del reves
 	ld de,00020h		;8b69
 	call espeja_nueve_sprites		;8b6c
-	ld hl,09473h		;8b6f
+	ld hl,09473h		;8b6f   ; el segundo bloque de nueve: del patron 0x68 al 0x8C
 	call descomprime_rle_a_vram		;8b72
 	ld b,009h		;8b75
 	ld hl,0008ch		;8b77
 	ld de,00068h		;8b7a
 	call espeja_nueve_sprites		;8b7d
-	ld hl,0956ah		;8b80
+	ld hl,0956ah		;8b80   ; y el tercero: del 0xB0 al 0xD4
 	call descomprime_rle_a_vram		;8b83
 	ld b,009h		;8b86
 	ld hl,000d4h		;8b88
@@ -1469,12 +1469,12 @@ borra_parte_del_patron_bucle:
 	inc hl			;8ba6
 	djnz borra_parte_del_patron_bucle		;8ba7
 borra_parte_del_patron_segundo:
-	ld hl,0e15eh		;8ba9
+	ld hl,0e15eh		;8ba9   ; lo mismo en el segundo patron, 0xE15E: el muneco son dos capas de color
 	ld a,(0e185h)		;8bac
 	ld e,a			;8baf
 	ld d,000h		;8bb0
 	add hl,de			;8bb2
-	ld a,(0e184h)		;8bb3
+	ld a,(0e184h)		;8bb3   ; con 0xE184 a cero no se borra nada
 	ld b,a			;8bb6
 	xor a			;8bb7
 	cp b			;8bb8
@@ -1494,11 +1494,11 @@ borra_parte_del_patron_vuelve:
 espeja_nueve_sprites:
 	push bc			;8bc1
 	ld bc,03800h		;8bc2   ; numero de patron por 8 mas 0x3800: la tabla de sprites
-	add hl,hl			;8bc5
+	add hl,hl			;8bc5   ; tres add hl,hl: el numero de patron por 8
 	add hl,hl			;8bc6
 	add hl,hl			;8bc7
 	add hl,bc			;8bc8
-	ex de,hl			;8bc9
+	ex de,hl			;8bc9   ; y lo mismo con el destino
 	add hl,hl			;8bca
 	add hl,hl			;8bcb
 	add hl,hl			;8bcc
@@ -1509,9 +1509,9 @@ espeja_nueve_sprites_bucle:
 	push bc			;8bd0
 	push hl			;8bd1
 	push de			;8bd2
-	ld bc,00010h		;8bd3
+	ld bc,00010h		;8bd3   ; la mitad izquierda del original va a la mitad DERECHA del espejo, 16 bytes mas alla
 	add hl,bc			;8bd6
-	ld bc,00002h		;8bd7
+	ld bc,00002h		;8bd7   ; dos patrones de ocho bytes, que son los 16 de media columna
 	ex de,hl			;8bda
 	call copia_patrones_en_espejo		;8bdb
 	pop hl			;8bde
@@ -1523,13 +1523,13 @@ espeja_nueve_sprites_bucle:
 	push hl			;8be8
 	push de			;8be9
 	ex de,hl			;8bea
-	call copia_patrones_en_espejo		;8beb
+	call copia_patrones_en_espejo		;8beb   ; y la mitad derecha del original a la izquierda del espejo: ese es el cruce
 	pop hl			;8bee
 	ld bc,00010h		;8bef
 	add hl,bc			;8bf2
 	ex de,hl			;8bf3
 	pop hl			;8bf4
-	add hl,bc			;8bf5
+	add hl,bc			;8bf5   ; 0x20 bytes adelante en los dos: el sprite siguiente de los nueve
 	add hl,bc			;8bf6
 	pop bc			;8bf7
 	djnz espeja_nueve_sprites_bucle		;8bf8
@@ -1556,13 +1556,13 @@ patron_hundiendose_izquierda:
 	ld bc,00020h		;8c2a
 	ldir		;8c2d
 patron_hundiendose_vram:
-	call borra_parte_del_patron		;8c2f
+	call borra_parte_del_patron		;8c2f   ; el mordisco se da en RAM, y de ahi va a la VRAM
 	push iy		;8c32
 	push ix		;8c34
 	bit 7,(ix+006h)		;8c36
 	jr nz,patron_hundiendose_vram_izquierda		;8c3a
-	ld (iy+002h),034h		;8c3c
-	ld hl,0e138h		;8c40
+	ld (iy+002h),034h		;8c3c   ; patron 0x34 mirando a la derecha
+	ld hl,0e138h		;8c40   ; cuatro trozos de 16 bytes: dos medias columnas por cada capa de color
 	ld de,03be0h		;8c43
 	ld bc,00010h		;8c46
 	call copia_bloque_a_vram		;8c49
@@ -1580,7 +1580,7 @@ patron_hundiendose_vram:
 	call copia_bloque_a_vram		;8c6d
 	jr patron_hundiendose_vuelve		;8c70
 patron_hundiendose_vram_izquierda:
-	ld (iy+002h),058h		;8c72
+	ld (iy+002h),058h		;8c72   ; mirando a la izquierda las medias columnas son otras: 0x3D00/0x3AC0 y 0x3D10/0x3AD0
 	ld hl,0e138h		;8c76
 	ld de,03d00h		;8c79
 	ld bc,00010h		;8c7c
@@ -1602,7 +1602,7 @@ patron_hundiendose_vuelve:
 	pop iy		;8ca8
 	ret			;8caa
 patron_reapareciendo:
-	ld de,0e15eh		;8cab
+	ld de,0e15eh		;8cab   ; los dos patrones de 0x8E80 y 0x8EA0 bajan a RAM, donde si se pueden morder
 	ld hl,08ea0h		;8cae
 	ld bc,00020h		;8cb1
 	ldir		;8cb4
@@ -1610,11 +1610,11 @@ patron_reapareciendo:
 	ld hl,08e80h		;8cb9
 	ld bc,00020h		;8cbc
 	ldir		;8cbf
-	call borra_parte_del_patron		;8cc1
+	call borra_parte_del_patron		;8cc1   ; se borra el trozo que toque, que 0x82CC va reduciendo cuadro a cuadro
 	push iy		;8cc4
 	push ix		;8cc6
-	ld (iy+002h),038h		;8cc8
-	ld hl,0e138h		;8ccc
+	ld (iy+002h),038h		;8cc8   ; patron 0x38, el de mirar a la derecha en el aire
+	ld hl,0e138h		;8ccc   ; de la RAM a las cuatro medias columnas: 0x3C00/0x39C0 una capa y 0x3C10/0x39D0 la otra
 	ld de,03c00h		;8ccf
 	ld bc,00010h		;8cd2
 	call copia_bloque_a_vram		;8cd5
@@ -1641,7 +1641,7 @@ pinta_los_hoyos:
 	call pinta_celdas		;8d0b
 	ret			;8d0e
 pinta_los_hoyos_con_cajas:
-	ld hl,08f48h		;8d0f
+	ld hl,08f48h		;8d0f   ; el guion de 0x8F48 pinta los dos hoyos
 	call pinta_celdas		;8d12
 	push ix		;8d15
 	ld ix,0e229h		;8d17
@@ -1654,7 +1654,7 @@ pinta_los_hoyos_con_cajas:
 	ld (ix+002h),a		;8d2a
 	pop ix		;8d2d
 	push ix		;8d2f
-	ld ix,0e22fh		;8d31
+	ld ix,0e22fh		;8d31   ; la segunda caja, igual pero desde 0xA3
 	ld (ix+000h),002h		;8d35
 	ld a,0a3h		;8d39
 	sub 000h		;8d3b
@@ -1696,27 +1696,27 @@ pinta_el_layout_filas:
 	push de			;8d86
 	ld bc,00020h		;8d87
 	call copia_bloque_a_vram		;8d8a
-	pop hl			;8d8d
+	pop hl			;8d8d   ; el origen no avanza: solo se corre el destino, 0x20 por vuelta
 	ld de,00020h		;8d8e
 	add hl,de			;8d91
 	ex de,hl			;8d92
 	pop hl			;8d93
 	pop bc			;8d94
 	djnz pinta_el_layout_filas		;8d95
-	ld de,00020h		;8d97
+	ld de,00020h		;8d97   ; detras de esa fila vienen los cinco bytes de anchura de la fila 12
 	add hl,de			;8d9a
 	ld b,005h		;8d9b
 	ld de,01980h		;8d9d
 pinta_el_layout_fila12:
 	push bc			;8da0
 	push hl			;8da1
-	ld c,(hl)			;8da2
+	ld c,(hl)			;8da2   ; el byte del tramo entra como C
 	ld b,000h		;8da3
 	push bc			;8da5
 	push de			;8da6
 	ld hl,08e1bh		;8da7   ; el byte del tramo es a la vez desplazamiento, longitud y avance
 	add hl,bc			;8daa
-	call copia_bloque_a_vram		;8dab
+	call copia_bloque_a_vram		;8dab   ; se pinta desde 0x1980, y el destino avanza esa misma longitud mas uno
 	pop hl			;8dae
 	pop de			;8daf
 	add hl,de			;8db0
@@ -1726,7 +1726,7 @@ pinta_el_layout_fila12:
 	inc hl			;8db4
 	pop bc			;8db5
 	djnz pinta_el_layout_fila12		;8db6
-	or a			;8db8
+	or a			;8db8   ; HL retrocede cinco: la fila 13 lee LOS MISMOS cinco bytes de anchura
 	ld de,00005h		;8db9
 	sbc hl,de		;8dbc
 	ld b,005h		;8dbe
@@ -1738,7 +1738,7 @@ pinta_el_layout_fila13:
 	ld b,000h		;8dc6
 	push bc			;8dc8
 	push de			;8dc9
-	ld hl,08e32h		;8dca
+	ld hl,08e32h		;8dca   ; pero no los usa como desplazamiento: la fila 13 arranca siempre en 0x8E32 y solo cambia lo larga que es
 	call copia_bloque_a_vram		;8dcd
 	pop hl			;8dd0
 	pop de			;8dd1
@@ -2540,14 +2540,14 @@ vuelve_a_encender:
 	ld bc,0e201h		;9baf   ; registro 1 = 0xE2: pantalla e interrupcion otra vez
 	call escribe_registro_vdp		;9bb2
 espera_a_que_suelten:
-	ld a,007h		;9bb5
+	ld a,007h		;9bb5   ; fila 7 del teclado
 	or 0f0h		;9bb7
 	out (0aah),a		;9bb9
 	in a,(0a9h)		;9bbb
 	cpl			;9bbd
-	and 094h		;9bbe
+	and 094h		;9bbe   ; mascara 0x94, los bits 7, 4 y 2 de esa fila: mientras siga pulsado alguno no se sale
 	jr nz,espera_a_que_suelten		;9bc0
-	ld a,03ch		;9bc2
+	ld a,03ch		;9bc2   ; y los tres bytes del reloj de inactividad vuelven a 60
 	ld (0e25ah),a		;9bc4
 	ld (0e25bh),a		;9bc7
 	ld (0e25ch),a		;9bca
@@ -2722,7 +2722,7 @@ cambia_de_pantalla_a_la_izquierda:
 	djnz cambia_de_pantalla_a_la_izquierda		;9cfe
 	jp monta_la_escena		;9d00
 sprites_del_jugador:		; Dos sprites mas, 16 pixeles por encima y con otro patron
-	ld hl,0e2a2h		;9d03
+	ld hl,0e2a2h		;9d03   ; 0xE2A2 es la mitad de abajo del muneco; 0xE2A6 y 0xE2AA, las dos de arriba
 	ld iy,0e2a6h		;9d06
 	ld ix,0e2aah		;9d0a
 	ld a,(hl)			;9d0e
@@ -2735,7 +2735,7 @@ sprites_del_jugador:		; Dos sprites mas, 16 pixeles por encima y con otro patron
 	ld (ix+001h),a		;9d1c
 	inc hl			;9d1f
 	ld a,(hl)			;9d20
-	sub 020h		;9d21
+	sub 020h		;9d21   ; el patron de abajo menos 0x20, y de ahi +0x68 y +0xB0: las dos capas de la mitad de arriba
 	ld b,a			;9d23
 	add a,068h		;9d24   ; los patrones de las dos capas de color
 	ld (iy+002h),a		;9d26
@@ -2745,27 +2745,27 @@ sprites_del_jugador:		; Dos sprites mas, 16 pixeles por encima y con otro patron
 	ret			;9d2f
 anade_objeto:		; Mete DE al final de la lista de 0xE247
 	ld hl,0e247h		;9d30
-	ld b,(hl)			;9d33
+	ld b,(hl)			;9d33   ; 0xE247 es el contador, y sube uno
 	inc (hl)			;9d34
 	inc hl			;9d35
 	xor a			;9d36
 	cp b			;9d37
 	jr z,anade_objeto_escribe		;9d38
 anade_objeto_busca_el_final:
-	inc hl			;9d3a
+	inc hl			;9d3a   ; dos bytes por puntero: se salta los que ya hay
 	inc hl			;9d3b
 	djnz anade_objeto_busca_el_final		;9d3c
 anade_objeto_escribe:
-	ld (hl),e			;9d3e
+	ld (hl),e			;9d3e   ; y el nuevo va al final de la lista
 	inc hl			;9d3f
 	ld (hl),d			;9d40
 	ret			;9d41
 rellena_vram_directo:		; Escribe A en DE bytes de VRAM desde HL
-	ld c,a			;9d42
+	ld c,a			;9d42   ; no pasa por 0xB185: se direcciona aqui mismo
 	ld a,l			;9d43
 	out (099h),a		;9d44
 	ld a,h			;9d46
-	or 040h		;9d47
+	or 040h		;9d47   ; el 0x40 marca escritura
 	out (099h),a		;9d49
 rellena_vram_directo_bucle:
 	ld a,c			;9d4b
@@ -2795,12 +2795,12 @@ pinta_marcador_bucle:
 	ld c,0b8h		;9d62   ; en cuanto sale un digito no nulo se pasa a 0xB8 = '0'
 pinta_marcador_digito:
 	ld a,c			;9d64
-	add a,(hl)			;9d65
+	add a,(hl)			;9d65   ; el digito se suma a la casilla base: 0xC3 es el blanco y 0xB8 el cero
 	ld (de),a			;9d66
 	inc hl			;9d67
 	inc de			;9d68
 	djnz pinta_marcador_bucle		;9d69
-	ld a,0b8h		;9d6b
+	ld a,0b8h		;9d6b   ; el ultimo digito siempre sale como numero, aunque sea cero
 	add a,(hl)			;9d6d
 	ld (de),a			;9d6e
 	ld hl,0e1dch		;9d6f
@@ -2818,7 +2818,7 @@ resta_al_marcador:		; A = que digito. Los llamantes usan 5 (una unidad) y 3 (cie
 	ld a,0ffh		;9d85   ; 0xFF = se paso de cero, hay que llevarse una
 resta_al_marcador_bucle:
 	dec (hl)			;9d87
-	cp (hl)			;9d88
+	cp (hl)			;9d88   ; si el digito se ha pasado de cero (0xFF) se pone a 9 y se sigue por el de la izquierda
 	jr nz,pinta_marcador		;9d89
 	ld (hl),009h		;9d8b
 	dec hl			;9d8d
@@ -2833,7 +2833,7 @@ suma_miles:		; Suma A veces uno en el digito de los miles: los tesoros
 	ld b,a			;9d9f
 	ld a,00ah		;9da0
 suma_miles_bucle:
-	ld hl,0e1d8h		;9da2
+	ld hl,0e1d8h		;9da2   ; 0xE1D8 son los miles; al llegar a 10 se pone a cero y se lleva una a 0xE1D7
 	inc (hl)			;9da5
 	cp (hl)			;9da6
 	jr nz,suma_miles_sigue		;9da7
@@ -2842,7 +2842,7 @@ suma_miles_bucle:
 	inc (hl)			;9dac
 	cp (hl)			;9dad
 	jr nz,suma_miles_sigue		;9dae
-	ld (hl),000h		;9db0
+	ld (hl),000h		;9db0   ; y de ahi a 0xE1D6, las centenas de mil: mas alla no hay acarreo
 	dec hl			;9db2
 	inc (hl)			;9db3
 suma_miles_sigue:
@@ -2938,11 +2938,11 @@ anima_el_final_bucle:
 	push de			;9e40
 	push hl			;9e41
 	push ix		;9e42
-	ld bc,00008h		;9e44
+	ld bc,00008h		;9e44   ; ocho bytes por tira
 	call copia_bloque_a_vram		;9e47
 	pop ix		;9e4a
 	pop hl			;9e4c
-	ld de,00012h		;9e4d
+	ld de,00012h		;9e4d   ; en la tabla se avanza 0x12 por tira y en la VRAM solo 8
 	add hl,de			;9e50
 	ex de,hl			;9e51
 	pop hl			;9e52
@@ -2957,14 +2957,14 @@ anima_el_final_bucle:
 	ld a,00ah		;9e65
 	cp (iy+002h)		;9e67   ; diez fotogramas y vuelta a empezar
 	ret nz			;9e6a
-	ld (ix+000h),03ch		;9e6b
+	ld (ix+000h),03ch		;9e6b   ; al dar la vuelta se esperan 0x3C cuadros
 	ld (iy+002h),000h		;9e6f
 	ret			;9e73
 sprites_del_final:		; Cuatro sprites que van saliendo segun avanza 0xE348
-	ld a,(0e348h)		;9e74
+	ld a,(0e348h)		;9e74   ; hasta el fotograma 3 los cuatro estan a color 0: no se ven
 	cp 003h		;9e77
 	jr nc,sprites_del_final_coloca		;9e79
-	ld hl,0e2b1h		;9e7b
+	ld hl,0e2b1h		;9e7b   ; 0xE2B1, 0xE2B5, 0xE2B9 y 0xE2BD son los cuatro colores
 	ld (hl),000h		;9e7e
 	ld hl,0e2b5h		;9e80
 	ld (hl),000h		;9e83
@@ -2980,10 +2980,10 @@ sprites_del_final_coloca:
 	ld iy,0e2aeh		;9e95
 	ld (iy+000h),a		;9e99
 	ld (iy+003h),006h		;9e9c   ; el color de cada uno
-	ld a,(0e348h)		;9ea0
+	ld a,(0e348h)		;9ea0   ; el segundo no sale hasta el fotograma 6
 	cp 006h		;9ea3
 	ret c			;9ea5
-	sub 009h		;9ea6
+	sub 009h		;9ea6   ; la misma cuenta para el segundo
 	cpl			;9ea8
 	inc a			;9ea9
 	add a,0b3h		;9eaa
@@ -3032,23 +3032,23 @@ monta_la_escena:
 monta_la_escena_repinta:
 	call pinta_el_subsuelo		;9f10
 monta_la_escena_sigue:
-	ld a,001h		;9f13
+	ld a,001h		;9f13   ; sonido 1 al entrar en cada pantalla
 	call arranca_un_sonido		;9f15
-	call borra_las_cajas		;9f18
+	call borra_las_cajas		;9f18   ; las diez cajas se borran, y cada tipo de escena rehace las suyas
 	xor a			;9f1b
 	ld (0e1ceh),a		;9f1c
-	ld ix,0e2bfh		;9f1f
+	ld ix,0e2bfh		;9f1f   ; al objeto comodin se le pone el manejador del hoyo, 0xA962
 	ld de,0a962h		;9f23
 	ld (ix+012h),e		;9f26
 	ld (ix+013h),d		;9f29
 	ld hl,0e247h		;9f2c
 	ld (hl),003h		;9f2f   ; tres objetos vivos al montar la escena
-	ld hl,0e2a6h		;9f31
+	ld hl,0e2a6h		;9f31   ; 0xE2A6-0xE2AD a cero: las dos entradas de sprite que van encima del jugador
 	ld de,0e2a7h		;9f34
 	ld bc,00007h		;9f37
 	ld (hl),000h		;9f3a
 	ldir		;9f3c
-	ld hl,0e26ah		;9f3e
+	ld hl,0e26ah		;9f3e   ; 0xE26A-0xE299 a cero: las doce primeras entradas de la tabla
 	ld de,0e26bh		;9f41
 	ld bc,0002fh		;9f44
 	ld (hl),000h		;9f47
@@ -3066,11 +3066,11 @@ monta_la_escena_sigue:
 	ld de,01b00h		;9f65
 	ld bc,00044h		;9f68
 	call copia_bloque_a_vram		;9f6b
-	ld a,(0e225h)		;9f6e
+	ld a,(0e225h)		;9f6e   ; del tipo 2 en adelante se monta ademas el objeto de 0xACB6
 	cp 002h		;9f71
 	call nc,monta_el_que_sigue		;9f73
 	call escoge_decorado_de_la_escena		;9f76
-	ld a,(0e225h)		;9f79
+	ld a,(0e225h)		;9f79   ; el tipo de escena, doblado: indice en los ocho punteros de 0xAEB4
 	sla a		;9f7c
 	ld e,a			;9f7e
 	ld d,000h		;9f7f
@@ -3080,7 +3080,7 @@ monta_la_escena_sigue:
 	inc hl			;9f86
 	ld d,(hl)			;9f87
 	ex de,hl			;9f88
-	ld de,vuelve_del_tipo_de_escena		;9f89
+	ld de,vuelve_del_tipo_de_escena		;9f89   ; la vuelta se apila a mano, igual que en el recorrido de objetos
 	push de			;9f8c
 	jp (hl)			;9f8d
 vuelve_del_tipo_de_escena:		; La direccion que el despachador apila antes del jp (hl)
@@ -3106,21 +3106,21 @@ escoge_decorado_indice:
 	ld (0e223h),a		;9fae   ; 0xE223 = de que mitad de la tabla de tesoros se tira
 	push de			;9fb1
 	push de			;9fb2
-	ld hl,0a086h		;9fb3
+	ld hl,0a086h		;9fb3   ; la tabla de 0xA086 da los dieciseis tiles del paisaje
 	add hl,de			;9fb6
 	ld e,(hl)			;9fb7
 	inc hl			;9fb8
 	ld d,(hl)			;9fb9
 	ex de,hl			;9fba
-	ld de,00380h		;9fbb
+	ld de,00380h		;9fbb   ; 0x80 bytes a la VRAM 0x0380: los patrones 0x70 a 0x7F
 	ld bc,00080h		;9fbe
 	call copia_bloque_a_vram		;9fc1
-	ld bc,00010h		;9fc4
+	ld bc,00010h		;9fc4   ; y los mismos dieciseis, espejados, a 0x0400: los patrones 0x80 a 0x8F
 	ld hl,00380h		;9fc7
 	ld de,00400h		;9fca
 	call copia_patrones_en_espejo		;9fcd
 	pop de			;9fd0
-	ld hl,0a08eh		;9fd1
+	ld hl,0a08eh		;9fd1   ; la otra tabla, 0xA08E, es el guion de celdas de ese paisaje
 	add hl,de			;9fd4
 	ld e,(hl)			;9fd5
 	inc hl			;9fd6
@@ -3128,18 +3128,18 @@ escoge_decorado_indice:
 	ex de,hl			;9fd8
 	call pinta_el_layout		;9fd9
 	pop de			;9fdc
-	ld a,e			;9fdd
+	ld a,e			;9fdd   ; 0xE227/0xE228 guardan el indice para que 0xA002 pueda reponerlo
 	ld (0e227h),a		;9fde
 	ld a,d			;9fe1
 	ld (0e228h),a		;9fe2
 	ret			;9fe5
 pinta_celdas:		; Interprete de guiones: primer byte = cuantas celdas, luego pares (posicion, tile)
-	ld b,(hl)			;9fe6
+	ld b,(hl)			;9fe6   ; cabecera de dos bytes; el primero es cuantas celdas vienen
 	inc hl			;9fe7
 	inc hl			;9fe8
 pinta_celdas_bucle:
 	push bc			;9fe9
-	ld e,(hl)			;9fea
+	ld e,(hl)			;9fea   ; cada celda son cuatro bytes: la posicion en dos, el tile, y uno sin usar
 	inc hl			;9feb
 	ld d,(hl)			;9fec
 	inc hl			;9fed
@@ -3149,7 +3149,7 @@ pinta_celdas_bucle:
 	ex de,hl			;9ff3
 	ld bc,00001h		;9ff4
 	push hl			;9ff7
-	call copia_bloque_a_vram		;9ff8
+	call copia_bloque_a_vram		;9ff8   ; un solo byte por celda, redireccionando el VDP en cada una
 	pop hl			;9ffb
 	inc hl			;9ffc
 	inc hl			;9ffd
@@ -3157,19 +3157,19 @@ pinta_celdas_bucle:
 	djnz pinta_celdas_bucle		;9fff
 	ret			;a001
 repone_decorado:		; Vuelve a poner los patrones de sprite y el juego de tiles guardado en 0xE227
-	ld hl,097feh		;a002
+	ld hl,097feh		;a002   ; los mismos 0x20 bytes de 0x97FE a tres sitios: los patrones de sprite 0x84, 0xA8 y 0xCC
 	ld de,03c20h		;a005
 	ld bc,00020h		;a008
 	call copia_bloque_a_vram		;a00b
-	ld hl,097feh		;a00e
+	ld hl,097feh		;a00e   ; el segundo destino, el patron 0xA8
 	ld de,03d40h		;a011
 	ld bc,00020h		;a014
 	call copia_bloque_a_vram		;a017
-	ld hl,097feh		;a01a
+	ld hl,097feh		;a01a   ; y el tercero, el 0xCC
 	ld de,03e60h		;a01d
 	ld bc,00020h		;a020
 	call copia_bloque_a_vram		;a023
-	ld hl,0e227h		;a026
+	ld hl,0e227h		;a026   ; 0xE227/0xE228: el indice de decorado que dejo escrito 0x9FDD
 	ld e,(hl)			;a029
 	inc hl			;a02a
 	ld d,(hl)			;a02b
@@ -3179,9 +3179,9 @@ repone_decorado:		; Vuelve a poner los patrones de sprite y el juego de tiles gu
 	inc hl			;a031
 	ld d,(hl)			;a032
 	ex de,hl			;a033
-	ld de,00068h		;a034
+	ld de,00068h		;a034   ; +0x68 dentro del juego de tiles, o sea el catorceavo de los dieciseis
 	add hl,de			;a037
-	ld de,03c28h		;a038
+	ld de,03c28h		;a038   ; y esos ocho bytes van a la tabla de patrones de SPRITE: 0x3C28, 0x3C38 y 0x3D48
 	ld bc,00008h		;a03b
 	push hl			;a03e
 	call copia_bloque_a_vram		;a03f
@@ -3201,7 +3201,7 @@ repone_decorado:		; Vuelve a poner los patrones de sprite y el juego de tiles gu
 	call copia_bloque_a_vram		;a05d
 	pop hl			;a060
 	ld bc,00002h		;a061
-	ld hl,03d40h		;a064
+	ld hl,03d40h		;a064   ; tres pares mas, espejados: 0x3D40 a 0x3D50, 0x3C20 a 0x3E70 y 0x3C30 a 0x3E60
 	ld de,03d50h		;a067
 	call copia_patrones_en_espejo		;a06a
 	ld bc,00002h		;a06d
@@ -3463,33 +3463,33 @@ mueve_la_liana_bucle:
 	add hl,de			;a4d7
 	inc c			;a4d8
 	djnz mueve_la_liana_bucle		;a4d9
-	ld a,h			;a4db
+	ld a,h			;a4db   ; en H queda la ultima fila alcanzada: de ahi salen las X de los otros dos sprites
 	ld ix,0e32fh		;a4dc
 	bit 7,(ix+016h)		;a4e0
 	jr z,mueve_la_liana_sprite2		;a4e4
 	sub 00fh		;a4e6
 mueve_la_liana_sprite2:
-	ld ix,0e276h		;a4e8
+	ld ix,0e276h		;a4e8   ; 0xE276 es el primer sprite de la cuerda y 0xE27A el segundo
 	ld iy,0e27ah		;a4ec
 	ld (iy+003h),001h		;a4f0
-	add a,(ix+001h)		;a4f4
+	add a,(ix+001h)		;a4f4   ; la X del segundo es la del primero mas lo que se ha desplazado
 	ld (iy+001h),a		;a4f7
 	ld a,(ix+000h)		;a4fa
-	add a,010h		;a4fd
+	add a,010h		;a4fd   ; y la Y, 16 pixeles mas abajo: los tres sprites van encadenados
 	ld (iy+000h),a		;a4ff
 	ld a,h			;a502
-	sla a		;a503
+	sla a		;a503   ; para el tercero el desplazamiento va doblado
 	ld ix,0e32fh		;a505
 	bit 7,(ix+016h)		;a509
 	jr z,mueve_la_liana_sprite3		;a50d
 	sub 01eh		;a50f
 mueve_la_liana_sprite3:
 	ld ix,0e276h		;a511
-	ld iy,0e27eh		;a515
+	ld iy,0e27eh		;a515   ; 0xE27E, el tercero
 	add a,(ix+001h)		;a519
 	ld (iy+001h),a		;a51c
 	ld a,(ix+000h)		;a51f
-	add a,020h		;a522
+	add a,020h		;a522   ; y 0x20 por debajo del primero
 	ld (iy+000h),a		;a524
 	pop hl			;a527
 	inc hl			;a528
@@ -3507,10 +3507,10 @@ mueve_la_liana_agarre:
 	add a,012h		;a53e
 mueve_la_liana_guarda_agarre:
 	ld (0e1cdh),a		;a540   ; 0xE1CD = la X donde se agarra el jugador
-	pop hl			;a543
+	pop hl			;a543   ; el retorno apilado apunta a la fase: se lee de ahi y se sigue detras
 	ld c,(hl)			;a544
 	inc hl			;a545
-	ld a,(hl)			;a546
+	ld a,(hl)			;a546   ; el cuarto byte de la fase va a 0xE1E2: en que paso de la curva del salto se cae al soltarse
 	ld (0e1e2h),a		;a547
 	ld hl,0e1cch		;a54a
 	ld (hl),c			;a54d
@@ -3523,9 +3523,9 @@ mueve_la_liana_guarda_agarre:
 	ld hl,0e19ah		;a55a
 	ld de,0e1bah		;a55d
 	ldir		;a560
-	ld iy,0e27eh		;a562
+	ld iy,0e27eh		;a562   ; 0xE27E es el tercer sprite de la cuerda: color 1
 	ld (iy+003h),001h		;a566
-	ld a,(0e221h)		;a56a
+	ld a,(0e221h)		;a56a   ; si corre la demo (0xE221) los tres sprites de la cuerda cambian de color
 	or a			;a56d
 	jr z,mueve_la_liana_vuelca		;a56e
 	ld hl,0e279h		;a570
@@ -3553,7 +3553,7 @@ mueve_la_liana_a_vram:
 	ld bc,00020h		;a5a6
 	call copia_bloque_a_vram		;a5a9
 	pop ix		;a5ac
-	ld b,004h		;a5ae
+	ld b,004h		;a5ae   ; la caja de la liana mide ocho pixeles: cuatro a cada lado del punto de agarre
 	ld c,004h		;a5b0
 	push ix		;a5b2
 	ld ix,0e23eh		;a5b4
@@ -3565,19 +3565,19 @@ mueve_la_liana_a_vram:
 	add a,c			;a5c6
 	ld (ix+002h),a		;a5c7
 	pop ix		;a5ca
-	ld a,(0e2ebh)		;a5cc
+	ld a,(0e2ebh)		;a5cc   ; bit 7 de 0xE2EB, que es el IX+0x16 del jugador: lo enciende 0x817C al agarrarse
 	bit 7,a		;a5cf
 	call nz,lleva_al_jugador_colgado		;a5d1
-	ld hl,0e1cbh		;a5d4
+	ld hl,0e1cbh		;a5d4   ; 0xE1CB es la fase del balanceo, de 1 a 0x20, y el bit 0 de IX+0x16 dice si va o vuelve
 	bit 0,(ix+016h)		;a5d7
 	jr nz,mueve_la_liana_vuelve		;a5db
-	dec (hl)			;a5dd
+	dec (hl)			;a5dd   ; de ida la fase baja hasta 1
 	ld a,001h		;a5de
 	cp (hl)			;a5e0
 	ret nz			;a5e1
 	set 0,(ix+016h)		;a5e2
 	ld a,(ix+016h)		;a5e6
-	xor 080h		;a5e9
+	xor 080h		;a5e9   ; y al llegar se le da la vuelta al bit 7 de IX+0x16
 	ld (ix+016h),a		;a5eb
 	ret			;a5ee
 mueve_la_liana_vuelve:
@@ -3595,12 +3595,12 @@ lleva_al_jugador_colgado:
 	jr z,lleva_al_jugador_colgado_y		;a605
 	add a,003h		;a607
 lleva_al_jugador_colgado_y:
-	sub 00ah		;a609
+	sub 00ah		;a609   ; diez pixeles a la izquierda del punto de agarre, siete si mira al otro lado
 	ld (iy+001h),a		;a60b
 	ld a,(0e1cch)		;a60e
 	add a,05dh		;a611
 	ld (iy+000h),a		;a613
-	ld (0e1cch),a		;a616
+	ld (0e1cch),a		;a616   ; la Y ya sumada vuelve a 0xE1CC, que 0xA529 recalcula en cada cuadro
 	ret			;a619
 
 ; ----------------------------------------------------------------------
@@ -3722,14 +3722,14 @@ mueve_los_troncos:		; Manejador de 0xE303
 mueve_los_troncos_quieto:
 	ld (iy+000h),06fh		;a741
 coloca_los_troncos:
-	ld a,(iy+001h)		;a745
+	ld a,(iy+001h)		;a745   ; el centro del tronco: su X mas 8
 	add a,008h		;a748
 	ld b,a			;a74a
 	push ix		;a74b
 	ld ix,0e232h		;a74d
 	ld (ix+000h),001h		;a751   ; caja del primer tronco, clase 1
 	ld a,b			;a755
-	sub 009h		;a756
+	sub 009h		;a756   ; y la caja va de centro-9 a centro+9, dieciocho pixeles
 	ld (ix+001h),a		;a758
 	ld a,b			;a75b
 	add a,009h		;a75c
@@ -3738,7 +3738,7 @@ coloca_los_troncos:
 	ld a,(0e224h)		;a763   ; los otros dos solo salen si la variante lo pide
 	and 003h		;a766
 	ret z			;a768
-	ld ix,0e286h		;a769
+	ld ix,0e286h		;a769   ; el segundo tronco, sprite 0xE286: misma Y y mismo patron que el primero, separados por 0xE137
 	ld a,(0e137h)		;a76d
 	ld iy,0e282h		;a770
 	add a,(iy+001h)		;a774
@@ -3749,7 +3749,7 @@ coloca_los_troncos:
 	ld (ix+000h),a		;a780
 	ld a,(iy+002h)		;a783
 	ld (ix+002h),a		;a786
-	ld (ix+003h),006h		;a789
+	ld (ix+003h),006h		;a789   ; color 6 en los tres troncos
 	push ix		;a78d
 	ld ix,0e235h		;a78f
 	ld (ix+000h),001h		;a793
@@ -3760,12 +3760,12 @@ coloca_los_troncos:
 	add a,009h		;a79e
 	ld (ix+002h),a		;a7a0
 	pop ix		;a7a3
-	ld a,(0e224h)		;a7a5
+	ld a,(0e224h)		;a7a5   ; el tercero solo aparece con variante 3 o mas
 	cp 003h		;a7a8
 	ret c			;a7aa
 	ld ix,0e28ah		;a7ab
 	ld a,(0e137h)		;a7af
-	sla a		;a7b2
+	sla a		;a7b2   ; y va al doble de distancia: dos veces 0xE137
 	ld iy,0e282h		;a7b4
 	add a,(iy+001h)		;a7b8
 	ld (ix+001h),a		;a7bb
@@ -3789,13 +3789,13 @@ coloca_los_troncos:
 	ld a,(0e224h)		;a7e9
 	cp 005h		;a7ec
 	ret nz			;a7ee
-	ld hl,0e286h		;a7ef
+	ld hl,0e286h		;a7ef   ; en la variante 5 el segundo se apaga poniendo su Y a cero
 	ld (hl),000h		;a7f2
 	ret			;a7f4
 mueve_los_cocodrilos:		; Manejador de 0xE303 en la laguna: tres bocas
 	push ix		;a7f5
 	ld ix,0e282h		;a7f7
-	ld a,(ix+002h)		;a7fb
+	ld a,(ix+002h)		;a7fb   ; el patron del primero se copia a los otros dos: las tres bocas van a una
 	ld iy,0e286h		;a7fe
 	ld (iy+002h),a		;a802
 	ld iy,0e28ah		;a805
@@ -3818,7 +3818,7 @@ cocodrilos_cajas:
 	push ix		;a822
 	ld ix,0e229h		;a824
 	ld (ix+000h),004h		;a828   ; los tres van en 0x50, 0x6F y 0x88, clase 4
-	ld a,050h		;a82c
+	ld a,050h		;a82c   ; la primera caja arranca en 0x50 y mide lo que diga C
 	sub 000h		;a82e
 	ld (ix+001h),a		;a830
 	ld a,050h		;a833
@@ -3828,7 +3828,7 @@ cocodrilos_cajas:
 	push ix		;a83b
 	ld ix,0e22ch		;a83d
 	ld (ix+000h),004h		;a841
-	ld a,06fh		;a845
+	ld a,06fh		;a845   ; la segunda en 0x6F, con D
 	sub 000h		;a847
 	ld (ix+001h),a		;a849
 	ld a,06fh		;a84c
@@ -3838,7 +3838,7 @@ cocodrilos_cajas:
 	push ix		;a854
 	ld ix,0e22fh		;a856
 	ld (ix+000h),004h		;a85a
-	ld a,088h		;a85e
+	ld a,088h		;a85e   ; y la tercera en 0x88, con E: abriendo la boca la primera crece 0x0B y las otras dos 0x0F
 	sub 000h		;a860
 	ld (ix+001h),a		;a862
 	ld a,088h		;a865
@@ -3861,18 +3861,18 @@ cocodrilos_cajas:
 abre_el_hoyo:		; Manejador de 0xE2BF: pinta el hoyo mientras se ensancha
 	ld ix,0e2bfh		;a870
 	ld (ix+010h),003h		;a874   ; mientras se mueve, un paso por cuadro
-	ld hl,001d0h		;a878
+	ld hl,001d0h		;a878   ; las dos tiras salen de la misma celda, la 0x1D0 (fila 14, columna 16): una crece a la izquierda y la otra a la derecha
 	ld de,(0e133h)		;a87b
 	ld d,000h		;a87f
 	or a			;a881
 	sbc hl,de		;a882
-	ld de,01800h		;a884
+	ld de,01800h		;a884   ; 0x1800 es la tabla de nombres: la celda ya es direccion de VRAM
 	add hl,de			;a887
 	ex de,hl			;a888
 	ld hl,0b0d0h		;a889
 	ld bc,(0e133h)		;a88c
 	call copia_bloque_a_vram		;a890
-	ld hl,0e133h		;a893
+	ld hl,0e133h		;a893   ; la de la derecha lee los ULTIMOS bytes de la tira de 0xB0D8, no los primeros
 	ld a,008h		;a896
 	sub (hl)			;a898
 	ld e,a			;a899
@@ -3882,7 +3882,7 @@ abre_el_hoyo:		; Manejador de 0xE2BF: pinta el hoyo mientras se ensancha
 	ld de,019d0h		;a8a0
 	ld bc,(0e133h)		;a8a3
 	call copia_bloque_a_vram		;a8a7
-	ld hl,001f0h		;a8aa
+	ld hl,001f0h		;a8aa   ; y otras dos iguales una fila mas abajo, desde la celda 0x1F0
 	ld de,(0e133h)		;a8ad
 	ld d,000h		;a8b1
 	or a			;a8b3
@@ -3907,7 +3907,7 @@ abre_el_hoyo:		; Manejador de 0xE2BF: pinta el hoyo mientras se ensancha
 	ld a,(0e132h)		;a8df
 	cp 001h		;a8e2
 	jp z,cierra_el_hoyo		;a8e4
-	ld a,(0e133h)		;a8e7
+	ld a,(0e133h)		;a8e7   ; la anchura por 8 son pixeles: la caja va de 0x88-(8W-8) a 0x88+(8W-24), asi que con W=1 queda del reves y no atrapa a nadie
 	sla a		;a8ea
 	sla a		;a8ec
 	sla a		;a8ee
@@ -3935,7 +3935,7 @@ abre_el_hoyo:		; Manejador de 0xE2BF: pinta el hoyo mientras se ensancha
 	ld (ix+010h),096h		;a91e
 	ret			;a922
 cierra_el_hoyo:
-	ld a,(0e133h)		;a923
+	ld a,(0e133h)		;a923   ; la misma cuenta de la caja, pero mientras ensancha
 	sla a		;a926
 	sla a		;a928
 	sla a		;a92a
@@ -3954,7 +3954,7 @@ cierra_el_hoyo:
 	ld (ix+002h),a		;a945
 	pop ix		;a948
 	ld hl,0e133h		;a94a
-	inc (hl)			;a94d
+	inc (hl)			;a94d   ; y la anchura sube hasta 8
 	ld a,(hl)			;a94e
 	cp 009h		;a94f
 	ret c			;a951
@@ -3966,8 +3966,8 @@ cierra_el_hoyo:
 	ret			;a961
 hoyo_sin_pintar:		; Igual que 0xA870 pero solo mueve la caja
 	ld ix,0e2bfh		;a962
-	ld (ix+010h),003h		;a966
-	ld a,(0e132h)		;a96a
+	ld (ix+010h),003h		;a966   ; periodo 3: un paso cada tres cuadros mientras se mueve
+	ld a,(0e132h)		;a96a   ; 0xE132 dice en que sentido va: con 1 la anchura sube, con 0 baja
 	cp 001h		;a96d
 	jp z,hoyo_sin_pintar_cierra		;a96f
 	ld hl,0e133h		;a972
@@ -3977,22 +3977,22 @@ hoyo_sin_pintar:		; Igual que 0xA870 pero solo mueve la caja
 	ld a,001h		;a979
 	ld (0e132h),a		;a97b
 	ld ix,0e2bfh		;a97e
-	ld (ix+010h),096h		;a982
+	ld (ix+010h),096h		;a982   ; al llegar al minimo se queda quieto 0x96 cuadros
 	ret			;a986
 hoyo_sin_pintar_cierra:
 	ld hl,0e133h		;a987
 	inc (hl)			;a98a
 	ld a,(hl)			;a98b
-	cp 009h		;a98c
+	cp 009h		;a98c   ; 0xE133 no pasa de 8
 	ret c			;a98e
 	ld (hl),008h		;a98f
 	ld a,000h		;a991
 	ld (0e132h),a		;a993
 	ld ix,0e2bfh		;a996
-	ld (ix+010h),044h		;a99a
+	ld (ix+010h),044h		;a99a   ; y en el maximo solo 0x44
 	ret			;a99e
 despacha_por_variante:		; HL = tabla, A = variante (0xE224)
-	sla a		;a99f
+	sla a		;a99f   ; la variante doblada: la tabla son punteros de palabra
 	ld e,a			;a9a1
 	ld d,000h		;a9a2
 	add hl,de			;a9a4
@@ -4000,7 +4000,7 @@ despacha_por_variante:		; HL = tabla, A = variante (0xE224)
 	inc hl			;a9a6
 	ld d,(hl)			;a9a7
 	ex de,hl			;a9a8
-	jp (hl)			;a9a9
+	jp (hl)			;a9a9   ; jp (hl): la rutina de la variante hereda el retorno
 
 ; ----------------------------------------------------------------------
 ; ############################################################
@@ -4054,14 +4054,14 @@ hoyos_carga_sprites:
 	push ix		;a9ed
 	ld ix,0e22ch		;a9ef
 	ld (ix+000h),002h		;a9f3   ; caja clase 2
-	ld a,07dh		;a9f7
+	ld a,07dh		;a9f7   ; la caja del hoyo va de 0x7D a 0x8B, catorce pixeles
 	sub 000h		;a9f9
 	ld (ix+001h),a		;a9fb
 	ld a,07dh		;a9fe
 	add a,00eh		;aa00
 	ld (ix+002h),a		;aa02
 	pop ix		;aa05
-	ld hl,099cfh		;aa07
+	ld hl,099cfh		;aa07   ; tres bloques de 0x20 bytes a los patrones de sprite 0x3C, 0x84 y 0xCC
 	ld de,039e0h		;aa0a
 	ld bc,00020h		;aa0d
 	call copia_bloque_a_vram		;aa10
@@ -4073,7 +4073,7 @@ hoyos_carga_sprites:
 	ld de,03e60h		;aa22
 	ld bc,00020h		;aa25
 	call copia_bloque_a_vram		;aa28
-	ld hl,09a4fh		;aa2b
+	ld hl,09a4fh		;aa2b   ; y la tapa del suelo al patron 0, que es lo que oculta al muneco al cruzar
 	ld de,03800h		;aa2e
 	ld bc,00020h		;aa31
 	call copia_bloque_a_vram		;aa34
@@ -4123,7 +4123,7 @@ monta_la_serpiente:		; Guion 0xB040, sprites de 0x9989, caja clase 6. El dibujo 
 	call descomprime_rle_a_vram		;aa77
 	ld hl,0b040h		;aa7a
 	call pinta_celdas		;aa7d
-	ld de,0e28eh		;aa80
+	ld de,0e28eh		;aa80   ; 0xE28E es la entrada de sprite del estorbo, y 0xE319 su objeto
 	ld hl,0b010h		;aa83
 	ld bc,00004h		;aa86
 	ldir		;aa89
@@ -4136,7 +4136,7 @@ monta_la_serpiente:		; Guion 0xB040, sprites de 0x9989, caja clase 6. El dibujo 
 	push ix		;aa9c
 	ld ix,0e23bh		;aa9e
 	ld (ix+000h),006h		;aaa2   ; clase 6, de 0xC3 a 0xD2
-	ld a,0c3h		;aaa6
+	ld a,0c3h		;aaa6   ; la caja va de 0xC3 a 0xD2, dieciseis pixeles
 	sub 000h		;aaa8
 	ld (ix+001h),a		;aaaa
 	ld a,0c3h		;aaad
@@ -4145,15 +4145,15 @@ monta_la_serpiente:		; Guion 0xB040, sprites de 0x9989, caja clase 6. El dibujo 
 	pop ix		;aab4
 	ret			;aab6
 monta_la_fogata:		; Guion 0xB0C2, sprites de 0x9865, caja clase 6. El dibujo es LA FOGATA: las llamas blancas sobre dos palos (variante 6)
-	ld hl,0b0c2h		;aab7
+	ld hl,0b0c2h		;aab7   ; la fogata pinta primero y carga los patrones despues, al reves que la serpiente
 	call pinta_celdas		;aaba
 	ld hl,09865h		;aabd
 	call descomprime_rle_a_vram		;aac0
-	ld de,0e28eh		;aac3
+	ld de,0e28eh		;aac3   ; los mismos 0xE28E y 0xE319 que la serpiente: el estorbo se monta igual
 	ld hl,0b010h		;aac6
 	ld bc,00004h		;aac9
 	ldir		;aacc
-	ld de,0e319h		;aace
+	ld de,0e319h		;aace   ; y su objeto 0xE319, con la plantilla de siempre
 	ld hl,0b014h		;aad1
 	ld bc,00016h		;aad4
 	ldir		;aad7
@@ -4213,15 +4213,15 @@ tesoro_ya_cogido_decide:
 	pop hl			;ab19   ; y si YA ESTABA COGIDO se come la direccion de retorno: la rutina que pinta el tesoro no llega a ejecutarse
 	ret			;ab1a
 tesoro_de_4000:
-	ld de,0e21dh		;ab1b
+	ld de,0e21dh		;ab1b   ; 0xE21D es el byte de banderas de esta clase: ocho bits, uno por tesoro
 	call tesoro_ya_cogido		;ab1e
-	ld hl,09850h		;ab21
+	ld hl,09850h		;ab21   ; los patrones del dibujo, comprimidos
 	call descomprime_rle_a_vram		;ab24
-	ld hl,0ae90h		;ab27
+	ld hl,0ae90h		;ab27   ; un byte suelto a 0x2013: la fila 3 del color del tile 2
 	ld de,02013h		;ab2a
 	ld bc,00001h		;ab2d
 	call copia_bloque_a_vram		;ab30
-	ld de,0e28eh		;ab33
+	ld de,0e28eh		;ab33   ; y los cuatro bytes del sprite del tesoro, 0xE28E
 	ld hl,0b010h		;ab36
 	ld bc,00004h		;ab39
 	ldir		;ab3c
@@ -4232,7 +4232,7 @@ tesoro_de_4000:
 	ld (iy+003h),007h		;ab4b
 	jr coloca_el_tesoro		;ab4f
 tesoro_de_3000:
-	ld de,0e21eh		;ab51
+	ld de,0e21eh		;ab51   ; 0xE21E, el byte de los de 3000
 	call tesoro_ya_cogido		;ab54
 	ld hl,0981eh		;ab57
 	call descomprime_rle_a_vram		;ab5a
@@ -4252,7 +4252,7 @@ tesoro_de_3000:
 coloca_el_tesoro:		; Guion 0xB0A8, caja clase 8: pinta en el hueco los tiles 0x98-0x9D que la rutina de tesoro de la escena acaba de cargar (saco, barra o anillo), y por eso la caja es la que suma en vez de matar
 	ld hl,0b0a8h		;ab85
 	call pinta_celdas		;ab88
-	ld de,0e319h		;ab8b
+	ld de,0e319h		;ab8b   ; la plantilla de 0xB014 monta el objeto 0xE319 y lo mete en la lista
 	ld hl,0b014h		;ab8e
 	ld bc,00016h		;ab91
 	ldir		;ab94
@@ -4261,7 +4261,7 @@ coloca_el_tesoro:		; Guion 0xB0A8, caja clase 8: pinta en el hueco los tiles 0x9
 	push ix		;ab9c
 	ld ix,0e23bh		;ab9e
 	ld (ix+000h),008h		;aba2   ; clase 8, centrada en 0xCB
-	ld a,0cbh		;aba6
+	ld a,0cbh		;aba6   ; la caja va de 0xCB-9 a 0xCB+9, dieciocho pixeles
 	sub 009h		;aba8
 	ld (ix+001h),a		;abaa
 	ld a,0cbh		;abad
@@ -4270,11 +4270,11 @@ coloca_el_tesoro:		; Guion 0xB0A8, caja clase 8: pinta en el hueco los tiles 0x9
 	pop ix		;abb4
 	ret			;abb6
 tesoro_de_5000:
-	ld de,0e220h		;abb7
+	ld de,0e220h		;abb7   ; 0xE220, el byte de los de 5000
 	call tesoro_ya_cogido		;abba
 	ld a,005h		;abbd   ; 5 son 5000 puntos: el anillo con la piedra, el mas caro
 	ld (0e188h),a		;abbf
-	ld hl,0b05ah		;abc2
+	ld hl,0b05ah		;abc2   ; el guion 0xB05A pinta el hueco 3x2 del anillo
 	call pinta_celdas		;abc5
 	ld hl,098bbh		;abc8
 	call descomprime_rle_a_vram		;abcb
@@ -4287,7 +4287,7 @@ tesoro_de_5000:
 	ld bc,00016h		;abdf
 	ldir		;abe2
 	ld iy,0e28eh		;abe4
-	ld (iy+001h),0c4h		;abe8
+	ld (iy+001h),0c4h		;abe8   ; X 0xC4 y color 0x0F: el anillo es el unico blanco
 	ld (iy+003h),00fh		;abec
 	ld de,0e319h		;abf0
 	call anade_objeto		;abf3
@@ -4303,11 +4303,11 @@ tesoro_de_5000:
 	pop ix		;ac0e
 	ret			;ac10
 tesoro_de_2000:
-	ld de,0e21fh		;ac11
+	ld de,0e21fh		;ac11   ; y 0xE21F, el de los de 2000: los cuatro bytes de 0xE21D a 0xE220 son los 32 tesoros
 	call tesoro_ya_cogido		;ac14
 	ld a,002h		;ac17   ; 2 son 2000 puntos: el saco de dinero
 	ld (0e188h),a		;ac19
-	ld hl,0b074h		;ac1c
+	ld hl,0b074h		;ac1c   ; el guion de 0xB074, el saco
 	call pinta_celdas		;ac1f
 	ld hl,0989eh		;ac22
 	call descomprime_rle_a_vram		;ac25
@@ -4379,17 +4379,17 @@ DATA_ret_huerfano_acb4:
 variante_que_no_hace_nada:		; Entrada de tabla que es solo un ret
 	ret			;acb5
 monta_el_que_sigue:		; Carga sus sprites y suelta el objeto 0xE2ED
-	ld hl,098e0h		;acb6
+	ld hl,098e0h		;acb6   ; los patrones del bicho, comprimidos en 0x98E0
 	call descomprime_rle_a_vram		;acb9
-	ld b,002h		;acbc
+	ld b,002h		;acbc   ; dos patrones espejados: el 0 se copia al 8 mirando al otro lado
 	ld de,00000h		;acbe
 	ld hl,00008h		;acc1
 	call espeja_nueve_sprites		;acc4
-	ld de,0e292h		;acc7
+	ld de,0e292h		;acc7   ; 0xE292 es la entrada de sprite que va DELANTE del jugador
 	ld hl,0af5eh		;acca
 	ld bc,00004h		;accd
 	ldir		;acd0
-	ld de,0e2edh		;acd2
+	ld de,0e2edh		;acd2   ; la plantilla de 0xAF62 monta el objeto 0xE2ED, que entra en la lista
 	ld hl,0af62h		;acd5
 	ld bc,00016h		;acd8
 	ldir		;acdb
@@ -4397,7 +4397,7 @@ monta_el_que_sigue:		; Carga sus sprites y suelta el objeto 0xE2ED
 	call anade_objeto		;ace0
 	ret			;ace3
 coloca_al_jugador:		; Copia las cuatro posiciones iniciales del jugador y sus capas
-	ld de,0e2a2h		;ace4
+	ld de,0e2a2h		;ace4   ; las tres entradas de sprite del muneco: 0xE2A2, 0xE2A6 y 0xE2AA
 	ld hl,0af78h		;ace7
 	ld bc,00004h		;acea
 	ldir		;aced
@@ -4409,19 +4409,19 @@ coloca_al_jugador:		; Copia las cuatro posiciones iniciales del jugador y sus ca
 	ld hl,0af80h		;acfd
 	ld bc,00004h		;ad00
 	ldir		;ad03
-	ld de,0e2d5h		;ad05
+	ld de,0e2d5h		;ad05   ; y los 0x18 bytes de su estructura, plantilla 0xAF98
 	ld hl,0af98h		;ad08
 	ld bc,00018h		;ad0b
 	ldir		;ad0e
 	ld de,0e2d5h		;ad10
 	call anade_objeto		;ad13
 	ld ix,0e2d5h		;ad16
-	set 0,(ix+016h)		;ad1a
+	set 0,(ix+016h)		;ad1a   ; bit 0 de IX+0x16: se empieza en la superficie
 	ret			;ad1e
 monta_los_troncos:		; Plantilla 0xAFC2 a 0xE303; su manejador es 0xA728
 	ld hl,09944h		;ad1f
 	call descomprime_rle_a_vram		;ad22
-	ld de,0e282h		;ad25
+	ld de,0e282h		;ad25   ; 0xE282 es el sprite del primer tronco; de el se copian los otros dos
 	ld hl,0afb6h		;ad28
 	ld bc,00004h		;ad2b
 	ldir		;ad2e
@@ -4434,7 +4434,7 @@ monta_los_troncos:		; Plantilla 0xAFC2 a 0xE303; su manejador es 0xA728
 	xor a			;ad41
 	ld (0e136h),a		;ad42
 	ld a,(0e224h)		;ad45
-	ld b,01ah		;ad48
+	ld b,01ah		;ad48   ; separacion 0x1A entre troncos, y 0x3A de la variante 2 en adelante
 	cp 002h		;ad4a
 	jr c,monta_los_troncos_separacion		;ad4c
 	ld b,03ah		;ad4e
@@ -4444,12 +4444,12 @@ monta_los_troncos_separacion:
 	cp 004h		;ad54   ; con variante 4 o mas el tercero se queda parado
 	jr c,monta_los_troncos_variante_1		;ad56
 	ld ix,0e303h		;ad58
-	res 0,(ix+006h)		;ad5c
+	res 0,(ix+006h)		;ad5c   ; el bit 0 de IX+0x06 es el "movil" de la X: apagado, el tronco se queda quieto
 	ld (ix+000h),0c0h		;ad60
 monta_los_troncos_variante_1:
 	cp 001h		;ad64
 	ret nz			;ad66
-	ld a,(0e2a3h)		;ad67
+	ld a,(0e2a3h)		;ad67   ; 0xE2A3 es la X del jugador
 	cp 0e2h		;ad6a   ; solo si el jugador esta pasado de 0xE2
 	ret c			;ad6c
 	ld hl,0e283h		;ad6d
@@ -4458,7 +4458,7 @@ monta_los_troncos_variante_1:
 	ld (hl),a			;ad73
 	ret			;ad74
 escena_tipo_4_cocodrilos:
-	ld hl,09919h		;ad75
+	ld hl,09919h		;ad75   ; los patrones de los cocodrilos, comprimidos en 0x9919
 	call descomprime_rle_a_vram		;ad78
 	ld de,0e282h		;ad7b   ; tres bloques de 4 bytes, uno por cocodrilo: son los tres que se ven en la captura
 	ld hl,0afdeh		;ad7e
@@ -4472,7 +4472,7 @@ escena_tipo_4_cocodrilos:
 	ld hl,0afe6h		;ad94
 	ld bc,00004h		;ad97
 	ldir		;ad9a
-	ld de,0e303h		;ad9c
+	ld de,0e303h		;ad9c   ; la plantilla de 0xAFEA monta el objeto 0xE303, que lleva el manejador 0xA7F5
 	ld hl,0afeah		;ad9f
 	ld bc,00016h		;ada2
 	ldir		;ada5
@@ -4480,7 +4480,7 @@ escena_tipo_4_cocodrilos:
 	ld (hl),087h		;adaa
 	ld de,0e303h		;adac
 	call anade_objeto		;adaf
-	ld hl,0b0fbh		;adb2
+	ld hl,0b0fbh		;adb2   ; los tres bytes 7B 7B 7B a 0x200B: el color del agua, que deshace el parche de la brea
 	ld de,0200bh		;adb5
 	ld bc,00003h		;adb8
 	call copia_bloque_a_vram		;adbb
@@ -4489,14 +4489,14 @@ escena_tipo_4_cocodrilos:
 	push ix		;adc4
 	ld ix,0e238h		;adc6
 	ld (ix+000h),004h		;adca
-	ld a,09fh		;adce
+	ld a,09fh		;adce   ; la cuarta caja, de 0x9F a 0xB0
 	sub 000h		;add0
 	ld (ix+001h),a		;add2
 	ld a,09fh		;add5
 	add a,011h		;add7
 	ld (ix+002h),a		;add9
 	pop ix		;addc
-	ld hl,0ae94h		;adde
+	ld hl,0ae94h		;adde   ; y la variante elige el estorbo de la derecha, por la tabla 0xAE94
 	ld a,(0e224h)		;ade1
 	jp despacha_por_variante		;ade4
 
@@ -5065,11 +5065,11 @@ direcciona_vram_escritura:
 	pop af			;b18e
 	ret			;b18f
 direcciona_vram_lectura:
-	ld a,l			;b190
+	ld a,l			;b190   ; primero el byte bajo de la direccion
 	out (099h),a		;b191
-	ld a,h			;b193
+	ld a,h			;b193   ; y el alto SIN el 0x40 que pone 0xB189: eso deja el VDP en lectura
 	out (099h),a		;b194
-	push af			;b196
+	push af			;b196   ; push af y pop af no cambian nada: son 21 ciclos de espera
 	pop af			;b197
 	ret			;b198
 escribe_byte_en_vram:		; Sin uso: nadie la llama
@@ -5088,8 +5088,8 @@ rellena_vram:		; HL destino, BC cuantos, A valor
 	call direcciona_vram_escritura		;b1a9
 rellena_vram_bucle:
 	ld a,d			;b1ac
-	out (098h),a		;b1ad
-	dec bc			;b1af
+	out (098h),a		;b1ad   ; el puerto 0x98 autoincrementa: se direcciona una vez y se escribe de corrido
+	dec bc			;b1af   ; BC cuenta hacia atras hasta cero
 	ld a,b			;b1b0
 	or c			;b1b1
 	jr nz,rellena_vram_bucle		;b1b2
@@ -5098,7 +5098,7 @@ rellena_vram_bucle:
 lee_bloque_de_vram:		; VRAM HL -> RAM DE, BC bytes
 	call direcciona_vram_lectura		;b1b6
 lee_bloque_de_vram_bucle:
-	in a,(098h)		;b1b9
+	in a,(098h)		;b1b9   ; de la VRAM a la RAM, byte a byte
 	ld (de),a			;b1bb
 	inc de			;b1bc
 	dec bc			;b1bd
@@ -5110,7 +5110,7 @@ copia_bloque_a_vram:		; RAM HL -> VRAM DE, BC bytes
 	ex de,hl			;b1c3
 	call direcciona_vram_escritura		;b1c4
 copia_bloque_a_vram_bucle:
-	ld a,(de)			;b1c7
+	ld a,(de)			;b1c7   ; y de la RAM a la VRAM
 	out (098h),a		;b1c8
 	inc de			;b1ca
 	dec bc			;b1cb
@@ -5127,11 +5127,11 @@ copia_patrones_en_espejo:		; BC patrones de VRAM HL a VRAM DE
 	push bc			;b1d1
 	push hl			;b1d2
 	push de			;b1d3
-	ld de,0e072h		;b1d4
+	ld de,0e072h		;b1d4   ; la fila baja a 0xE072, ocho bytes de RAM que hacen de banco de paso
 	ld bc,00008h		;b1d7
 	call lee_bloque_de_vram		;b1da
 	ld hl,0e072h		;b1dd
-	ld c,008h		;b1e0
+	ld c,008h		;b1e0   ; ocho filas por patron
 copia_patrones_en_espejo_fila:
 	ld b,008h		;b1e2
 copia_patrones_en_espejo_bits:
@@ -5146,16 +5146,16 @@ copia_patrones_en_espejo_bits:
 	push de			;b1f0
 	ld hl,0e072h		;b1f1
 	ld bc,00008h		;b1f4
-	call copia_bloque_a_vram		;b1f7
+	call copia_bloque_a_vram		;b1f7   ; la fila invertida vuelve a la VRAM, ya en el patron destino
 	pop de			;b1fa
 	pop hl			;b1fb
-	ld bc,00008h		;b1fc
+	ld bc,00008h		;b1fc   ; ocho bytes adelante en origen y en destino: el patron siguiente
 	add hl,bc			;b1ff
 	ex de,hl			;b200
 	add hl,bc			;b201
 	ex de,hl			;b202
 	pop bc			;b203
-	dec bc			;b204
+	dec bc			;b204   ; y otra vuelta, hasta agotar BC
 	ld a,b			;b205
 	or c			;b206
 	jp nz,copia_patrones_en_espejo		;b207
@@ -5176,7 +5176,7 @@ copia_patrones_volteados:		; BC patrones de VRAM HL a VRAM DE
 	ld ix,0e079h		;b21a   ; el primero contra el ultimo, cuatro intercambios
 	ld b,004h		;b21e
 copia_patrones_volteados_bucle:
-	ld d,(ix+000h)		;b220
+	ld d,(ix+000h)		;b220   ; el de arriba por el de abajo: cuatro intercambios y el patron queda del reves
 	ld e,(hl)			;b223
 	ld (ix+000h),e		;b224
 	ld (hl),d			;b227
@@ -5187,10 +5187,10 @@ copia_patrones_volteados_bucle:
 	push de			;b22e
 	ld hl,0e072h		;b22f
 	ld bc,00008h		;b232
-	call copia_bloque_a_vram		;b235
+	call copia_bloque_a_vram		;b235   ; los ocho bytes ya volteados, de vuelta a la VRAM
 	pop de			;b238
 	pop hl			;b239
-	ld bc,00008h		;b23a
+	ld bc,00008h		;b23a   ; y al patron siguiente
 	add hl,bc			;b23d
 	ex de,hl			;b23e
 	add hl,bc			;b23f
@@ -5252,8 +5252,8 @@ lee_teclado_como_joystick_monta:
 	rlca			;b290
 	rlca			;b291
 	and 01fh		;b292
-	ld b,a			;b294
-	ld a,(0e05fh)		;b295
+	ld b,a			;b294   ; en B quedan los cinco bits ya colocados
+	ld a,(0e05fh)		;b295   ; se mezclan con el puerto 1, y luego con el 2: teclado y palanca dan lo mismo
 	or b			;b298
 	ld (0e05fh),a		;b299
 	ld a,(0e061h)		;b29c
@@ -5376,34 +5376,34 @@ reinicia_el_sonido_vuelca:
 ; 7 B5BE  8 B564  9 B49F  10 B4E6
 ; ----------------------------------------------------------------------
 arranca_un_sonido:		; A = numero de sonido (0..10)
-	cp 00bh		;b32e
+	cp 00bh		;b32e   ; del 11 en adelante no hay sonido: se sale sin tocar nada
 	ret nc			;b330
 	push bc			;b331
 	push de			;b332
 	push hl			;b333
-	ld hl,0e1eeh		;b334
+	ld hl,0e1eeh		;b334   ; 0xE1EE a cero mientras se cambian los vectores: 0xB35B no los recorre
 	ld (hl),000h		;b337
 	ld b,a			;b339
 	add a,a			;b33a   ; A*3: registros de tres bytes
 	add a,b			;b33b
 	ld b,000h		;b33c
 	ld c,a			;b33e
-	ld hl,0b393h		;b33f
+	ld hl,0b393h		;b33f   ; la fila de la tabla de 0xB393
 	add hl,bc			;b342
-	ld a,(hl)			;b343
+	ld a,(hl)			;b343   ; el primer byte de la fila es la ranura
 	add a,a			;b344   ; la ranura, doblada, es el desplazamiento dentro de 0xE1E6
 	ld de,0e1e6h		;b345
 	ld c,a			;b348
-	ex de,hl			;b349
+	ex de,hl			;b349   ; HL pasa a la ranura de 0xE1E6 y DE a la fila
 	add hl,bc			;b34a
 	inc de			;b34b
-	ld a,(de)			;b34c
+	ld a,(de)			;b34c   ; los otros dos bytes son la direccion de la rutina
 	ld (hl),a			;b34d
 	inc de			;b34e
 	inc hl			;b34f
 	ld a,(de)			;b350
 	ld (hl),a			;b351
-	ld a,001h		;b352
+	ld a,001h		;b352   ; y 0xE1EE vuelve a 1: 0xB35B ya puede recorrerlos
 	ld (0e1eeh),a		;b354
 	pop hl			;b357
 	pop de			;b358
@@ -5439,12 +5439,12 @@ vuelca_registros_psg:		; 0xE20E-0xE21B a los registros 0-13
 	ld hl,0e21bh		;b37b
 	ld b,00dh		;b37e   ; outd escribe y decrementa a la vez el registro y el puntero
 vuelca_registros_psg_bucle:
-	ld c,0a0h		;b380
+	ld c,0a0h		;b380   ; el puerto 0xA0 elige el registro y el 0xA1 recibe el dato
 	out (c),b		;b382
 	ld c,0a1h		;b384
-	outd		;b386
+	outd		;b386   ; outd escribe (HL) y decrementa a la vez HL y B: del registro 13 hacia abajo
 	jr nz,vuelca_registros_psg_bucle		;b388
-	ld c,0a0h		;b38a
+	ld c,0a0h		;b38a   ; con B ya a cero el bucle ha salido, y el registro 0 se escribe aparte
 	out (c),b		;b38c
 	ld c,0a1h		;b38e
 	outd		;b390
@@ -5859,7 +5859,7 @@ lee_registro_de_guion:		; B cuadros, DE periodo, C volumen; A=0 si acabo
 	ret z			;b685
 	ld b,a			;b686
 	inc hl			;b687
-	ld d,(hl)			;b688
+	ld d,(hl)			;b688   ; los otros tres bytes: periodo en DE y volumen en C
 	inc hl			;b689
 	ld e,(hl)			;b68a
 	inc hl			;b68b
@@ -6034,13 +6034,13 @@ secuencia_de_presentacion_espera:
 ; ----------------------------------------------------------------------
 arranca_la_demo:
 	ld ix,0e2d5h		;b7a2
-	set 0,(ix+016h)		;b7a6
+	set 0,(ix+016h)		;b7a6   ; la demo se juega en la superficie
 	ld hl,0e2a2h		;b7aa
 	ld (ix+014h),l		;b7ad
 	ld (ix+015h),h		;b7b0
-	ld (ix+000h),0c0h		;b7b3
+	ld (ix+000h),0c0h		;b7b3   ; banderas 0xC0: el bit 0 apagado, o sea que no se mueve solo, y el 6 encendido, o sea manejador propio
 	ld (ix+002h),001h		;b7b7
-	ld hl,08243h		;b7bb
+	ld hl,08243h		;b7bb   ; y el manejador es 0x8243, el mismo de reaparecer
 	ld (ix+012h),l		;b7be
 	ld (ix+013h),h		;b7c1
 	ld a,(0e247h)		;b7c4
@@ -6193,7 +6193,7 @@ anima_la_franja_variante_b:
 anima_la_franja_pinta:
 	ld ix,0e2bfh		;b8eb
 	ld hl,001f0h		;b8ef   ; 0x19F0 = fila 15, columna 16: el centro desde donde se abre
-	ld e,(ix+00fh)		;b8f2
+	ld e,(ix+00fh)		;b8f2   ; IX+0x0F es la anchura y el paso a la vez
 	ld d,000h		;b8f5
 	or a			;b8f7
 	sbc hl,de		;b8f8
@@ -6216,7 +6216,7 @@ anima_la_franja_pinta:
 	ld b,000h		;b922
 	call copia_bloque_a_vram		;b924
 	ld ix,0e2bfh		;b927
-	ld hl,00210h		;b92b
+	ld hl,00210h		;b92b   ; y otro par igual una fila mas abajo, desde la celda 0x210
 	ld e,(ix+00fh)		;b92e
 	ld d,000h		;b931
 	or a			;b933
@@ -6242,13 +6242,13 @@ anima_la_franja_pinta:
 	ld ix,0e2bfh		;b963
 	bit 0,(ix+00bh)		;b967   ; bit 0 de +0x0B: 1 abre, 0 cierra
 	jr z,anima_la_franja_cierra		;b96b
-	inc (ix+00fh)		;b96d
+	inc (ix+00fh)		;b96d   ; abriendo, la anchura sube hasta 7
 	ld a,008h		;b970
 	cp (ix+00fh)		;b972
 	ret nz			;b975
 	dec (ix+00fh)		;b976
 	dec (ix+00bh)		;b979
-	ld (ix+011h),050h		;b97c
+	ld (ix+011h),050h		;b97c   ; 0x50 cuadros de pausa entre pasada y pasada
 	ld a,000h		;b980
 	cp (ix+00bh)		;b982
 	ret nz			;b985
@@ -6257,7 +6257,7 @@ anima_la_franja_pinta:
 	ld (ix+013h),h		;b98c
 	ret			;b98f
 anima_la_franja_cierra:
-	dec (ix+00fh)		;b990
+	dec (ix+00fh)		;b990   ; cerrando, la anchura baja hasta 1
 	ret nz			;b993
 	ld (ix+00fh),001h		;b994
 	dec (ix+00bh)		;b998
@@ -6383,9 +6383,16 @@ DATA_inicializador_e132:
 
 ; ----------------------------------------------------------------------
 ; DATOS listas_nibble_espejo: Dos listas de 8 bytes, y la segunda es la
-;   primera CON LOS NIBBLES INTERCAMBIADOS (61->16, 91->19, B1->1B...).
-;   Consumidor sin encontrar: ni una instruccion trazada ni un puntero literal
-;   en toda la ROM apuntan aqui. Acotada por el inicializador que acaba en
+;   primera CON LOS NIBBLES INTERCAMBIADOS (61->16, 91->19, B1->1B...). Son
+;   bytes de la tabla de COLORES: el nibble alto es la tinta y el bajo el
+;   fondo. La primera lista es byte a byte la de 0xBA9A -60 90 B0 A0 C0 30 50
+;   40, los ocho colores del rotulo que 0xB83E vuelca a 0x20B8- con el nibble
+;   bajo puesto a 1: los mismos ocho colores sobre NEGRO en vez de sobre
+;   transparente. Y la segunda es esa con la tinta y el fondo cambiados.
+;   Consumidor sin encontrar: los unicos literales de la ROM que caen en esta
+;   zona son 0xBA4A (0xB7FF, ldir de 0x58 bytes que acaba justo en 0xBAA2),
+;   0xBA9A (0xB83E, ocho bytes que tambien acaban en 0xBAA2) y 0xBAB2
+;   (0xB729); ninguno entra aqui. Acotada por el inicializador que acaba en
 ;   0xBAA2 y el bloque RLE que empieza en 0xBAB2
 ;   0xbaa2..0xbab2  (16 bytes)
 DATA_listas_nibble_espejo:

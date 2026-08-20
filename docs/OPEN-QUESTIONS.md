@@ -3,7 +3,7 @@
 Every byte of the cartridge is accounted for, the listing gives back the
 original byte for byte and its 337 labels have names. That does not mean they
 all say what they do: 78 carry their explanation in the label itself and the
-rest lean on the 305 line comments and the 50 block headers. This page says
+rest lean on the 583 line comments and the 50 block headers. This page says
 what those figures mean and what remains unknown.
 
 ## No victory condition shows up

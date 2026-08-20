@@ -46,7 +46,7 @@ one.
 | bytes of data | 6,917 |
 | bytes unexplained | **0** |
 | named labels | 337 |
-| anchored comments | 305 |
+| anchored comments | 583 |
 | data ranges with an explanation | 130 |
 
 ## A few things that turned up
