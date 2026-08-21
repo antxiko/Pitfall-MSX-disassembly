@@ -31,12 +31,12 @@ Los bits 3-5 eligen una de ocho rutinas por la tabla de 0xAEB4:
 |---|---|---|---|
 | 0 | 0xA9AA | hoyos en el suelo, con escalera al subterráneo | 31 |
 | 1 | 0xA9AA | los mismos: las dos entradas apuntan al mismo sitio | 32 |
-| 2 | 0xAC7C | charca de brea | 32 |
-| 3 | 0xAC6B | charca de agua | 32 |
-| 4 | 0xAD75 | laguna con tres cocodrilos | 32 |
+| 2 | 0xAC7C | charca de brea, con liana | 32 |
+| 3 | 0xAC6B | charca de agua, con liana | 32 |
+| 4 | 0xAD75 | laguna con tres cocodrilos, **con liana en 16 de ellas** | 32 |
 | 5 | 0xADF6 | **la escena del tesoro**, la única que puntúa | 32 |
 | 6 | 0xAE04 | brea con liana | 32 |
-| 7 | 0xADE8 | agua con liana | 32 |
+| 7 | 0xADE8 | agua, **sin liana** | 32 |
 
 El reparto es casi uniforme porque el anillo recorre los 255 valores no nulos:
 solo el tipo 0 se queda con una escena menos.
@@ -54,6 +54,24 @@ Los tipos 2 y 3 son **el mismo dibujo con distinto color**: 0xAC7C escribe
 Los tres cocodrilos van en las X 0x50, 0x6F y 0x88 (0xA828) y abren la boca
 cada cuadro (guion de 0xAFD8); con la boca abierta su caja de colisión crece
 (0xA812).
+
+## La liana no la reparte el tipo de escena
+
+A la liana la monta `monta_la_liana` (0xAE38), y la llaman **cuatro** sitios.
+Tres son las llamadas a las claras de los tipos 2 (0xAC88), 3 (0xAC77) y 6
+(0xAE04). El cuarto es otra cosa: la cola de la laguna, 0xADDE, despacha por la
+tabla de 0xAE94 usando **la variante** en vez del tipo, y esa tabla lleva
+`monta_la_liana` en sus índices 2, 3, 6 y 7 —los otros cuatro son un `ret`
+suelto—. `ld hl,0AE94h` aparece una sola vez en todo el cartucho y la rutina
+del tipo 4 no tiene ninguna otra entrada, así que ese es el único camino.
+
+Como el anillo recorre los 255 valores no nulos, de las 32 lagunas hay **16 con
+liana y 16 sin ella**, y las escenas con liana son **112 de las 255**, no 96.
+De la familia de la charca, el que se queda sin ninguna es el tipo 7.
+
+Se comprueba sin jugar y sin leer más código, porque son la misma escena con la
+variante cambiada: con 0xE222 = 0x26 la cuerda cuelga del árbol, y con
+0xE222 = 0x24 no está. Las dos capturas las hace `make capturas`.
 
 ## Los 32 tesoros, contados sin jugar
 

@@ -31,12 +31,12 @@ Bits 3-5 pick one of eight routines through the table at 0xAEB4:
 |---|---|---|---|
 | 0 | 0xA9AA | pits in the ground, with a ladder to the underground | 31 |
 | 1 | 0xA9AA | the same: both entries point to the same place | 32 |
-| 2 | 0xAC7C | a tar pit | 32 |
-| 3 | 0xAC6B | a water pool | 32 |
-| 4 | 0xAD75 | a lagoon with three crocodiles | 32 |
+| 2 | 0xAC7C | a tar pit, with a vine | 32 |
+| 3 | 0xAC6B | a water pool, with a vine | 32 |
+| 4 | 0xAD75 | a lagoon with three crocodiles, **with a vine in 16 of them** | 32 |
 | 5 | 0xADF6 | **the treasure scene**, the only one that scores | 32 |
 | 6 | 0xAE04 | tar with a vine | 32 |
-| 7 | 0xADE8 | water with a vine | 32 |
+| 7 | 0xADE8 | water, **no vine** | 32 |
 
 The share-out is almost uniform because the ring visits the 255 non-zero
 values: only kind 0 gets one scene fewer.
@@ -54,6 +54,25 @@ Kinds 2 and 3 are **the same drawing in a different colour**: 0xAC7C writes
 The three crocodiles sit at X 0x50, 0x6F and 0x88 (0xA828) and open their
 mouths every frame (script at 0xAFD8); with the mouth open their collision box
 grows (0xA812).
+
+## The vine is not handed out by the scene kind
+
+The vine is set up by `monta_la_liana` (0xAE38), and **four** places call it.
+Three are the plain calls in kinds 2 (0xAC88), 3 (0xAC77) and 6 (0xAE04). The
+fourth one works differently: the tail of the lagoon, 0xADDE, dispatches through
+the table at 0xAE94 keyed by **the variant** instead of the kind, and that table
+holds `monta_la_liana` at its entries 2, 3, 6 and 7 —the other four are a bare
+`ret`—. `ld hl,0AE94h` appears exactly once in the whole cartridge and the kind
+4 routine has no other entry point, so that is the only way in.
+
+Since the ring visits the 255 non-zero values, 16 of the 32 lagoons have a vine
+and 16 do not, and the scenes with a vine are **112 of the 255**, not 96. Of the
+pool family, the one left without any is kind 7.
+
+You can check it without playing and without reading more code, because they are
+the same scene with the variant changed: with 0xE222 = 0x26 the rope hangs from
+the tree, and with 0xE222 = 0x24 it is not there. `make capturas` takes both
+screenshots.
 
 ## The 32 treasures, counted without playing
 

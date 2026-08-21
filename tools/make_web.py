@@ -257,18 +257,20 @@ TIPOS = [
      "escaleras: entre los tipos 0 y 1 están las 63 bajadas que hay",
      "Type 1 · 0xA9AA — the other half of the pits, and the other half of the "
      "ladders: types 0 and 1 hold the 63 ways down there are"),
-    ("Tipo 2 · 0xAC7C — charca de brea. El mismo dibujo que el tipo 3 con "
-     "otro color: escribe 1B 1B 1B en la tabla de colores",
-     "Type 2 · 0xAC7C — a tar pit. The same drawing as type 3 in another "
-     "colour: it writes 1B 1B 1B into the colour table"),
+    ("Tipo 2 · 0xAC7C — charca de brea, con liana. El mismo dibujo que el "
+     "tipo 3 con otro color: escribe 1B 1B 1B en la tabla de colores",
+     "Type 2 · 0xAC7C — a tar pit, with a vine. The same drawing as type 3 in "
+     "another colour: it writes 1B 1B 1B into the colour table"),
     ("Tipo 3 · 0xAC6B — charca de agua, que es el parche de color deshecho: "
-     "7B 7B 7B donde el tipo 2 ponía 1B 1B 1B",
+     "7B 7B 7B donde el tipo 2 ponía 1B 1B 1B, y liana también",
      "Type 3 · 0xAC6B — a water pool, which is that colour patch undone: "
-     "7B 7B 7B where type 2 put 1B 1B 1B"),
+     "7B 7B 7B where type 2 put 1B 1B 1B, and a vine as well"),
     ("Tipo 4 · 0xAD75 — laguna con tres cocodrilos: tres bloques de cuatro "
-     "bytes en el código, tres cocodrilos en la pantalla",
+     "bytes en el código, tres cocodrilos en la pantalla. La mitad de estas "
+     "escenas llevan liana, y no la decide el tipo sino la variante",
      "Type 4 · 0xAD75 — a lagoon with three crocodiles: three four-byte "
-     "blocks in the code, three crocodiles on screen"),
+     "blocks in the code, three crocodiles on screen. Half of these scenes "
+     "carry a vine, and it is the variant that decides, not the type"),
     ("Tipo 5 · 0xADF6 — la escena del tesoro, la única que puntúa. Son 32 en "
      "el anillo, ocho de cada valor",
      "Type 5 · 0xADF6 — the treasure scene, the only one that scores. There "
@@ -277,10 +279,10 @@ TIPOS = [
      "cada paso",
      "Type 6 · 0xAE04 — tar with a vine, and the vine is traced point by "
      "point on every step"),
-    ("Tipo 7 · 0xADE8 — agua con liana. Con el tipo 6 y el 4, las tres "
-     "escenas que obligan a cruzar por arriba",
-     "Type 7 · 0xADE8 — water with a vine. With types 6 and 4, the three "
-     "scenes that make you cross over the top"),
+    ("Tipo 7 · 0xADE8 — agua SIN liana: es el único de la familia de la "
+     "charca que no llama a monta_la_liana, ni de frente ni por tabla",
+     "Type 7 · 0xADE8 — water with NO vine: it is the only one of the pool "
+     "family that never calls monta_la_liana, neither directly nor by table"),
 ]
 
 # El recorte del rotulo: sobre la captura ya reducida a la mitad se busca EL

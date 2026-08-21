@@ -51,7 +51,7 @@ the split:
 
 ## Without the cartridge
 
-The work is in `src/pitfall.asm` and the notes: 6,569 lines with 337 routines
+The work is in `src/pitfall.asm` and the notes: 6,589 lines with 337 routines
 and tables named, 988 line comments anchored to their address and 130 ranges of
 data with their explanation next to them. The 17 tests run without the binary.
 

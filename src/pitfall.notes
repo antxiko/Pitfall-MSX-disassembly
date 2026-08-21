@@ -133,13 +133,13 @@ C 0xB69F El paso ATRAS: la funcion inversa exacta de 0xB68F, desplazando a la de
 C 0xB6A2 el mismo montaje para calcular el bit, pero al final se gira a la DERECHA
 C 0xB6AC comprobado sobre los 256 valores: 0xB69F deshace exactamente lo que hace 0xB68F, en los dos sentidos
 
-D 0xAE94 0xAEA4 tabla_de_submodos_1 Ocho punteros de palabra para el despachador parametrico de 0xA99F, indexados por el submodo (0xE224)=(0xE222)&7. La base la carga el llamante de 0xADE4. Solo dos rutinas distintas, alternadas de dos en dos: 0xACB5 y 0xAE38
+D 0xAE94 0xAEA4 tabla_de_liana_del_tipo_4 Ocho punteros de palabra para el despachador de 0xA99F, indexados por la variante (0xE224)=(0xE222)&7. La carga 0xADDE, la cola del tipo 4, y es el UNICO sitio del cartucho que la carga. Dos rutinas alternadas de dos en dos: 0xACB5 (un `ret`, sin liana) en las variantes 0, 1, 4 y 5, y monta_la_liana (0xAE38) en las variantes 2, 3, 6 y 7
 F 0xAE94 w1
 
-D 0xAEA4 0xAEB4 tabla_de_submodos_2 Ocho punteros de palabra para 0xA99F, mismos indices. La base la carga 0xAE2E, y SOLO cuando el modo (0xE225) es 5. Cuatro rutinas distintas repetidas dos veces: 0xAC11, 0xAB51, 0xAB1B, 0xABB7
+D 0xAEA4 0xAEB4 tabla_de_tesoros_del_tipo_5 Ocho punteros de palabra para 0xA99F, indexados por la variante. La base la carga 0xAE2E, y SOLO cuando el tipo (0xE225) es 5. Cuatro rutinas distintas repetidas dos veces: 0xAC11, 0xAB51, 0xAB1B, 0xABB7
 F 0xAEA4 w1
 
-D 0xAEC4 0xAED4 tabla_de_submodos_3 Ocho punteros de palabra para 0xA99F, mismos indices. La cargan los llamantes de 0xAA70, 0xACB1 y el camino de 0xAE24 cuando el modo no es 5. Seis de las ocho entradas apuntan al mismo sitio, 0xAD1F; las otras dos, 0xAAB7 y 0xAA74
+D 0xAEC4 0xAED4 tabla_de_estorbos_por_variante Ocho punteros de palabra para 0xA99F, indexados por la variante. La cargan los llamantes de 0xAA70, 0xACB1 y el camino de 0xAE24 cuando el modo no es 5. Seis de las ocho entradas apuntan al mismo sitio, 0xAD1F; las otras dos, 0xAAB7 y 0xAA74
 F 0xAEC4 w1
 
 # =============================================================================
@@ -471,7 +471,8 @@ B 0xA9AA monta cada una y de mirar la captura de las 255 escenas:
 B 0xA9AA   0 y 1  A9AA  hoyos en el suelo, CON ESCALERA al subterraneo
 B 0xA9AA   2      AC7C  charca de brea, Y CON LIANA
 B 0xA9AA   3      AC6B  charca de agua, Y CON LIANA
-B 0xA9AA   4      AD75  laguna con TRES cocodrilos
+B 0xA9AA   4      AD75  laguna con TRES cocodrilos, y CON LIANA en 16
+B 0xA9AA                de sus 32 escenas
 B 0xA9AA   5      ADF6  la escena del TESORO, la unica que puntua
 B 0xA9AA   6      AE04  brea con liana
 B 0xA9AA   7      ADE8  agua, SIN liana
@@ -480,10 +481,18 @@ B 0xA9AA 0x9F4B-0x9F4E apaga el bit 7 de 0xE32F+0x00 al montar CADA
 B 0xA9AA escena, y ese bit es justo el que mira 0xA471 antes de hacer
 B 0xA9AA nada. Lo unico que lo vuelve a encender es monta_la_liana
 B 0xA9AA (0xAE38), que copia encima la plantilla 0xB02A, cuyo primer
-B 0xA9AA byte vale 0xC0. Y a monta_la_liana la llaman tres sitios y no
-B 0xA9AA mas: 0xAC88 (tipo 2), 0xAC77 (tipo 3) y 0xAE04 (tipo 6). El
-B 0xA9AA tipo 7 no la llama, asi que se queda SIN liana; los tipos 2 y
-B 0xA9AA 3 SI la tienen. Con liana son 96 escenas de las 255, no 64.
+B 0xA9AA byte vale 0xC0. Y a monta_la_liana la llaman CUATRO sitios:
+B 0xA9AA 0xAC88 (tipo 2), 0xAC77 (tipo 3), 0xAE04 (tipo 6) y la tabla
+B 0xA9AA de liana de 0xAE94, que carga 0xADDE -la cola del
+B 0xA9AA tipo 4- y despacha por la VARIANTE: sus indices 2, 3, 6 y 7
+B 0xA9AA valen 0xAE38. O sea que la laguna de los cocodrilos tiene
+B 0xA9AA liana en cuatro de sus ocho variantes, 16 de sus 32 escenas.
+B 0xA9AA El tipo 7 no la llama por ningun camino, asi que ese si se
+B 0xA9AA queda SIN liana. Con liana son 112 escenas de las 255.
+B 0xA9AA Lo del tipo 4 esta MEDIDO sobre las capturas del proyecto:
+B 0xA9AA work/omsx/mapa/escena_023_26.png (0x26, variante 6) la tiene y
+B 0xA9AA escena_020_24.png (0x24, variante 4) no, siendo la misma
+B 0xA9AA escena. Ver el bloque de 0xAE94.
 B 0xA9AA El reparto del anillo es uniforme: 31 escenas del tipo 0 y 32
 B 0xA9AA de cada uno de los otros siete. Y los tipos 2 y 3 son EL MISMO
 B 0xA9AA DIBUJO con distinto color: uno escribe 1B 1B 1B (negro, brea)
@@ -501,7 +510,7 @@ C 0xAD7B tres bloques de 4 bytes, uno por cocodrilo: son los tres que se ven en 
 C 0xAD9C la plantilla de 0xAFEA monta el objeto 0xE303, que lleva el manejador 0xA7F5
 C 0xADB2 los tres bytes 7B 7B 7B a 0x200B: el color del agua, que deshace el parche de la brea
 C 0xADCE la cuarta caja, de 0x9F a 0xB0
-C 0xADDE y la variante elige el estorbo de la derecha, por la tabla 0xAE94
+C 0xADDE y la variante decide si esta laguna lleva liana ademas de cocodrilos: la tabla de 0xAE94 manda a monta_la_liana en las variantes 2, 3, 6 y 7, y a un `ret` en las otras cuatro
 L 0xADF6 escena_tipo_5_tesoro
 L 0xAE04 escena_tipo_6_brea_con_liana
 L 0xADE8 escena_tipo_7_agua_sin_liana
@@ -1013,7 +1022,7 @@ C 0xAA37 se duplican patrones para tener la pareja de sprites
 L 0xAE13 monta_objeto_de_escena Comun a los tipos 5, 6 y 7
 C 0xAE24 la tabla de variantes: la 0xAEA4 solo para el tipo 5
 L 0xAE31 monta_objeto_de_escena_despacha
-L 0xAE38 monta_la_liana La llaman los tipos 2, 3 y 6
+L 0xAE38 monta_la_liana La llaman los tipos 2 (0xAC88), 3 (0xAC77) y 6 (0xAE04) a las claras, y el tipo 4 por la tabla de 0xAE94
 L 0xAE46 monta_la_liana_objeto
 C 0xAE4E la plantilla del objeto de la liana
 C 0xAE56 y su manejador
@@ -2254,14 +2263,23 @@ B 0x9DB8 55 ticks seguidos, los 55 a 60 interrupciones exactas. OJO:
 B 0x9DB8 corre tambien en titulo y demo, sobre tiles sin inicializar;
 B 0x9DB8 los 20:00 se escriben al arrancar la partida.
 
-B 0xAE94 OJO AL CERRAR ESTO: esta tabla es un SEGUNDO camino hacia
-B 0xAE94 monta_la_liana, aparte de las llamadas directas de los tipos 2, 3 y 6.
-B 0xAE94 Va indexada por el SUBMODO (0xE224 = (0xE222) and 7), no por el tipo
-B 0xAE94 de escena, y sus indices 2, 3, 6 y 7 apuntan a monta_la_liana. La carga
-B 0xAE94 0xADDE, dentro de la rutina que elige el estorbo de la derecha.
-B 0xAE94 Comprobado por la sesion principal el 2026-08-21: el tipo 7 (0xADE8)
-B 0xAE94 efectivamente NO llama a monta_la_liana, asi que la correccion del
-B 0xAE94 listado se sostiene; pero **queda sin cerrar si por este camino puede
-B 0xAE94 aparecer liana en escenas donde el reparto por tipo dice que no**, y
-B 0xAE94 por eso NO se han tocado todavia las filas 2/3/6/7 de la tabla de
-B 0xAE94 escenas de las dos webs. Cerrar antes de publicarlo alli.
+B 0xAE94 EL CUARTO CAMINO A LA LIANA, y el unico que no va por el tipo de
+B 0xAE94 escena. A monta_la_liana (0xAE38) la llaman directamente los tipos 2
+B 0xAE94 (0xAC88), 3 (0xAC77) y 6 (0xAE04); esta tabla es el cuarto, y sale de
+B 0xAE94 un solo sitio: 0xADDE, la cola del tipo 4, los cocodrilos. `ld hl,
+B 0xAE94 0AE94h` aparece UNA vez en todo el cartucho, y 0xAD75-0xADE6 es una
+B 0xAE94 rutina de corrido sin ninguna otra entrada, asi que a esta tabla no
+B 0xAE94 llega nadie mas.
+B 0xAE94 Indexa por la VARIANTE (0xE224 = (0xE222) and 7), no por el tipo, y
+B 0xAE94 sus indices 2, 3, 6 y 7 son 0xAE38: LA LAGUNA DE LOS COCODRILOS
+B 0xAE94 TAMBIEN TIENE LIANA en la mitad de sus escenas. Los otros cuatro
+B 0xAE94 indices son 0xACB5, un `ret` suelto.
+B 0xAE94 CUANTAS: el anillo de 0xE222 recorre los 255 valores no nulos, asi
+B 0xAE94 que de las 32 escenas del tipo 4 hay 16 con liana y 16 sin ella. Con
+B 0xAE94 las 96 de los tipos 2, 3 y 6 son **112 escenas con liana de las 255**,
+B 0xAE94 no 96. El tipo 7 sigue sin liana ninguna.
+B 0xAE94 MEDIDO, no leido: en las capturas del propio proyecto,
+B 0xAE94 work/omsx/mapa/escena_023_26.png (0xE222 = 0x26, tipo 4, variante 6)
+B 0xAE94 sale con liana, y escena_020_24.png (0x24, tipo 4, variante 4) es la
+B 0xAE94 misma escena sin ella. La lista completa la da work/mapa_escenas.tsv:
+B 0xAE94 16 filas de tipo 4 con variante 2, 3, 6 o 7.
