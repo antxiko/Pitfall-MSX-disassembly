@@ -47,7 +47,7 @@ de entrada puede caer dentro de uno.
 | bytes de datos | 6.917 |
 | bytes sin explicar | **0** |
 | etiquetas bautizadas | 337 |
-| comentarios anclados | 913 |
+| comentarios anclados | 988 |
 | rangos de datos con explicación | 130 |
 
 ## Unas cuantas cosas que aparecieron

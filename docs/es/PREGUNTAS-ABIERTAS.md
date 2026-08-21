@@ -3,7 +3,7 @@
 Cada byte del cartucho tiene dueño, el listado vuelve a dar el original byte a
 byte y sus 337 etiquetas tienen nombre. Eso no quiere decir que todas lleven
 escrito qué hacen: 78 llevan su explicación en la propia etiqueta y el resto se
-apoya en los 913 comentarios de línea y en las 50 cabeceras de bloque. Esta
+apoya en los 988 comentarios de línea y en las 50 cabeceras de bloque. Esta
 página dice qué significan esas cifras y qué queda por saber.
 
 ## No aparece condición de victoria

@@ -222,16 +222,16 @@ agarra_la_liana_derecha:
 	ld (iy+002h),040h		;819f
 	ret			;81a3
 columpia_en_la_liana:
-	ld a,(0e05fh)		;81a4
+	ld a,(0e05fh)		;81a4   ; 0xE05F es la entrada del mando 1, la que mira todo el juego
 	bit 1,a		;81a7   ; sin el bit 1 (abajo) no se suelta
 	ret z			;81a9
-	ld iy,0e2a2h		;81aa
+	ld iy,0e2a2h		;81aa   ; 0xE2A2, los cuatro bytes de sprite del jugador
 	bit 3,a		;81ae
-	jr nz,columpia_hacia_la_derecha		;81b0
+	jr nz,columpia_hacia_la_derecha		;81b0   ; con abajo y ademas derecha (bit 3) o izquierda (bit 2), el lado lo elige quien juega
 	bit 2,a		;81b2
 	jr nz,columpia_hacia_la_izquierda		;81b4
 	ld hl,0e345h		;81b6
-	bit 7,(hl)		;81b9
+	bit 7,(hl)		;81b9   ; y con abajo a secas manda el bit 7 de 0xE345, que es el IX+0x16 de la liana: se salta hacia donde iba el balanceo
 	jr nz,columpia_hacia_la_izquierda		;81bb
 columpia_hacia_la_derecha:
 	ld de,000c8h		;81bd   ; velocidad hacia la derecha, en 1/256 de pixel por cuadro
@@ -661,15 +661,15 @@ mira_colisiones_siguiente:
 mira_colisiones_vuelve:
 	ret			;8588
 mira_colisiones_en_el_aire:		; La misma busqueda sobre 0xE23B, desde el salto
-	ld iy,0e2a2h		;8589
+	ld iy,0e2a2h		;8589   ; 0xE2A2, la entrada de sprite del jugador
 	ld a,(iy+001h)		;858d
-	add a,008h		;8590
-	bit 7,(ix+006h)		;8592
+	add a,008h		;8590   ; mas 8, o sea el centro del muneco: la misma X con la que buscan 0x84EF y 0x8529
+	bit 7,(ix+006h)		;8592   ; mirando a la izquierda (bit 7 de IX+0x06) se corre un pixel
 	jr z,mira_colisiones_en_el_aire_tabla		;8596
 	sub 001h		;8598
 mira_colisiones_en_el_aire_tabla:
 	ld hl,0e23bh		;859a
-	ld b,002h		;859d
+	ld b,002h		;859d   ; dos cajas y no diez: en el aire solo se miran las de 0xE23B, o las de 0xE241 si se esta en el subterraneo
 	bit 0,(ix+016h)		;859f
 	jr nz,mira_colisiones_en_el_aire_bucle		;85a3
 	ld hl,0e241h		;85a5
@@ -709,15 +709,15 @@ mira_colisiones_en_el_aire_nada:
 	ret			;85d8
 alcanza_la_liana:
 	ld hl,0e2a2h		;85d9   ; la caja de clase 5 ya decidio por la X; esta comprobacion vertical exige a la vez (0xE1CC)-7 < Y y (0xE1CC)-0x14 >= Y, que solo se cumplen juntas porque la segunda resta se desborda. Con 0xE1CC entre 0x07 y 0x10 sale cierta para cualquier Y; con 0x06 -las dos fases del extremo- sale falsa: en la punta del balanceo la liana no se coge
-	ld a,(0e1cch)		;85dc
+	ld a,(0e1cch)		;85dc   ; ojo con 0xE1CC: en este momento no es una coordenada, es el TERCER byte de la fase (0x06 a 0x10) que 0xA54D acaba de escribir. Solo 0xA616 lo convierte en Y, y eso ya colgado
 	sub 007h		;85df
-	cp (hl)			;85e1
+	cp (hl)			;85e1   ; (hl) es la Y del jugador, el primer byte de 0xE2A2
 	jr nc,mira_colisiones_en_el_aire_nada		;85e2
 	ld a,(0e1cch)		;85e4
 	sub 014h		;85e7
 	cp (hl)			;85e9
 	jr c,mira_colisiones_en_el_aire_nada		;85ea
-	ld a,005h		;85ec
+	ld a,005h		;85ec   ; devuelve la clase 5, y 0x885C se la pasa a despacha_la_clase: por la tabla 0x8AA0 acaba en 0x8162, agarrarse
 	ret			;85ee
 rebota_y_retrocede:		; Clase 10: invierte la velocidad y retrocede tres pasos. NO baja al subterraneo
 	ld a,(ix+007h)		;85ef
@@ -766,12 +766,12 @@ rebota_y_retrocede_calcula:
 ; los dos unicos llamantes de quita_una_vida en el cartucho.
 ; ----------------------------------------------------------------------
 arrollado_por_el_tronco:		; Clase 1
-	ld iy,0e2a2h		;8640
-	ld hl,arrollado_pierde_puntos		;8644
+	ld iy,0e2a2h		;8640   ; 0xE2A2, la entrada de sprite del jugador
+	ld hl,arrollado_pierde_puntos		;8644   ; el manejador pasa a 0x8660: mientras siga tumbado, cada cuadro cuesta puntos
 	ld (ix+012h),l		;8647
 	ld (ix+013h),h		;864a
-	ld (iy+000h),072h		;864d
-	res 5,(ix+000h)		;8651
+	ld (iy+000h),072h		;864d   ; Y a 0x72, cinco pixeles por debajo del 0x6D del suelo: eso es estar tumbado
+	res 5,(ix+000h)		;8651   ; bit 5 de IX+0x00 apagado, o sea sin animar: el muneco se queda en una sola pose
 	ld a,020h		;8655
 	ld (0e268h),a		;8657   ; 0xE268: repite el sonido 4 cada 0x20 cuadros
 	ld a,004h		;865a
@@ -854,11 +854,11 @@ cae_por_el_hoyo_medio_derecha:
 	ld (iy+002h),038h		;8714
 	ret			;8718
 cae_por_el_hoyo_arriba:
-	ld a,(iy+000h)		;8719
+	ld a,(iy+000h)		;8719   ; estas dos instrucciones sobran: A ya traia esta misma Y desde 0x8705, y el 0xE185 del ld hl no lo lee nadie. Las dos ramas escriben (iy+002h) y vuelven sin tocar ni A ni HL, y quien llama es el despachador de objetos, que tampoco los mira
 	ld hl,0e185h		;871c
-	bit 7,(ix+006h)		;871f
+	bit 7,(ix+006h)		;871f   ; bit 7 de IX+0x06: hacia donde mira
 	jr z,cae_por_el_hoyo_arriba_derecha		;8723
-	ld (iy+002h),058h		;8725
+	ld (iy+002h),058h		;8725   ; por encima de la Y 0x90 el patron es el de estar de pie, 0x58 a la izquierda y 0x34 a la derecha
 	ret			;8729
 cae_por_el_hoyo_arriba_derecha:
 	ld (iy+002h),034h		;872a
@@ -1547,11 +1547,11 @@ patron_hundiendose:
 	ldir		;8c15
 	jr patron_hundiendose_vram		;8c17
 patron_hundiendose_izquierda:
-	ld de,0e15eh		;8c19
+	ld de,0e15eh		;8c19   ; mirando a la izquierda las dos mitades se CRUZAN: a 0xE15E -la columna derecha- va 0x8EE0, que es 0x8E40 con los bits de cada byte del reves
 	ld hl,08ee0h		;8c1c
-	ld bc,00020h		;8c1f
+	ld bc,00020h		;8c1f   ; 0x20 bytes: las dos capas de color de esa columna, 16 y 16
 	ldir		;8c22
-	ld de,0e138h		;8c24
+	ld de,0e138h		;8c24   ; y a 0xE138 -la columna izquierda- va 0x8EC0, que es 0x8E60 del reves. Espejar un sprite de 16 de ancho es dar la vuelta a los bits Y cambiar las columnas de sitio
 	ld hl,08ec0h		;8c27
 	ld bc,00020h		;8c2a
 	ldir		;8c2d
@@ -1581,15 +1581,15 @@ patron_hundiendose_vram:
 	jr patron_hundiendose_vuelve		;8c70
 patron_hundiendose_vram_izquierda:
 	ld (iy+002h),058h		;8c72   ; mirando a la izquierda las medias columnas son otras: 0x3D00/0x3AC0 y 0x3D10/0x3AD0
-	ld hl,0e138h		;8c76
+	ld hl,0e138h		;8c76   ; 0xE138 es la columna izquierda, y sus dos mitades de 16 son las dos capas: la primera al patron 0xA0 (VRAM 0x3D00) y la segunda al 0x58 (0x3AC0)
 	ld de,03d00h		;8c79
 	ld bc,00010h		;8c7c
-	call copia_bloque_a_vram		;8c7f
+	call copia_bloque_a_vram		;8c7f   ; los cuatro bloques suben ya mordidos: el recorte se lo dio 0x8C2F en la RAM
 	ld hl,0e148h		;8c82
 	ld de,03ac0h		;8c85
 	ld bc,00010h		;8c88
 	call copia_bloque_a_vram		;8c8b
-	ld hl,0e15eh		;8c8e
+	ld hl,0e15eh		;8c8e   ; y 0xE15E es la columna derecha, a las mitades derechas de esos dos mismos patrones
 	ld de,03d10h		;8c91
 	ld bc,00010h		;8c94
 	call copia_bloque_a_vram		;8c97
@@ -1665,19 +1665,19 @@ pinta_los_hoyos_con_cajas:
 	pop ix		;8d47
 	ret			;8d49
 pinta_la_escalera_b:
-	ld hl,08f06h		;8d4a
+	ld hl,08f06h		;8d4a   ; el mastil, guion 0x8F06: la columna 16 y su cabecera de tres columnas. Es identico en la a y en la b
 	call pinta_celdas		;8d4d
-	ld hl,0904eh		;8d50
+	ld hl,0904eh		;8d50   ; lo UNICO que cambia entre las dos: los pilares de 0x904E, los mismos que 0x900C pero con los tiles cambiados de lado
 	call pinta_celdas		;8d53
-	ld hl,0b08eh		;8d56
+	ld hl,0b08eh		;8d56   ; y el guion 0xB08E, seis celdas del tile blanco: borra el hueco 3x2 donde iria el tesoro
 	call pinta_celdas		;8d59
 	ret			;8d5c
 pinta_la_escalera_a:
-	ld hl,08f06h		;8d5d
+	ld hl,08f06h		;8d5d   ; el mismo mastil de la columna 16 que pinta la b
 	call pinta_celdas		;8d60
-	ld hl,0900ch		;8d63
+	ld hl,0900ch		;8d63   ; y aqui los pilares de 0x900C, columnas 5-6 y 26-27
 	call pinta_celdas		;8d66
-	ld hl,0b08eh		;8d69
+	ld hl,0b08eh		;8d69   ; el mismo borrado del hueco del tesoro que hace la b
 	call pinta_celdas		;8d6c
 	ret			;8d6f
 pinta_el_layout:		; Vuelca el decorado: 0x71 bytes en crudo desde la fila 4, una fila de 32 que se repite seis veces, los tramos de las filas 12 y 13 y un guion de celdas
@@ -1806,8 +1806,11 @@ DATA_tabla_tramos_fila13:
 	defb 0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh,0ffh	; 8e32  ..............
 
 ; ----------------------------------------------------------------------
-; DATOS sprite_hundiendose_derecha_1: Primera capa del jugador mirando a la
-;   derecha. La copia 0x8C0F a 0xE138
+; DATOS sprite_hundiendose_derecha_1: La columna IZQUIERDA del jugador mirando
+;   a la derecha, con las dos capas de color seguidas: 16 bytes de una y 16 de
+;   la otra. La copia 0x8C0F a 0xE138, y de ahi 0x8C43 sube la primera mitad a
+;   la VRAM 0x3BE0 y 0x8C4F la segunda a 0x39A0, que son las mitades
+;   izquierdas de los patrones 0x7C y 0x34
 ;   0x8e40..0x8e60  (32 bytes)
 DATA_sprite_hundiendose_derecha_1:
 	defb 000h,000h,000h,000h,003h,003h,003h,000h	; 8e40  ........
@@ -1816,8 +1819,10 @@ DATA_sprite_hundiendose_derecha_1:
 	defb 001h,001h,000h,000h,000h,000h,000h,000h	; 8e58  ........
 
 ; ----------------------------------------------------------------------
-; DATOS sprite_hundiendose_derecha_2: Segunda capa de la misma pose. La copia
-;   0x8C04 a 0xE15E
+; DATOS sprite_hundiendose_derecha_2: La columna DERECHA de la misma pose,
+;   otra vez con las dos capas seguidas. La copia 0x8C04 a 0xE15E, y 0x8C5B y
+;   0x8C67 suben sus mitades a 0x3BF0 y 0x39B0, las mitades derechas de esos
+;   dos mismos patrones
 ;   0x8e60..0x8e80  (32 bytes)
 DATA_sprite_hundiendose_derecha_2:
 	defb 000h,000h,000h,000h,0c0h,000h,000h,000h	; 8e60  ........
@@ -1826,8 +1831,8 @@ DATA_sprite_hundiendose_derecha_2:
 	defb 000h,0c0h,000h,000h,000h,000h,000h,000h	; 8e78  ........
 
 ; ----------------------------------------------------------------------
-; DATOS sprite_hundiendose_3: Primera capa de la tercera pose, la que carga
-;   0x8CB9 a 0xE138
+; DATOS sprite_hundiendose_3: La columna izquierda de la tercera pose, la que
+;   carga 0x8CB9 a 0xE138
 ;   0x8e80..0x8ea0  (32 bytes)
 DATA_sprite_hundiendose_3:
 	defb 000h,000h,000h,000h,000h,003h,003h,003h	; 8e80  ........
@@ -1836,8 +1841,8 @@ DATA_sprite_hundiendose_3:
 	defb 000h,000h,000h,000h,000h,000h,000h,000h	; 8e98  ........
 
 ; ----------------------------------------------------------------------
-; DATOS sprite_hundiendose_4: Segunda capa de esa pose, que carga 0x8CAE a
-;   0xE15E
+; DATOS sprite_hundiendose_4: La columna derecha de esa pose, que carga 0x8CAE
+;   a 0xE15E
 ;   0x8ea0..0x8ec0  (32 bytes)
 DATA_sprite_hundiendose_4:
 	defb 000h,000h,000h,000h,000h,0c0h,000h,000h	; 8ea0  ........
@@ -3363,10 +3368,10 @@ DATA_tabla_patrones_14x18:
 ; `ld (ix+000h),007h` en todo el cartucho.
 ; ----------------------------------------------------------------------
 borra_dibujo_liana:		; Pone a cero los 0x40 bytes de 0xE18A
-	ld hl,0e18ah		;a43a
-	ld de,0e18bh		;a43d
-	ld (hl),000h		;a440
-	ld bc,0003fh		;a442
+	ld hl,0e18ah		;a43a   ; los 0x40 bytes de 0xE18A son los DOS patrones de sprite de la cuerda, 32 y 32: 0xA594 sube el primero a la VRAM 0x39E0 (patron 0x3C) y 0xA5A0 el segundo a 0x3B00 (el 0x60)
+	ld de,0e18bh		;a43d   ; destino un byte por delante del origen: el borrado en cadena de siempre
+	ld (hl),000h		;a440   ; se siembra un cero a mano...
+	ld bc,0003fh		;a442   ; ...y el LDIR lo arrastra 0x3F veces: 1 + 63 son los 0x40 de 0xE18A a 0xE1C9
 	ldir		;a445
 	ret			;a447
 pinta_punto_liana:		; X en H, Y en C, sobre el mapa de bits de IY
@@ -3374,20 +3379,20 @@ pinta_punto_liana:		; X en H, Y en C, sobre el mapa de bits de IY
 	push iy		;a449
 	push bc			;a44b
 	ld a,007h		;a44c
-	cp h			;a44e   ; de la fila 8 en adelante se salta al segundo patron
+	cp h			;a44e   ; de la COLUMNA 8 en adelante -H es la X- se salta 16 bytes, que es la mitad DERECHA del mismo patron de 32: no hay un segundo patron
 	jr nc,pinta_punto_liana_fila		;a44f
 	ld e,010h		;a451
 	ld d,000h		;a453
 	add iy,de		;a455
 pinta_punto_liana_fila:
-	ld e,c			;a457
+	ld e,c			;a457   ; la Y si va como desplazamiento directo: cada fila del patron ocupa un byte
 	ld d,000h		;a458
 	add iy,de		;a45a
-	ld a,h			;a45c
+	ld a,h			;a45c   ; de la X solo cuentan los tres bits bajos, o sea la columna dentro del byte
 	and 007h		;a45d
 	ld b,a			;a45f
-	inc b			;a460
-	xor a			;a461
+	inc b			;a460   ; una rotacion mas que la columna: 1 para la columna 0 y 8 para la 7
+	xor a			;a461   ; A a cero y acarreo a 1, que es el bit que las RRA van metiendo por la izquierda
 	scf			;a462
 pinta_punto_liana_mascara:
 	rra			;a463   ; rota el bit hasta la columna que toca
@@ -3446,14 +3451,14 @@ mueve_la_liana_extremo:
 	sub 00fh		;a4b2
 	ld h,a			;a4b4
 mueve_la_liana_sprite1:
-	ld ix,0e276h		;a4b5
+	ld ix,0e276h		;a4b5   ; 0xE276 son los cuatro bytes de atributo del primer sprite: Y, X, patron y color
 	ld (ix+001h),h		;a4b9
-	ld (ix+000h),033h		;a4bc
-	ld (ix+003h),001h		;a4c0
-	ld hl,00000h		;a4c4
+	ld (ix+000h),033h		;a4bc   ; la Y es FIJA, 0x33: la cuerda cuelga siempre de la misma altura y solo se mueve de lado
+	ld (ix+003h),001h		;a4c0   ; color 1, negro
+	ld hl,00000h		;a4c4   ; el trazado arranca en cero, con H el pixel y L la fraccion; la primera fila ya lleva una pendiente sumada
 	add hl,de			;a4c7
 	ld c,000h		;a4c8
-	ld b,010h		;a4ca
+	ld b,010h		;a4ca   ; dieciseis vueltas, y C lleva la fila, de 0 a 15
 	ld iy,0e18ah		;a4cc
 mueve_la_liana_bucle:
 	ld a,h			;a4d0   ; dieciseis filas, una por linea del patron
@@ -3498,13 +3503,13 @@ mueve_la_liana_sprite3:
 	ld h,(iy+001h)		;a52b
 	ld l,000h		;a52e
 mueve_la_liana_agarre:
-	add hl,de			;a530
+	add hl,de			;a530   ; desde la X del tercer sprite, tantos pasos mas de pendiente como diga el tercer byte de la fase: 0x10 con la liana vertical y 0x06 en el extremo
 	djnz mueve_la_liana_agarre		;a531
-	ld a,h			;a533
+	ld a,h			;a533   ; y en H sale ya la X del punto de agarre
 	ld ix,0e32fh		;a534
 	bit 7,(ix+016h)		;a538
 	jr z,mueve_la_liana_guarda_agarre		;a53c
-	add a,012h		;a53e
+	add a,012h		;a53e   ; cayendo hacia el otro lado, 18 pixeles a la derecha: la recta se dibuja desde la columna 15 y a los sprites se les resto 0x0F y 0x1E en 0xA4B2 y 0xA50F, asi que el punto de agarre hay que devolverlo a su sitio
 mueve_la_liana_guarda_agarre:
 	ld (0e1cdh),a		;a540   ; 0xE1CD = la X donde se agarra el jugador
 	pop hl			;a543   ; el retorno apilado apunta a la fase: se lee de ahi y se sigue detras
@@ -3535,11 +3540,11 @@ mueve_la_liana_guarda_agarre:
 	ld hl,0e281h		;a57a
 	ld (hl),00fh		;a57d
 mueve_la_liana_vuelca:
-	ld a,(0e1cbh)		;a57f
+	ld a,(0e1cbh)		;a57f   ; solo con la fase 1 -la liana vertical- se vuelca aqui la tabla de sprites
 	cp 002h		;a582
-	jr nc,mueve_la_liana_a_vram		;a584
-	ld a,006h		;a586
-	ld hl,0e26ah		;a588
+	jr nc,mueve_la_liana_a_vram		;a584   ; de la fase 2 en adelante se salta el volcado: el bucle principal ya lo hace al final de cada cuadro (0x8106)
+	ld a,006h		;a586   ; este ld a,006h no lo lee nadie: 0xB1C3 trabaja con HL, DE y BC, y lo primero que hace 0xB185 es machacar A
+	ld hl,0e26ah		;a588   ; los 0x54 bytes de 0xE26A a la VRAM 0x1B00, la tabla de atributos de sprites entera
 	ld de,01b00h		;a58b
 	ld bc,00054h		;a58e
 	call copia_bloque_a_vram		;a591
@@ -3687,15 +3692,15 @@ mueve_el_escorpion:		; Manejador de 0xE2ED, EL ESCORPION del subterraneo (identi
 	ld (ix+007h),e		;a6e6
 	ret			;a6e9
 escorpion_hacia_la_derecha:
-	res 7,(ix+006h)		;a6ea
-	ld de,0af52h		;a6ee
+	res 7,(ix+006h)		;a6ea   ; bit 7 de IX+0x06 apagado: mira a la derecha. La rama de 0xA6CB lo enciende para el otro lado
+	ld de,0af52h		;a6ee   ; el guion de animacion de 0xAF52 -el de andar hacia la derecha- a IX+0x0C/0D
 	ld (ix+00ch),e		;a6f1
 	ld (ix+00dh),d		;a6f4
-	set 5,(ix+000h)		;a6f7
+	set 5,(ix+000h)		;a6f7   ; bit 5 de IX+0x00 = animado, y bit 0 de IX+0x06 = se mueve en X
 	set 0,(ix+006h)		;a6fb
 	ld d,000h		;a6ff
-	ld e,0c0h		;a701
-	ld (ix+008h),d		;a703
+	ld e,0c0h		;a701   ; 0x00C0 en IX+0x07/08, tres cuartos de pixel por cuadro; el 0xFF40 de la rama de la izquierda es ese mismo paso cambiado de signo
+	ld (ix+008h),d		;a703   ; el byte alto en IX+0x08 y el bajo en IX+0x07, en ese orden
 	ld (ix+007h),e		;a706
 	ret			;a709
 escorpion_se_para:
@@ -4011,12 +4016,21 @@ despacha_por_variante:		; HL = tabla, A = variante (0xE224)
 ; tipo de pantalla distinto. Los nombres salen de leer lo que
 ; monta cada una y de mirar la captura de las 255 escenas:
 ; 0 y 1  A9AA  hoyos en el suelo, CON ESCALERA al subterraneo
-; 2      AC7C  charca de brea
-; 3      AC6B  charca de agua
+; 2      AC7C  charca de brea, Y CON LIANA
+; 3      AC6B  charca de agua, Y CON LIANA
 ; 4      AD75  laguna con TRES cocodrilos
 ; 5      ADF6  la escena del TESORO, la unica que puntua
 ; 6      AE04  brea con liana
-; 7      ADE8  agua con liana
+; 7      ADE8  agua, SIN liana
+; Lo de la liana estaba mal contado, y se comprueba sin jugar:
+; 0x9F4B-0x9F4E apaga el bit 7 de 0xE32F+0x00 al montar CADA
+; escena, y ese bit es justo el que mira 0xA471 antes de hacer
+; nada. Lo unico que lo vuelve a encender es monta_la_liana
+; (0xAE38), que copia encima la plantilla 0xB02A, cuyo primer
+; byte vale 0xC0. Y a monta_la_liana la llaman tres sitios y no
+; mas: 0xAC88 (tipo 2), 0xAC77 (tipo 3) y 0xAE04 (tipo 6). El
+; tipo 7 no la llama, asi que se queda SIN liana; los tipos 2 y
+; 3 SI la tienen. Con liana son 96 escenas de las 255, no 64.
 ; El reparto del anillo es uniforme: 31 escenas del tipo 0 y 32
 ; de cada uno de los otros siete. Y los tipos 2 y 3 son EL MISMO
 ; DIBUJO con distinto color: uno escribe 1B 1B 1B (negro, brea)
@@ -4040,16 +4054,16 @@ escena_tipo_0_y_1_hoyos:
 	jr hoyos_carga_sprites		;a9ce
 hoyos_escalera_izquierda:
 	push ix		;a9d0
-	ld ix,0e241h		;a9d2
-	ld (ix+000h),00ah		;a9d6
+	ld ix,0e241h		;a9d2   ; 0xE241 es la cuarta de las diez cajas de 0xE229
+	ld (ix+000h),00ah		;a9d6   ; la misma clase 10 que la otra rama: rebotar, que no es bajar al subterraneo
 	ld a,031h		;a9da   ; y en 0x31 cuando es uno
 	sub 00ch		;a9dc
 	ld (ix+001h),a		;a9de
 	ld a,031h		;a9e1
-	add a,00dh		;a9e3
+	add a,00dh		;a9e3   ; de 0x25 a 0x3E, veinticinco pixeles: uno mas que la de tres hoyos, que usa +0x0C en vez de +0x0D
 	ld (ix+002h),a		;a9e5
 	pop ix		;a9e8
-	call pinta_la_escalera_b		;a9ea
+	call pinta_la_escalera_b		;a9ea   ; y los pilares del juego b. La escalera en si es la misma en las dos ramas -el guion 0x8F06, columna 16-: lo de la izquierda es donde cae la caja, no donde esta la escalera
 hoyos_carga_sprites:
 	push ix		;a9ed
 	ld ix,0e22ch		;a9ef
@@ -4287,7 +4301,7 @@ tesoro_de_5000:
 	ld bc,00016h		;abdf
 	ldir		;abe2
 	ld iy,0e28eh		;abe4
-	ld (iy+001h),0c4h		;abe8   ; X 0xC4 y color 0x0F: el anillo es el unico blanco
+	ld (iy+001h),0c4h		;abe8   ; X 0xC4 y color 0x0F, blanco. No es el unico: tambien van en 0x0F la barra de 3000 (0xAB81) y el saco de 2000 (0xAC46). El que se sale es el de 4000, que va en 0x07
 	ld (iy+003h),00fh		;abec
 	ld de,0e319h		;abf0
 	call anade_objeto		;abf3
@@ -4309,25 +4323,25 @@ tesoro_de_2000:
 	ld (0e188h),a		;ac19
 	ld hl,0b074h		;ac1c   ; el guion de 0xB074, el saco
 	call pinta_celdas		;ac1f
-	ld hl,0989eh		;ac22
+	ld hl,0989eh		;ac22   ; los tiles del saco, comprimidos en 0x989E
 	call descomprime_rle_a_vram		;ac25
-	ld de,0e28eh		;ac28
+	ld de,0e28eh		;ac28   ; los cuatro bytes de sprite del estorbo, la plantilla de 0xB010
 	ld hl,0b010h		;ac2b
 	ld bc,00004h		;ac2e
 	ldir		;ac31
-	ld de,0e319h		;ac33
+	ld de,0e319h		;ac33   ; y su objeto de 22 bytes, la plantilla de 0xB014
 	ld hl,0b014h		;ac36
 	ld bc,00016h		;ac39
 	ldir		;ac3c
 	ld iy,0e28eh		;ac3e
-	ld (iy+001h),0c4h		;ac42
+	ld (iy+001h),0c4h		;ac42   ; X 0xC4 y color 0x0F: los mismos que el anillo de 0xABE8 y la barra de 0xAB7D
 	ld (iy+003h),00fh		;ac46
 	ld de,0e319h		;ac4a
-	call anade_objeto		;ac4d
+	call anade_objeto		;ac4d   ; con esto el estorbo entra en la lista de objetos
 	push ix		;ac50
 	ld ix,0e23bh		;ac52
-	ld (ix+000h),008h		;ac56
-	ld a,0cbh		;ac5a
+	ld (ix+000h),008h		;ac56   ; la caja del tesoro, clase 8: la unica que suma miles en vez de matar
+	ld a,0cbh		;ac5a   ; centrada en 0xCB, de 0xCB-9 a 0xCB+9: los mismos dieciocho pixeles que los otros tres tesoros
 	sub 009h		;ac5c
 	ld (ix+001h),a		;ac5e
 	ld a,0cbh		;ac61
@@ -4335,35 +4349,35 @@ tesoro_de_2000:
 	ld (ix+002h),a		;ac65
 	pop ix		;ac68
 	ret			;ac6a
-escena_tipo_3_agua:
-	ld hl,0b0fbh		;ac6b
+escena_tipo_3_agua_con_liana:
+	ld hl,0b0fbh		;ac6b   ; los tres bytes 7B 7B 7B de 0xB0FB a la VRAM 0x200B: el charco en cian, que es el agua. La brea escribe 1B 1B 1B en ese mismo sitio desde 0xAC7C
 	ld de,0200bh		;ac6e
 	ld bc,00003h		;ac71
 	call copia_bloque_a_vram		;ac74
-	call monta_la_liana		;ac77
-	jr charca_cajas_y_rotulo		;ac7a
-escena_tipo_2_brea:
+	call monta_la_liana		;ac77   ; y este tipo TAMBIEN monta la liana, igual que el 2: el que se queda sin ella es el 7
+	jr charca_cajas_y_rotulo		;ac7a   ; de aqui en adelante la brea y el agua hacen exactamente lo mismo
+escena_tipo_2_brea_con_liana:
 	ld hl,0b110h		;ac7c
 	ld de,0200bh		;ac7f
 	ld bc,00003h		;ac82
 	call copia_bloque_a_vram		;ac85
 	call monta_la_liana		;ac88
 charca_cajas_y_rotulo:		; Comun a la brea y al agua: la caja del charco y el rotulo
-	push ix		;ac8b
-	ld ix,0e22ch		;ac8d
+	push ix		;ac8b   ; se aparta el IX del objeto en curso, que aqui dentro hace falta para apuntar a las cajas
+	ld ix,0e22ch		;ac8d   ; 0xE22C es la segunda de las diez cajas de 0xE229
 	ld (ix+000h),003h		;ac91   ; clase 3, de 0x50 a 0xB0: todo el ancho del charco
-	ld a,080h		;ac95
+	ld a,080h		;ac95   ; centrada en 0x80 -el medio de la pantalla- con 0x30 a cada lado: 96 pixeles de charco
 	sub 030h		;ac97
 	ld (ix+001h),a		;ac99
 	ld a,080h		;ac9c
 	add a,030h		;ac9e
 	ld (ix+002h),a		;aca0
 	pop ix		;aca3
-	ld hl,0aed4h		;aca5
+	ld hl,0aed4h		;aca5   ; el rotulo de 0xAED4, 28 celdas repartidas en las filas 14 y 15
 	call pinta_celdas		;aca8
-	ld a,(0e224h)		;acab
+	ld a,(0e224h)		;acab   ; 0xE224 es la variante, o sea los bits 0-2 del registro de pantalla
 	ld hl,0aec4h		;acae
-	jp despacha_por_variante		;acb1
+	jp despacha_por_variante		;acb1   ; salto sin retorno: 0xA99F acaba en jp (hl) y la rutina de la variante hereda el retorno de aqui
 
 ; ----------------------------------------------------------------------
 ; DATOS ret_huerfano_acb4: Un `ret` detras del `jp` de 0xACB1
@@ -4511,7 +4525,7 @@ DATA_ret_huerfano_ade7:
 ; ======================================================================
 
 
-escena_tipo_7_agua_con_liana:
+escena_tipo_7_agua_sin_liana:
 	ld hl,0b0fbh		;ade8
 	ld de,0200bh		;adeb
 	ld bc,00003h		;adee
@@ -4601,6 +4615,20 @@ DATA_colores_del_tesoro:
 ;   base la carga el llamante de 0xADE4. Solo dos rutinas distintas,
 ;   alternadas de dos en dos: 0xACB5 y 0xAE38
 ;   0xae94..0xaea4  (16 bytes)
+
+; ----------------------------------------------------------------------
+; OJO AL CERRAR ESTO: esta tabla es un SEGUNDO camino hacia
+; monta_la_liana, aparte de las llamadas directas de los tipos 2, 3 y 6.
+; Va indexada por el SUBMODO (0xE224 = (0xE222) and 7), no por el tipo
+; de escena, y sus indices 2, 3, 6 y 7 apuntan a monta_la_liana. La carga
+; 0xADDE, dentro de la rutina que elige el estorbo de la derecha.
+; Comprobado por la sesion principal el 2026-08-21: el tipo 7 (0xADE8)
+; efectivamente NO llama a monta_la_liana, asi que la correccion del
+; listado se sostiene; pero **queda sin cerrar si por este camino puede
+; aparecer liana en escenas donde el reparto por tipo dice que no**, y
+; por eso NO se han tocado todavia las filas 2/3/6/7 de la tabla de
+; escenas de las dos webs. Cerrar antes de publicarlo alli.
+; ----------------------------------------------------------------------
 DATA_tabla_de_submodos_1:
 	defw 0acb5h	; ae94  -> variante_que_no_hace_nada
 	defw 0acb5h	; ae96  -> variante_que_no_hace_nada
@@ -4637,12 +4665,12 @@ DATA_tabla_de_submodos_2:
 DATA_tabla_de_modos:
 	defw 0a9aah	; aeb4  -> escena_tipo_0_y_1_hoyos
 	defw 0a9aah	; aeb6  -> escena_tipo_0_y_1_hoyos
-	defw 0ac7ch	; aeb8  -> escena_tipo_2_brea
-	defw 0ac6bh	; aeba  -> escena_tipo_3_agua
+	defw 0ac7ch	; aeb8  -> escena_tipo_2_brea_con_liana
+	defw 0ac6bh	; aeba  -> escena_tipo_3_agua_con_liana
 	defw 0ad75h	; aebc  -> escena_tipo_4_cocodrilos
 	defw 0adf6h	; aebe  -> escena_tipo_5_tesoro
 	defw 0ae04h	; aec0  -> escena_tipo_6_brea_con_liana
-	defw 0ade8h	; aec2  -> escena_tipo_7_agua_con_liana
+	defw 0ade8h	; aec2  -> escena_tipo_7_agua_sin_liana
 
 ; ----------------------------------------------------------------------
 ; DATOS tabla_de_submodos_3: Ocho punteros de palabra para 0xA99F, mismos
