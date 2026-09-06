@@ -20,7 +20,7 @@ in one line.
 make          # trace, build the listing and check everything
 make verify   # assemble the listing and compare its sha256 with the cartridge
 make sanity   # what reassembly cannot catch
-make test     # the 17 tests over the listing, no cartridge needed
+make test     # the 18 tests over the listing, no cartridge needed
 ```
 
 `make` fails if the listing stops reproducing the cartridge byte for byte, if
@@ -53,7 +53,7 @@ the split:
 
 The work is in `src/pitfall.asm` and the notes: 6,589 lines with 337 routines
 and tables named, 988 line comments anchored to their address and 130 ranges of
-data with their explanation next to them. The 17 tests run without the binary.
+data with their explanation next to them. The 18 tests run without the binary.
 
 ## How it is organised
 

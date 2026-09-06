@@ -93,7 +93,7 @@ audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
 <pre><code>make          # traza, genera el listado y lo comprueba todo
 make verify   # ensambla el listado y compara el sha256 con el cartucho
 make sanity   # lo que el reensamblado no puede cazar
-make test     # los 17 tests del listado, que no necesitan el cartucho</code></pre>
+make test     # los 18 tests del listado, que no necesitan el cartucho</code></pre>
 <p><code>make</code> falla si el listado deja de reproducir el cartucho byte a byte, si el trazador se mete en una zona declarada como datos, si un punto de entrada cae dentro de una, o si queda un byte de los 16384 sin dueño.</p>
 <h2 id="la-prueba-que-decide">La prueba que decide</h2>
 <p>Un desensamblado es fiable si al ensamblarlo vuelve a salir el original. Eso es <code>make verify</code>:</p>
@@ -108,7 +108,7 @@ OK: reproducible byte a byte</code></pre>
   ==========================================
   explicado                  16384  100.00 %</code></pre>
 <h2 id="sin-el-cartucho">Sin el cartucho</h2>
-<p>El trabajo está en <code>src/pitfall.asm</code> y en las notas: 6.589 líneas con 337 rutinas y tablas bautizadas, 988 comentarios anclados a su dirección y 130 rangos de datos con su explicación al lado. Los 17 tests corren sin el binario.</p>
+<p>El trabajo está en <code>src/pitfall.asm</code> y en las notas: 6.589 líneas con 337 rutinas y tablas bautizadas, 988 comentarios anclados a su dirección y 130 rangos de datos con su explicación al lado. Los 18 tests corren sin el binario.</p>
 <h2 id="como-esta-organizado">Cómo está organizado</h2>
 <p>El listado <b>no se toca a mano</b>: se genera, y lo gobiernan tres ficheros.</p>
 <table><tr><th></th><th></th></tr><tr><td><code>src/pitfall.entries</code></td><td>los puntos de entrada: por dónde empieza a trazar</td></tr><tr><td><code>src/pitfall.nocode</code></td><td>las zonas que NO son código, y por qué se sabe</td></tr><tr><td><code>src/pitfall.notes</code></td><td>los nombres, los comentarios y los rangos de datos</td></tr></table>

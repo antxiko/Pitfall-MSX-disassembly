@@ -20,7 +20,7 @@ línea.
 make          # traza, genera el listado y lo comprueba todo
 make verify   # ensambla el listado y compara el sha256 con el cartucho
 make sanity   # lo que el reensamblado no puede cazar
-make test     # los 17 tests del listado, que no necesitan el cartucho
+make test     # los 18 tests del listado, que no necesitan el cartucho
 ```
 
 `make` falla si el listado deja de reproducir el cartucho byte a byte, si el
@@ -53,7 +53,7 @@ reparto:
 
 El trabajo está en `src/pitfall.asm` y en las notas: 6.589 líneas con 337
 rutinas y tablas bautizadas, 988 comentarios anclados a su dirección y 130
-rangos de datos con su explicación al lado. Los 17 tests corren sin el binario.
+rangos de datos con su explicación al lado. Los 18 tests corren sin el binario.
 
 ## Cómo está organizado
 

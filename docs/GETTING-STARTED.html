@@ -93,7 +93,7 @@ audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
 <pre><code>make          # trace, build the listing and check everything
 make verify   # assemble the listing and compare its sha256 with the cartridge
 make sanity   # what reassembly cannot catch
-make test     # the 17 tests over the listing, no cartridge needed</code></pre>
+make test     # the 18 tests over the listing, no cartridge needed</code></pre>
 <p><code>make</code> fails if the listing stops reproducing the cartridge byte for byte, if the tracer walks into an area declared as data, if an entry point falls inside one, or if a single byte of the 16384 is left unaccounted for.</p>
 <h2 id="the-proof-that-decides">The proof that decides</h2>
 <p>A disassembly is trustworthy if assembling it gives back the original. That is <code>make verify</code>:</p>
@@ -108,7 +108,7 @@ OK: reproducible byte a byte</code></pre>
   ==========================================
   explicado                  16384  100.00 %</code></pre>
 <h2 id="without-the-cartridge">Without the cartridge</h2>
-<p>The work is in <code>src/pitfall.asm</code> and the notes: 6,589 lines with 337 routines and tables named, 988 line comments anchored to their address and 130 ranges of data with their explanation next to them. The 17 tests run without the binary.</p>
+<p>The work is in <code>src/pitfall.asm</code> and the notes: 6,589 lines with 337 routines and tables named, 988 line comments anchored to their address and 130 ranges of data with their explanation next to them. The 18 tests run without the binary.</p>
 <h2 id="how-it-is-organised">How it is organised</h2>
 <p>The listing is <b>never edited by hand</b>: it is generated, governed by three files.</p>
 <table><tr><th></th><th></th></tr><tr><td><code>src/pitfall.entries</code></td><td>the entry points: where tracing starts</td></tr><tr><td><code>src/pitfall.nocode</code></td><td>the areas that are NOT code, and how that is known</td></tr><tr><td><code>src/pitfall.notes</code></td><td>the names, the comments and the data ranges</td></tr></table>
